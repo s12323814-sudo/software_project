@@ -1,22 +1,13 @@
+package admain;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-class yasmeen {
-public static void main(String[] args){
-int x;
-x=33;
-System.out.println("hello"+x);
+public class database_connection {
 
- }
-}
-
-
-
-public class DBConnection {
-
-    private static final String URL =
-            "jdbc:postgresql://localhost:5432/clinic_db";
+	private static final String URL =
+            "jdbc:postgresql://localhost:5432/Appointment_Scheduling_System";
     private static final String USER = "postgres";
     private static final String PASSWORD = "your_password";
 
