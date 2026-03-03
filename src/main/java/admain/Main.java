@@ -17,6 +17,10 @@ public class Main {
     	            int choice = sc.nextInt();
 
     	            switch (choice) {
+    	                case 1: 
+    	            	    UserMenu.showMenu();
+                            break;
+    	            
     	                case 2:
     	                    adminMenu();
     	                    break;
