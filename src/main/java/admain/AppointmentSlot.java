@@ -5,37 +5,57 @@ import java.time.LocalTime;
 
 public class AppointmentSlot {
 
-    private int slotId;
-    private LocalDate slotDate;
-    private LocalTime slotTime;
-    private int capacity;
+    private int id;
+    private LocalDate date;
+    private LocalTime time;
+    private int maxCapacity;
     private int bookedCount;
 
-    public AppointmentSlot(int slotId, LocalDate slotDate, LocalTime slotTime, int capacity, int bookedCount) {
-        this.slotId = slotId;
-        this.slotDate = slotDate;
-        this.slotTime = slotTime;
-        this.capacity = capacity;
+    public AppointmentSlot(int id, LocalDate date, LocalTime time, int maxCapacity, int bookedCount) {
+        this.id = id;
+        this.date = date;
+        this.time = time;
+        this.maxCapacity = maxCapacity;
         this.bookedCount = bookedCount;
     }
 
-    public int getSlotId() {
-        return slotId;
+    public int getId() {
+        return id;
     }
 
-    public int getCapacity() {
-        return capacity;
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public LocalTime getTime() {
+        return time;
+    }
+
+    public int getMaxCapacity() {
+        return maxCapacity;
     }
 
     public int getBookedCount() {
         return bookedCount;
     }
 
+    // تحقق إذا كان الـ slot ممتلئ
+    public boolean isFull() {
+        return bookedCount >= maxCapacity;
+    }
+
+    // زيادة عدد الحجوزات
+    public void addBooking() {
+        if (!isFull()) {
+            bookedCount++;
+        }
+    }
+
     @Override
     public String toString() {
-        return "Slot ID: " + slotId +
-                " | Date: " + slotDate +
-                " | Time: " + slotTime +
-                " | Available Seats: " + (capacity - bookedCount);
+        return "ID: " + id +
+                " | Date: " + date +
+                " | Time: " + time +
+                " | Capacity: " + bookedCount + "/" + maxCapacity;
     }
 }

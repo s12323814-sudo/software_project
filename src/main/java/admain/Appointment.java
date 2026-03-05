@@ -1,6 +1,9 @@
 package admain;
 
+import java.time.Duration;
+
 public class Appointment {
+
     private TimeSlot timeSlot;
     private int participants;
     private AppointmentStatus status;
@@ -10,13 +13,43 @@ public class Appointment {
         this.timeSlot = timeSlot;
         this.participants = participants;
         this.type = type;
-        this.status = AppointmentStatus.CONFIRMED;
-        this.timeSlot.setAvailable(false);
+        this.status = AppointmentStatus.PENDING; // يبدأ Pending
     }
 
-    public TimeSlot getTimeSlot() { return timeSlot; }
-    public int getParticipants() { return participants; }
-    public AppointmentStatus getStatus() { return status; }
-    public void setStatus(AppointmentStatus status) { this.status = status; }
-    public String getType() { return type; }
+    public TimeSlot getTimeSlot() {
+        return timeSlot;
+    }
+
+    public int getParticipants() {
+        return participants;
+    }
+
+    public AppointmentStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AppointmentStatus status) {
+        this.status = status;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    // حساب مدة الموعد بالدقائق
+    public int getDuration() {
+        return (int) Duration.between(timeSlot.getStart(), timeSlot.getEnd()).toMinutes();
+    }
+
+    // عرض معلومات الموعد
+    @Override
+    public String toString() {
+        return "Appointment{" +
+                "Start=" + timeSlot.getStart() +
+                ", End=" + timeSlot.getEnd() +
+                ", Participants=" + participants +
+                ", Status=" + status +
+                ", Type='" + type + '\'' +
+                '}';
+    }
 }
