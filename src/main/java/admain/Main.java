@@ -1,11 +1,13 @@
 package admain;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 public class Main {
 	 static Scanner sc = new Scanner(System.in);
-
+	 private static SlotService slotService = new SlotService();
+	 private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     public static void main(String[] args) {
 
     	        while (true) {
@@ -86,12 +88,41 @@ public class Main {
 
     	            System.out.println("\nWelcome Admin: " + session.currentAdmin.getUsername());
     	            System.out.println("1- Logout");
-
+    	            System.out.println("2- book");
     	            int choice = sc.nextInt();
 
     	            if (choice == 1) {
     	                session.logout();
     	            }
+    	            else if(choice ==2 ){
+    	                bookAppointment();
+                      
+    	            }
+    	        }
+    	    }
+    	    private static void bookAppointment() {
+
+    	        try {
+    	            System.out.print("Enter Slot ID: ");
+    	            int slotId = Integer.parseInt(sc.nextLine());
+
+    	            System.out.print("Enter Start Time (yyyy-MM-dd HH:mm): ");
+    	            LocalDateTime start = LocalDateTime.parse(sc.nextLine(), formatter);
+
+    	            System.out.print("Enter End Time (yyyy-MM-dd HH:mm): ");
+    	            LocalDateTime end = LocalDateTime.parse(sc.nextLine(), formatter);
+
+    	            System.out.print("Enter Number of Participants: ");
+    	            int participants = Integer.parseInt(sc.nextLine());
+
+    	            slotService.bookSlot(slotId, start, end, participants);
+
+    	            System.out.println("Appointment booked successfully!");
+
+    	        } catch (NumberFormatException e) {
+    	            System.out.println("Invalid number input.");
+    	        } catch (Exception e) {
+    	            System.out.println("Error: " + e.getMessage());
     	        }
     	    }
     	
