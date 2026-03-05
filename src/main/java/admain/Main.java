@@ -89,8 +89,7 @@ public class Main {
     	            System.out.println("\nWelcome Admin: " + session.currentAdmin.getUsername());
     	            System.out.println("1- Logout");
     	            System.out.println("2- book");
-    	            int choice = sc.nextInt();
-
+    	            int choice = Integer.parseInt(sc.nextLine());
     	            if (choice == 1) {
     	                session.logout();
     	            }

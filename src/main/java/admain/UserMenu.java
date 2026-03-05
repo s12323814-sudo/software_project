@@ -15,8 +15,8 @@ public class UserMenu {
         while (true) {
             System.out.println("\n=== User Menu ===");
             System.out.println("1- View Available Appointment Slots");
-            System.out.println("2- Book Appointment");
-            System.out.println("3- Exit");
+          
+            System.out.println("2- Exit");
 
             int choice;
             try {
