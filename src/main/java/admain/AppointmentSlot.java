@@ -39,12 +39,12 @@ public class AppointmentSlot {
         return bookedCount;
     }
 
-    // تحقق إذا كان الـ slot ممتلئ
+  
     public boolean isFull() {
         return bookedCount >= maxCapacity;
     }
 
-    // زيادة عدد الحجوزات
+     
     public void addBooking() {
         if (!isFull()) {
             bookedCount++;
