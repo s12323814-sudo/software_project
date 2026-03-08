@@ -112,6 +112,16 @@ public class UserMenu {
 
         if (login_foruser.register(username, password, email)) {
             System.out.println("Account created successfully!");
+
+          
+            users user = login_foruser.login(username, password);
+
+            if (user != null) {
+                session.currentUser = user;
+                System.out.println("Logged in automatically!");
+                userSession();
+            }
+
         } else {
             System.out.println("Registration failed! Username or email may already exist.");
         }

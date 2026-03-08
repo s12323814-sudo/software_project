@@ -28,7 +28,7 @@ public class login_foradmain {
 	        return null;
 	    }
 
-	    public static boolean register(String username, String password, String email) {
+	    public static Admin register(String username, String password, String email) {
 
 	        try (Connection conn = database_connection.getConnection()) {
 
@@ -40,12 +40,14 @@ public class login_foradmain {
 	            stmt.setString(3, email);
 
 	            stmt.executeUpdate();
-	            return true;
+
+	            return login(username, password);
 
 	        } catch (SQLException e) {
 	            System.out.println("Username already exists.");
-	            return false;
 	        }
+
+	        return null;
 	    }
 	    public static boolean updatePassword(String email, String newPassword) {
 

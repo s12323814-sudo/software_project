@@ -83,9 +83,13 @@ public class Main {
                     System.out.print("Email: ");
                     String email = sc.nextLine();
 
-                    if (login_foradmain.register(newUser, newPass, email)) {
-                        System.out.println("Account created successfully!");
-                    } else {
+                    Admin adminR = login_foradmain.register(newUser, newPass, email);
+                    if(adminR != null){
+                        session.currentAdmin = adminR;
+                        System.out.println("Account created and logged in!");
+                        adminSession();
+                    }
+                     else {
                         System.out.println("Account creation failed!");
                     }
 
