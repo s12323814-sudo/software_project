@@ -4,8 +4,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 public class TimeSlot {
-
-    private int id; // معرف slot في DB
+    private int id;
     private LocalDateTime start;
     private LocalDateTime end;
 
@@ -15,30 +14,17 @@ public class TimeSlot {
         this.end = end;
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
+    public LocalDateTime getStart() { return start; }
+    public LocalDateTime getEnd() { return end; }
 
-    public LocalDateTime getStart() {
-        return start;
-    }
-
-    public LocalDateTime getEnd() {
-        return end;
-    }
-
-    // Duration محسوبة بالدقائق
     public int getDurationMinutes() {
         return (int) Duration.between(start, end).toMinutes();
     }
 
     @Override
     public String toString() {
-        return "TimeSlot{" +
-                "id=" + id +
-                ", start=" + start +
-                ", end=" + end +
-                ", duration=" + getDurationMinutes() + " minutes" +
-                '}';
+        return "TimeSlot{id=" + id + ", start=" + start + ", end=" + end +
+                ", duration=" + getDurationMinutes() + " minutes}";
     }
 }

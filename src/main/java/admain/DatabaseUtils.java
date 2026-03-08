@@ -1,31 +1,25 @@
 package admain;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-
+import java.time.LocalTime;
 public class DatabaseUtils {
 
     public static TimeSlot getTimeSlotById(int slotId) throws SQLException {
-
-        String sql = "SELECT slot_id, slot_time FROM appointment_slot WHERE slot_id = ?";
+        String sql = "SELECT slot_date, slot_time FROM appointment_slot WHERE slot_id = ?";
 
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, slotId);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    int id = rs.getInt("slot_id");
-                    LocalDateTime start = rs.getTimestamp("slot_time").toLocalDateTime();
-                    LocalDateTime end = start.plusMinutes(60); // افتراضياً مدة ساعة، يمكن تعديلها حسب الحاجة
-
-                    return new TimeSlot(id, start, end);
+                    LocalDateTime start = rs.getDate("slot_date").toLocalDate()
+                            .atTime(rs.getTime("slot_time").toLocalTime());
+                    LocalDateTime end = start.plusMinutes(60); // مدة افتراضية
+                    return new TimeSlot(slotId, start, end);
                 } else {
-                    throw new IllegalArgumentException("Slot ID not found in DB.");
+                    throw new IllegalArgumentException("Slot not found");
                 }
             }
         }

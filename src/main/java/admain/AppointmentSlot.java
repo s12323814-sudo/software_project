@@ -4,58 +4,37 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class AppointmentSlot {
-
     private int id;
     private LocalDate date;
-    private LocalTime time;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private int maxCapacity;
     private int bookedCount;
 
-    public AppointmentSlot(int id, LocalDate date, LocalTime time, int maxCapacity, int bookedCount) {
+    public AppointmentSlot(int id, LocalDate date, LocalTime startTime, LocalTime endTime, int maxCapacity, int bookedCount) {
         this.id = id;
         this.date = date;
-        this.time = time;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.maxCapacity = maxCapacity;
         this.bookedCount = bookedCount;
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
+    public LocalDate getDate() { return date; }
+    public LocalTime getStartTime() { return startTime; }
+    public LocalTime getEndTime() { return endTime; }
+    public int getMaxCapacity() { return maxCapacity; }
+    public int getBookedCount() { return bookedCount; }
 
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public LocalTime getTime() {
-        return time;
-    }
-
-    public int getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public int getBookedCount() {
-        return bookedCount;
-    }
-
-  
-    public boolean isFull() {
-        return bookedCount >= maxCapacity;
-    }
-
-     
-    public void addBooking() {
-        if (!isFull()) {
-            bookedCount++;
-        }
-    }
+    public boolean isFull() { return bookedCount >= maxCapacity; }
+    public void addBooking(int participants) { bookedCount += participants; }
 
     @Override
     public String toString() {
         return "ID: " + id +
-                " | Date: " + date +
-                " | Time: " + time +
-                " | Capacity: " + bookedCount + "/" + maxCapacity;
+               " | Date: " + date +
+               " | Time: " + startTime + " - " + endTime +
+               " | Capacity: " + bookedCount + "/" + maxCapacity;
     }
 }
