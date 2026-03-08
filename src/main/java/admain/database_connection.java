@@ -10,7 +10,7 @@ public class database_connection {
 
 	 
     private static final String URL = "jdbc:postgresql://localhost:5432/Appointment";
-   private static final String USER = "Appointment_Scheduling_System";
+   private static final String USER = "appointment_scheduling_system";
    private static final String PASSWORD = "123456";
 
    private static Connection connection;
