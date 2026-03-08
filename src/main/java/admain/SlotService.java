@@ -12,7 +12,7 @@ public class SlotService {
     public List<AppointmentSlot> getAvailableSlots() {
         List<AppointmentSlot> slots = new ArrayList<>();
 
-        String sql = "SELECT * FROM appointment_slot WHERE booked_count < max_capacity";
+        String sql = "SELECT * FROM appointment_slots WHERE booked_count < max_capacity";
 
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -38,7 +38,7 @@ public class SlotService {
 
  
     public AppointmentSlot getSlotById(int slotId) {
-        String sql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
+        String sql = "SELECT * FROM appointment_slots WHERE slot_id = ?";
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -66,7 +66,7 @@ public class SlotService {
             conn.setAutoCommit(false);
 
             
-            String checkSql = "SELECT max_capacity, booked_count FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
+            String checkSql = "SELECT max_capacity, booked_count FROM appointment_slots WHERE slot_id = ? FOR UPDATE";
             try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
                 ps.setInt(1, slotId);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -82,14 +82,14 @@ public class SlotService {
                         throw new SQLException("Not enough capacity for this slot. Remaining: " + remaining);
                     }
 
-                    String insertSql = "INSERT INTO user_appointments(user_id, slot_id, participants) VALUES (?, ?, ?)";
+                    String insertSql = "INSERT INTO booking(user_id, slot_id, participants) VALUES (?, ?, ?)";
                     try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
                         insertPs.setInt(1, userId);
                         insertPs.setInt(2, slotId);
                         insertPs.setInt(3, participants);
                         insertPs.executeUpdate();
                     }
-                    String updateSql = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
+                    String updateSql = "UPDATE appointment_slots SET booked_count = booked_count + ? WHERE slot_id = ?";
                     try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
                         updatePs.setInt(1, participants);
                         updatePs.setInt(2, slotId);
@@ -104,24 +104,20 @@ public class SlotService {
         }
     }
 
-    public void bookSlot(int slotId, java.time.LocalDateTime start, java.time.LocalDateTime end, int participants) throws SQLException {
-
-        long duration = java.time.Duration.between(start, end).toMinutes();
-
-        if (duration < 30 || duration > 120) {
-            throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
-        }
+    public void bookSlot(int slotId, int participants) throws SQLException {
 
         try (Connection conn = database_connection.getConnection()) {
+
             conn.setAutoCommit(false);
 
-         
-            String checkSql = "SELECT max_capacity, booked_count FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
+            String checkSql = "SELECT max_capacity, booked_count FROM appointment_slots WHERE slot_id = ? FOR UPDATE";
 
-            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-                checkPs.setInt(1, slotId);
+            try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
 
-                try (ResultSet rs = checkPs.executeQuery()) {
+                ps.setInt(1, slotId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+
                     if (!rs.next()) {
                         throw new IllegalArgumentException("Slot not found.");
                     }
@@ -133,31 +129,30 @@ public class SlotService {
                         throw new IllegalArgumentException("Participant limit exceeded.");
                     }
 
-                    String insertSql = "INSERT INTO appointments (slot_id, start_time, end_time, duration, participants, status) VALUES (?, ?, ?, ?, ?, ?)";
-                    try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                        ps.setInt(1, slotId);
-                        ps.setTimestamp(2, Timestamp.valueOf(start));
-                        ps.setTimestamp(3, Timestamp.valueOf(end));
-                        ps.setInt(4, (int) duration);
-                        ps.setInt(5, participants);
-                        ps.setString(6, "CONFIRMED");
+                    String insertSql = "INSERT INTO booking(slot_id, participants, status) VALUES (?, ?, ?)";
 
-                        ps.executeUpdate();
+                    try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
+
+                        insertPs.setInt(1, slotId);
+                        insertPs.setInt(2, participants);
+                        insertPs.setString(3, "CONFIRMED");
+
+                        insertPs.executeUpdate();
                     }
 
-                    String updateSql = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
+                    String updateSql = "UPDATE appointment_slots SET booked_count = booked_count + ? WHERE slot_id = ?";
+
                     try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+
                         updatePs.setInt(1, participants);
                         updatePs.setInt(2, slotId);
+
                         updatePs.executeUpdate();
                     }
                 }
             }
 
             conn.commit();
-
-        } catch (Exception e) {
-            throw e;
         }
     }
 

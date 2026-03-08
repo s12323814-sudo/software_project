@@ -11,7 +11,8 @@ public class Main {
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public static void main(String[] args) {
-
+    	ReminderManager reminder = new ReminderManager();
+    	reminder.checkReminders();
         while (true) {
             System.out.println("=== Main Menu ===");
             System.out.println("1- Login as User");
@@ -164,16 +165,10 @@ public class Main {
             System.out.print("Enter Slot ID: ");
             int slotId = Integer.parseInt(sc.nextLine());
 
-            System.out.print("Enter Start Time (yyyy-MM-dd HH:mm): ");
-            LocalDateTime start = LocalDateTime.parse(sc.nextLine(), formatter);
-
-            System.out.print("Enter End Time (yyyy-MM-dd HH:mm): ");
-            LocalDateTime end = LocalDateTime.parse(sc.nextLine(), formatter);
-
             System.out.print("Enter Number of Participants: ");
             int participants = Integer.parseInt(sc.nextLine());
 
-            slotService.bookSlot(slotId, start, end, participants);
+            slotService.bookSlot(slotId, participants);
 
             System.out.println("Appointment booked successfully!");
 

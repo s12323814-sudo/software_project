@@ -36,12 +36,12 @@ public class Appointment {
         return type;
     }
 
-    // حساب مدة الموعد بالدقائق
+   
     public int getDuration() {
         return (int) Duration.between(timeSlot.getStart(), timeSlot.getEnd()).toMinutes();
     }
 
-    // عرض معلومات الموعد
+   
     @Override
     public String toString() {
         return "Appointment{" +
