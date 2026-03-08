@@ -3,16 +3,24 @@ package admain;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     static Scanner sc = new Scanner(System.in);
     private static SlotService slotService = new SlotService();
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
+ 
+    private static NotificationService notificationService = new MockNotificationService(); 
+    private static ReminderManager reminderManager = new ReminderManager(slotService, notificationService);
     public static void main(String[] args) {
-    	ReminderManager reminder = new ReminderManager();
-    	reminder.checkReminders();
+    	
+    	ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    	scheduler.scheduleAtFixedRate(() -> {
+    	    reminderManager.checkReminders();
+    	}, 0, 10, TimeUnit.MINUTES);
         while (true) {
             System.out.println("=== Main Menu ===");
             System.out.println("1- Login as User");

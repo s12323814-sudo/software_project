@@ -8,10 +8,10 @@ public class MockNotificationService implements NotificationService {
     private List<String> sentMessages = new ArrayList<>();
 
     @Override
-    public void sendNotification(String email, String message) {
+    public void sendReminder(String email, String message) {
         String log = "Mock sent to " + email + ": " + message;
         sentMessages.add(log);
-        System.out.println(log); // للعرض أثناء الاختبار
+        System.out.println(log);
     }
 
     public List<String> getSentMessages() {

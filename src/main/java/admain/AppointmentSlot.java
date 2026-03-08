@@ -1,7 +1,10 @@
 package admain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AppointmentSlot {
 
@@ -18,7 +21,9 @@ public class AppointmentSlot {
         this.maxCapacity = maxCapacity;
         this.bookedCount = bookedCount;
     }
-
+    public LocalDateTime getDateTime() {
+        return LocalDateTime.of(date, time);
+    }
     public int getId() {
         return id;
     }
@@ -44,11 +49,14 @@ public class AppointmentSlot {
         return bookedCount >= maxCapacity;
     }
 
-     
-    public void addBooking() {
-        if (!isFull()) {
-            bookedCount++;
-        }
+    private List<Booking> bookings = new ArrayList<>();
+
+    public List<Booking> getBookings() {
+        return bookings;
+    }
+    public void addBooking(Booking booking) {
+        bookings.add(booking);
+        bookedCount++;
     }
 
     @Override

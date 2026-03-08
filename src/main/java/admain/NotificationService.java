@@ -1,5 +1,5 @@
 package admain;
 
 public interface NotificationService {
-    void sendNotification(String email, String message);
+	void sendReminder(String email, String message);
 }
