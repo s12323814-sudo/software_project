@@ -2,6 +2,7 @@ package admain;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -19,19 +20,20 @@ public class Main {
             System.out.println("3- Exit");
 
             int choice = sc.nextInt();
+            sc.nextLine(); // لتنظيف الـ buffer
 
             switch (choice) {
                 case 1:
                     UserMenu.showMenu();
                     break;
-
                 case 2:
                     adminMenu();
                     break;
-
                 case 3:
                     System.out.println("Goodbye!");
                     System.exit(0);
+                default:
+                    System.out.println("Invalid choice!");
             }
         }
     }
@@ -47,12 +49,11 @@ public class Main {
             System.out.println("4- Back");
 
             int choice = sc.nextInt();
-            sc.nextLine();
+            sc.nextLine(); // لتنظيف buffer
 
             switch (choice) {
 
                 case 1:
-
                     System.out.print("Username: ");
                     String username = sc.nextLine();
 
@@ -68,12 +69,9 @@ public class Main {
                     } else {
                         System.out.println("Login Failed!");
                     }
-
                     break;
 
                 case 2:
-
-
                     System.out.print("New Username: ");
                     String newUser = sc.nextLine();
 
@@ -88,16 +86,17 @@ public class Main {
                     } else {
                         System.out.println("Account creation failed!");
                     }
-
                     break;
-                case 3:
 
+                case 3:
                     forgotPassword();
                     break;
 
                 case 4:
-
                     return;
+
+                default:
+                    System.out.println("Invalid choice!");
             }
         }
     }
@@ -113,14 +112,12 @@ public class Main {
         }
 
         String otp = OTPGenerator.generateOTP();
-
         EmailSender.sendOTP(email, otp);
 
         System.out.print("Enter OTP sent to your email: ");
         String userOtp = sc.nextLine();
 
         if (otp.equals(userOtp)) {
-
             System.out.print("Enter new password: ");
             String newPassword = sc.nextLine();
 
@@ -138,15 +135,25 @@ public class Main {
         while (session.currentAdmin != null) {
 
             System.out.println("\nWelcome Admin: " + session.currentAdmin.getUsername());
-            System.out.println("1- Logout");
-            System.out.println("2- book");
+            System.out.println("1- View Slots");
+            System.out.println("2- Book Appointment");
+            System.out.println("3- Logout");
 
             int choice = Integer.parseInt(sc.nextLine());
 
-            if (choice == 1) {
-                session.logout();
-            } else if (choice == 2) {
-                bookAppointment();
+            switch (choice) {
+                case 1:
+                    viewAvailableSlots();
+                    break;
+                case 2:
+                    bookAppointment();
+                    break;
+                case 3:
+                    session.logout();
+                    System.out.println("Logged out successfully.");
+                    break;
+                default:
+                    System.out.println("Invalid choice!");
             }
         }
     }
@@ -154,7 +161,6 @@ public class Main {
     private static void bookAppointment() {
 
         try {
-
             System.out.print("Enter Slot ID: ");
             int slotId = Integer.parseInt(sc.nextLine());
 
@@ -175,6 +181,33 @@ public class Main {
             System.out.println("Invalid number input.");
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private static void viewAvailableSlots() {
+        List<AppointmentSlot> slots = slotService.getAvailableSlots();
+
+        if (slots.isEmpty()) {
+            System.out.println("No available slots.");
+            return;
+        }
+
+        System.out.println("\nAvailable Slots:");
+        System.out.printf("%-5s %-12s %-8s %-10s %-10s %-10s%n",
+                "ID", "Date", "Time", "Capacity", "Booked", "Remaining");
+
+        for (AppointmentSlot slot : slots) {
+            int remaining = slot.getMaxCapacity() - slot.getBookedCount();
+            if (remaining > 0) {
+                System.out.printf("%-5d %-12s %-8s %-10d %-10d %-10d%n",
+                        slot.getId(),
+                        slot.getDate(),
+                        slot.getTime(),
+                        slot.getMaxCapacity(),
+                        slot.getBookedCount(),
+                        remaining
+                );
+            }
         }
     }
 }
