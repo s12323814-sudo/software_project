@@ -100,8 +100,10 @@ public class Main {
                     break;
 
                 case 4:
-
+                    System.out.println("Exiting...");
                     return;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
