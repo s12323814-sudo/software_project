@@ -185,4 +185,13 @@ ALTER TABLE ONLY public.appointment_slot
 --
 
 \unrestrict dL1Qjondd4wyAR0YyIRFbz63nfo2uZZX0jo2ejLZe7oz8V5kIMM94Hesog5NKOf
-
+CREATE TABLE appointments (
+    appointment_id SERIAL PRIMARY KEY,
+    slot_id INT NOT NULL REFERENCES appointment_slots(slot_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE SET NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    duration INT NOT NULL,
+    participants INT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED'
+);
