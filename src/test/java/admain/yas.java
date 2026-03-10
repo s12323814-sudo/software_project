@@ -26,21 +26,21 @@ public class yas {
         }
 
         
-        login_foradmain.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
+        login_foradmin_y.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
     }
 
     @Test
     @Order(1)
     @DisplayName("Test Email Exists")
     void testEmailExists() {
-        assertTrue(login_foradmain.emailExists(TEST_EMAIL), "Email should exist after registration");
+        assertTrue(login_foradmin_y.emailExists(TEST_EMAIL), "Email should exist after registration");
     }
 
     @Test
     @Order(2)
     @DisplayName("Test Login Admin")
     void testLogin() {
-        Admin admin = login_foradmain.login(TEST_USERNAME, TEST_PASSWORD);
+        Admin_y admin = login_foradmin_y.login(TEST_USERNAME, TEST_PASSWORD);
         assertNotNull(admin, "Login should return an Admin object");
         assertEquals(TEST_USERNAME, admin.getUsername(), "Username should match");
     }
@@ -50,11 +50,11 @@ public class yas {
     @DisplayName("Test Update Password")
     void testUpdatePassword() {
         String newPass = "654321";
-        boolean updated = login_foradmain.updatePassword(TEST_EMAIL, newPass);
+        boolean updated = login_foradmin_y.updatePassword(TEST_EMAIL, newPass);
         assertTrue(updated, "Password should be updated successfully");
 
         
-        Admin admin = login_foradmain.login(TEST_USERNAME, newPass);
+        Admin_y admin = login_foradmin_y.login(TEST_USERNAME, newPass);
         assertNotNull(admin, "Login with new password should succeed");
     }
 }

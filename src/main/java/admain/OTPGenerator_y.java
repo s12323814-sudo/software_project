@@ -2,7 +2,7 @@ package admain;
 
 import java.util.Random;
 
-public class OTPGenerator {
+public class OTPGenerator_y {
 
     public static String generateOTP() {
         Random rand = new Random();

@@ -1,8 +1,11 @@
 package admain;
 
-public class session {
-	  public static users currentUser = null;  
-	    public static Admin currentAdmin = null;
+import admain.Admin_y;
+import admain.users_y;
+
+public class session_y {
+	  public static users_y currentUser = null;  
+	    public static Admin_y currentAdmin = null;
 
 	    public static void logoutUser() {
 	        currentUser = null;

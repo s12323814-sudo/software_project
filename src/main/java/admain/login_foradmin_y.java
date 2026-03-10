@@ -1,8 +1,10 @@
 package admain;
 import java.sql.*;
-public class login_foradmain {
 
-	    public static Admin login(String username, String password) {
+import admain.Admin_y;
+public class login_foradmin_y {
+
+	    public static Admin_y login(String username, String password) {
 
 	        try (Connection conn = database_connection.getConnection()) {
 
@@ -14,7 +16,7 @@ public class login_foradmain {
 	            ResultSet rs = stmt.executeQuery();
 
 	            if (rs.next()) {
-	                return new Admin(
+	                return new Admin_y(
 	                        rs.getInt("admin_id"),
 	                        rs.getString("username"),
 	                        rs.getString("password")
@@ -28,7 +30,7 @@ public class login_foradmain {
 	        return null;
 	    }
 
-	    public static Admin register(String username, String password, String email) {
+	    public static Admin_y register(String username, String password, String email) {
 
 	        try (Connection conn = database_connection.getConnection()) {
 

@@ -6,24 +6,32 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AppointmentSlot {
+public class AppointmentSlot_y {
 
     private int id;
     private LocalDate date;
-    private LocalTime time;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private int maxCapacity;
     private int bookedCount;
 
-    public AppointmentSlot(int id, LocalDate date, LocalTime time, int maxCapacity, int bookedCount) {
+    public AppointmentSlot_y(int id, LocalDate date, LocalTime startTime, LocalTime endTime, int maxCapacity, int bookedCount) {
         this.id = id;
         this.date = date;
-        this.time = time;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.maxCapacity = maxCapacity;
         this.bookedCount = bookedCount;
     }
-    public LocalDateTime getDateTime() {
-        return LocalDateTime.of(date, time);
+
+    public LocalDateTime getStartDateTime() {
+        return LocalDateTime.of(date, startTime);
     }
+
+    public LocalDateTime getEndDateTime() {
+        return LocalDateTime.of(date, endTime);
+    }
+
     public int getId() {
         return id;
     }
@@ -32,8 +40,12 @@ public class AppointmentSlot {
         return date;
     }
 
-    public LocalTime getTime() {
-        return time;
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
     }
 
     public int getMaxCapacity() {
@@ -44,17 +56,17 @@ public class AppointmentSlot {
         return bookedCount;
     }
 
-  
     public boolean isFull() {
         return bookedCount >= maxCapacity;
     }
 
-    private List<Booking> bookings = new ArrayList<>();
+    private List<Booking_y> bookings = new ArrayList<>();
 
-    public List<Booking> getBookings() {
+    public List<Booking_y> getBookings() {
         return bookings;
     }
-    public void addBooking(Booking booking) {
+
+    public void addBooking(Booking_y booking) {
         bookings.add(booking);
         bookedCount++;
     }
@@ -63,7 +75,8 @@ public class AppointmentSlot {
     public String toString() {
         return "ID: " + id +
                 " | Date: " + date +
-                " | Time: " + time +
+                " | Start: " + startTime +
+                " | End: " + endTime +
                 " | Capacity: " + bookedCount + "/" + maxCapacity;
     }
 }

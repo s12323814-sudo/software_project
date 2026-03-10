@@ -1,12 +1,17 @@
 package admain;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-import java.sql.*;
+import admain.database_connection;
+import admain.users_y;
 
 
-public class login_foruser {
+public class login_foruser_y {
 
  
-    public static users login(String username, String password) {
+    public static users_y login(String username, String password) {
 
         try (Connection conn = database_connection.getConnection()) {
 
@@ -18,7 +23,7 @@ public class login_foruser {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return new users(
+                return new users_y(
                         rs.getInt("user_id"),
                         rs.getString("username"),
                         rs.getString("password"),

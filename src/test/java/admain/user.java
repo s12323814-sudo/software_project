@@ -26,14 +26,14 @@ class user {
         }
 
         
-        login_foruser.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
+        login_foruser_y.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
     }
 
     @Test
     @DisplayName("Test user registration")
     void testRegister() {
         
-        boolean result = login_foruser.register(TEST_USERNAME + "2", TEST_PASSWORD, "another@example.com");
+        boolean result = login_foruser_y.register(TEST_USERNAME + "2", TEST_PASSWORD, "another@example.com");
         assertTrue(result, "New user should be registered successfully");
     }
 
@@ -41,14 +41,14 @@ class user {
     @DisplayName("Test duplicate registration fails")
     void testDuplicateRegister() {
         
-        boolean result = login_foruser.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
+        boolean result = login_foruser_y.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
         assertFalse(result, "Duplicate registration should fail");
     }
 
     @Test
     @DisplayName("Test successful login")
     void testLoginSuccess() {
-        users user = login_foruser.login(TEST_USERNAME, TEST_PASSWORD);
+        users_y user = login_foruser_y.login(TEST_USERNAME, TEST_PASSWORD);
         assertNotNull(user, "Login should return a user object");
         assertEquals(TEST_USERNAME, user.getUsername(), "Username should match");
         assertEquals(TEST_EMAIL, user.getEmail(), "Email should match");
@@ -57,25 +57,25 @@ class user {
     @Test
     @DisplayName("Test login fails with wrong password")
     void testLoginFail() {
-        users user = login_foruser.login(TEST_USERNAME, "wrongpassword");
+        users_y user = login_foruser_y.login(TEST_USERNAME, "wrongpassword");
         assertNull(user, "Login should fail and return null");
     }
 
     @Test
     @DisplayName("Test email existence check")
     void testEmailExists() {
-        assertTrue(login_foruser.emailExists(TEST_EMAIL), "Email should exist");
-        assertFalse(login_foruser.emailExists("nonexistent@example.com"), "Email should not exist");
+        assertTrue(login_foruser_y.emailExists(TEST_EMAIL), "Email should exist");
+        assertFalse(login_foruser_y.emailExists("nonexistent@example.com"), "Email should not exist");
     }
 
     @Test
     @DisplayName("Test update password")
     void testUpdatePassword() {
    
-        boolean updated = login_foruser.updatePassword(TEST_EMAIL, NEW_PASSWORD);
+        boolean updated = login_foruser_y.updatePassword(TEST_EMAIL, NEW_PASSWORD);
         assertTrue(updated, "Password should be updated");
 
-        users user = login_foruser.login(TEST_USERNAME, NEW_PASSWORD);
+        users_y user = login_foruser_y.login(TEST_USERNAME, NEW_PASSWORD);
         assertNotNull(user, "Login with new password should succeed");
     }
 }

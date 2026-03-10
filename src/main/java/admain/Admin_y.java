@@ -1,11 +1,11 @@
 package admain;
 
-public class Admin {
+public class Admin_y {
 	  private int adminId;
 	    private String username;
 	    private String password;
 
-	    public Admin(int adminId, String username, String password) {
+	    public Admin_y(int adminId, String username, String password) {
 	        this.adminId = adminId;
 	        this.username = username;
 	        this.password = password;

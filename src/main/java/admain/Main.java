@@ -1,189 +1,197 @@
 package admain;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Scanner;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+	import java.time.LocalDateTime;
+	import java.time.format.DateTimeFormatter;
+	import java.util.Scanner;
+	import java.util.concurrent.Executors;
+	import java.util.concurrent.ScheduledExecutorService;
+	import java.util.concurrent.TimeUnit;
 
-public class Main {
+	public class Main {
 
-    static Scanner sc = new Scanner(System.in);
-    private static SlotService slotService = new SlotService();
-    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
- 
-    private static NotificationService notificationService = new MockNotificationService(); 
-    private static ReminderManager reminderManager = new ReminderManager(slotService, notificationService);
-    public static void main(String[] args) {
-    	
-    	ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    	scheduler.scheduleAtFixedRate(() -> {
-    	    reminderManager.checkReminders();
-    	}, 0, 10, TimeUnit.MINUTES);
-        while (true) {
-            System.out.println("=== Main Menu ===");
-            System.out.println("1- Login as User");
-            System.out.println("2- Login as Admin");
-            System.out.println("3- Exit");
+	    static Scanner sc = new Scanner(System.in);
+	    private static SlotService_y slotService = new SlotService_y();
+	    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+	 
+	    private static NotificationService_y notificationService = new MockNotificationService_y(); 
+	    private static ReminderManager_y reminderManager = new ReminderManager_y(slotService, notificationService);
+	    public static void main(String[] args) {
+	    	
+	    	   ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	    	    scheduler.scheduleAtFixedRate(() -> {
+	    	        if (session_y.currentUser != null) {
+	    	            reminderManager.checkReminders();
+	    	        }
+	    	        if (session_y.currentAdmin != null) {
+	    	            reminderManager.checkReminders();
+	    	        }
+	    	    }, 0, 1, TimeUnit.MINUTES);
 
-            int choice = sc.nextInt();
+	        while (true) {
+	            System.out.println("=== Main Menu ===");
+	            System.out.println("1- Login as User");
+	            System.out.println("2- Login as Admin");
+	            System.out.println("3- Exit");
 
-            switch (choice) {
-                case 1:
-                    UserMenu.showMenu();
-                    break;
+	            int choice = sc.nextInt();
 
-                case 2:
-                    adminMenu();
-                    break;
+	            switch (choice) {
+	                case 1:
+	                    UserMenu_y.showMenu();
+	                    break;
 
-                case 3:
-                    System.out.println("Goodbye!");
-                    System.exit(0);
-            }
-        }
-    }
+	                case 2:
+	                    adminMenu();
+	                    break;
 
-    public static void adminMenu() {
+	                case 3:
+	                    System.out.println("Goodbye!");
+	                    System.exit(0);
+	            }
+	        }
+	    }
 
-        while (true) {
+	    public static void adminMenu() {
 
-            System.out.println("\n--- Admin Menu ---");
-            System.out.println("1- Login");
-            System.out.println("2- Create Account");
-            System.out.println("3- Forgot Password");
-            System.out.println("4- Back");
+	        while (true) {
 
-            int choice = sc.nextInt();
-            sc.nextLine();
+	            System.out.println("\n--- Admin Menu ---");
+	            System.out.println("1- Login");
+	            System.out.println("2- Create Account");
+	            System.out.println("3- Forgot Password");
+	            System.out.println("4- Back");
 
-            switch (choice) {
+	            int choice = sc.nextInt();
+	            sc.nextLine();
 
-                case 1:
+	            switch (choice) {
 
-                    System.out.print("Username: ");
-                    String username = sc.nextLine();
+	                case 1:
 
-                    System.out.print("Password: ");
-                    String password = sc.nextLine();
+	                    System.out.print("Username: ");
+	                    String username = sc.nextLine();
 
-                    Admin admin = login_foradmain.login(username, password);
+	                    System.out.print("Password: ");
+	                    String password = sc.nextLine();
 
-                    if (admin != null) {
-                        session.currentAdmin = admin;
-                        System.out.println("Login Successful!");
-                        adminSession();
-                    } else {
-                        System.out.println("Login Failed!");
-                    }
+	                    Admin_y admin = login_foradmin_y.login(username, password);
 
-                    break;
+	                    if (admin != null) {
+	                        session_y.currentAdmin = admin;
+	                        System.out.println("Login Successful!");
+	                        adminSession();
+	                    } else {
+	                        System.out.println("Login Failed!");
+	                    }
 
-                case 2:
+	                    break;
+
+	                case 2:
 
 
-                    System.out.print("New Username: ");
-                    String newUser = sc.nextLine();
+	                    System.out.print("New Username: ");
+	                    String newUser = sc.nextLine();
 
-                    System.out.print("New Password: ");
-                    String newPass = sc.nextLine();
+	                    System.out.print("New Password: ");
+	                    String newPass = sc.nextLine();
 
-                    System.out.print("Email: ");
-                    String email = sc.nextLine();
+	                    System.out.print("Email: ");
+	                    String email = sc.nextLine();
 
-                    Admin adminR = login_foradmain.register(newUser, newPass, email);
-                    if(adminR != null){
-                        session.currentAdmin = adminR;
-                        System.out.println("Account created and logged in!");
-                        adminSession();
-                    }
-                     else {
-                        System.out.println("Account creation failed!");
-                    }
+	                    Admin_y adminR = login_foradmin_y.register(newUser, newPass, email);
+	                    if(adminR != null){
+	                        session_y.currentAdmin = adminR;
+	                        System.out.println("Account created and logged in!");
+	                        adminSession();
+	                    }
+	                     else {
+	                        System.out.println("Account creation failed!");
+	                    }
 
-                    break;
-                case 3:
+	                    break;
+	                case 3:
 
-                    forgotPassword();
-                    break;
+	                    forgotPassword();
+	                    break;
 
-                case 4:
-                    System.out.println("Exiting...");
-                    return;
-                default:
-                    System.out.println("Invalid choice.");
-            }
-        }
-    }
+	                case 4:
+	                    System.out.println("Exiting...");
+	                    return;
+	                default:
+	                    System.out.println("Invalid choice.");
+	            }
+	        }
+	    }
 
-    public static void forgotPassword() {
+	    public static void forgotPassword() {
 
-        System.out.print("Enter your email: ");
-        String email = sc.nextLine();
+	        System.out.print("Enter your email: ");
+	        String email = sc.nextLine();
 
-        if (!login_foradmain.emailExists(email)) {
-            System.out.println("Email not found!");
-            return;
-        }
+	        if (!login_foradmin_y.emailExists(email)) {
+	            System.out.println("Email not found!");
+	            return;
+	        }
 
-        String otp = OTPGenerator.generateOTP();
+	        String otp = OTPGenerator_y.generateOTP();
+	        EmailService_y emailService = new MockEmailService_y();
+	        emailService.sendOTP(email, otp);
 
-        EmailSender.sendOTP(email, otp);
+	        System.out.print("Enter OTP sent to your email: ");
+	        String userOtp = sc.nextLine();
 
-        System.out.print("Enter OTP sent to your email: ");
-        String userOtp = sc.nextLine();
+	        if (otp.equals(userOtp)) {
 
-        if (otp.equals(userOtp)) {
+	            System.out.print("Enter new password: ");
+	            String newPassword = sc.nextLine();
 
-            System.out.print("Enter new password: ");
-            String newPassword = sc.nextLine();
+	            if (login_foradmin_y.updatePassword(email, newPassword)) {
+	                System.out.println("Password updated successfully!");
+	            }
 
-            if (login_foradmain.updatePassword(email, newPassword)) {
-                System.out.println("Password updated successfully!");
-            }
+	        } else {
+	            System.out.println("Wrong OTP.");
+	        }
+	    }
 
-        } else {
-            System.out.println("Wrong OTP.");
-        }
-    }
+	    public static void adminSession() {
 
-    public static void adminSession() {
+	        while (session_y.currentAdmin != null) {
 
-        while (session.currentAdmin != null) {
+	            System.out.println("\nWelcome Admin: " + session_y.currentAdmin.getUsername());
+	            System.out.println("1- Logout");
+	            System.out.println("2- book");
 
-            System.out.println("\nWelcome Admin: " + session.currentAdmin.getUsername());
-            System.out.println("1- Logout");
-            System.out.println("2- book");
+	            int choice = Integer.parseInt(sc.nextLine());
 
-            int choice = Integer.parseInt(sc.nextLine());
+	            if (choice == 1) {
+	                session_y.logout();
+	            } else if (choice == 2) {
+	                bookAppointment();
+	            }
+	        }
+	    }
 
-            if (choice == 1) {
-                session.logout();
-            } else if (choice == 2) {
-                bookAppointment();
-            }
-        }
-    }
+	    private static void bookAppointment() {
 
-    private static void bookAppointment() {
+	        try {
 
-        try {
+	            System.out.print("Enter Slot ID: ");
+	            int slotId = Integer.parseInt(sc.nextLine());
 
-            System.out.print("Enter Slot ID: ");
-            int slotId = Integer.parseInt(sc.nextLine());
+	            System.out.print("Enter Number of Participants: ");
+	            int participants = Integer.parseInt(sc.nextLine());
 
-            System.out.print("Enter Number of Participants: ");
-            int participants = Integer.parseInt(sc.nextLine());
+	            slotService.bookSlot(slotId, participants);
 
-            slotService.bookSlot(slotId, participants);
+	            System.out.println("Appointment booked successfully!");
 
-            System.out.println("Appointment booked successfully!");
+	        } catch (NumberFormatException e) {
+	            System.out.println("Invalid number input.");
+	        } catch (Exception e) {
+	            System.out.println("Error: " + e.getMessage());
+	        }
+	    
+	}
 
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid number input.");
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
 }

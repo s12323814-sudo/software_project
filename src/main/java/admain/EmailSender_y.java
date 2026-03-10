@@ -1,12 +1,14 @@
 package admain;
 
 import java.util.Properties;
+
 import javax.mail.*;
 import javax.mail.internet.*;
 
-public class EmailSender {
+public class EmailSender_y implements EmailService_y {
 
-    public static void sendOTP(String toEmail, String otp) {
+    @Override
+    public void sendOTP(String toEmail, String otp) {
 
         final String fromEmail = "yasmeenalqaduomi@gmail.com";
         final String password = "nlng knkr juiv znqb";
@@ -18,20 +20,18 @@ public class EmailSender {
         props.put("mail.smtp.port", "587");
 
         Session session = Session.getInstance(props,
-                new Authenticator() {
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(fromEmail, password);
-                    }
-                });
+            new Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(fromEmail, password);
+                }
+            });
 
         try {
-
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(fromEmail));
             message.setRecipients(
                     Message.RecipientType.TO,
-                    InternetAddress.parse(toEmail)
-            );
+                    InternetAddress.parse(toEmail));
 
             message.setSubject("Password Reset Code");
             message.setText("Your OTP code is: " + otp);

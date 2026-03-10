@@ -1,17 +1,13 @@
 package admain;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 
-public class UserMenu {
+public class UserMenu_y {
 
-    private static SlotService slotService = new SlotService();
+    private static SlotService_y slotService = new SlotService_y();
     private static Scanner sc = new Scanner(System.in);
-    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    
     public static void showMenu() {
 
         while (true) {
@@ -22,6 +18,7 @@ public class UserMenu {
             System.out.println("4- Exit");
 
             int choice;
+
             try {
                 choice = Integer.parseInt(sc.nextLine());
             } catch (NumberFormatException e) {
@@ -30,38 +27,44 @@ public class UserMenu {
             }
 
             switch (choice) {
+
                 case 1:
                     loginUser();
                     break;
+
                 case 2:
                     registerUser();
                     break;
+
                 case 3:
-                	forgotPassword();
+                    forgotPassword();
                     break;
-                    
+
                 case 4:
                     System.out.println("Exiting...");
                     return;
+
                 default:
                     System.out.println("Invalid choice.");
             }
         }
     }
 
+
     public static void forgotPassword() {
 
         System.out.print("Enter your email: ");
         String email = sc.nextLine();
 
-        if (!login_foruser.emailExists(email)) {
+        if (!login_foruser_y.emailExists(email)) {
             System.out.println("Email not found!");
             return;
         }
 
-        String otp = OTPGenerator.generateOTP();
+        String otp = OTPGenerator_y.generateOTP();
 
-        EmailSender.sendOTP(email, otp);
+        EmailService_y emailService = new MockEmailService_y();
+        emailService.sendOTP(email, otp);
 
         System.out.print("Enter OTP sent to your email: ");
         String userOtp = sc.nextLine();
@@ -71,7 +74,7 @@ public class UserMenu {
             System.out.print("Enter new password: ");
             String newPassword = sc.nextLine();
 
-            if (login_foruser.updatePassword(email, newPassword)) {
+            if (login_foruser_y.updatePassword(email, newPassword)) {
                 System.out.println("Password updated successfully!");
             }
 
@@ -79,6 +82,8 @@ public class UserMenu {
             System.out.println("Wrong OTP.");
         }
     }
+
+
     private static void loginUser() {
 
         System.out.print("Username: ");
@@ -87,18 +92,22 @@ public class UserMenu {
         System.out.print("Password: ");
         String password = sc.nextLine();
 
-        users user = login_foruser.login(username, password); // كلاس مماثل login_foradmain
+        users_y user = login_foruser_y.login(username, password);
 
         if (user != null) {
-            session.currentUser = user;
+
+            session_y.currentUser = user;
+
             System.out.println("Login Successful!");
+
             userSession();
+
         } else {
             System.out.println("Login Failed! Check your username/password.");
         }
     }
 
-   
+
     private static void registerUser() {
 
         System.out.print("New Username: ");
@@ -110,34 +119,28 @@ public class UserMenu {
         System.out.print("Email: ");
         String email = sc.nextLine();
 
-        if (login_foruser.register(username, password, email)) {
+        if (login_foruser_y.register(username, password, email)) {
+
             System.out.println("Account created successfully!");
 
-          
-            users user = login_foruser.login(username, password);
-
-            if (user != null) {
-                session.currentUser = user;
-                System.out.println("Logged in automatically!");
-                userSession();
-            }
-
         } else {
+
             System.out.println("Registration failed! Username or email may already exist.");
         }
     }
 
-   
+
     private static void userSession() {
 
-        while (session.currentUser != null) {
+        while (session_y.currentUser != null) {
 
-            System.out.println("\nWelcome " + session.currentUser.getUsername());
+            System.out.println("\nWelcome " + session_y.currentUser.getUsername());
             System.out.println("1- View Available Slots");
             System.out.println("2- Book Appointment");
             System.out.println("3- Logout");
 
             int choice;
+
             try {
                 choice = Integer.parseInt(sc.nextLine());
             } catch (NumberFormatException e) {
@@ -146,90 +149,120 @@ public class UserMenu {
             }
 
             switch (choice) {
+
                 case 1:
                     viewAvailableSlots();
                     break;
+
                 case 2:
                     bookAppointment();
                     break;
+
                 case 3:
-                    session.logoutUser();
+                    session_y.logoutUser();
                     break;
+
                 default:
                     System.out.println("Invalid choice.");
             }
         }
     }
 
-   
+
     private static void viewAvailableSlots() {
-        List<AppointmentSlot> slots = slotService.getAvailableSlots();
+
+        List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
 
         if (slots.isEmpty()) {
+
             System.out.println("No available slots.");
+
             return;
         }
 
         System.out.println("\nAvailable Slots:");
+
         System.out.printf("%-5s %-20s %-20s %-10s %-10s %-10s%n",
                 "ID", "Start Time", "End Time", "Capacity", "Booked", "Remaining");
 
-        for (AppointmentSlot slot : slots) {
+        for (AppointmentSlot_y slot : slots) {
+
             int remaining = slot.getMaxCapacity() - slot.getBookedCount();
-            String dateTime = slot.getDate() + " " + slot.getTime();
+
+            String startTime = slot.getDate() + " " + slot.getStartTime();
+            String endTime = slot.getDate() + " " + slot.getEndTime();
+
             if (remaining > 0) {
+
                 System.out.printf("%-5d %-20s %-20s %-10d %-10d %-10d%n",
                         slot.getId(),
-                        dateTime,
+                        startTime,
+                        endTime,
                         slot.getMaxCapacity(),
                         slot.getBookedCount(),
                         remaining
                 );
             }
         }
-      
     }
 
-  
+
     private static void bookAppointment() {
 
-        if (session.currentUser == null) {
+        if (session_y.currentUser == null) {
+
             System.out.println("Please login first!");
+
             return;
         }
 
         try {
+
             System.out.print("Enter Slot ID to book: ");
+
             int slotId = Integer.parseInt(sc.nextLine());
- 
-            AppointmentSlot slot = slotService.getSlotById(slotId);
+
+            AppointmentSlot_y slot = slotService.getSlotById(slotId);
+
             if (slot == null) {
+
                 System.out.println("Slot not found.");
+
                 return;
             }
 
             int remaining = slot.getMaxCapacity() - slot.getBookedCount();
+
             if (remaining <= 0) {
+
                 System.out.println("This slot is fully booked.");
+
                 return;
             }
 
             System.out.print("Enter Number of Participants: ");
+
             int participants = Integer.parseInt(sc.nextLine());
 
             if (participants > remaining) {
+
                 System.out.println("Cannot book more than remaining capacity (" + remaining + ").");
+
                 System.out.println("You can book up to " + remaining + " participants for this slot.");
+
                 return;
             }
 
-           
-            slotService.bookSlotForUser(session.currentUser.getUserId(), slotId, participants);
+            slotService.bookSlotForUser(session_y.currentUser.getUserId(), slotId, participants);
 
             int newRemaining = remaining - participants;
-            System.out.println("Appointment booked successfully! Remaining capacity: " + newRemaining);
+
+            System.out.println("Appointment booked successfully!");
+
+            System.out.println("Remaining capacity: " + newRemaining);
 
         } catch (Exception e) {
+
             System.out.println("Error: " + e.getMessage());
         }
     }

@@ -1,9 +1,10 @@
 package admain;
 
-public class Booking {
+public class Booking_y {
+
     private String userEmail;
 
-    public Booking(String userEmail) {
+    public Booking_y(String userEmail) {
         this.userEmail = userEmail;
     }
 
