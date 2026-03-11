@@ -173,4 +173,10 @@ public class SlotService_y {
             conn.commit();
         }
     }
+
+
+	public void addSlot(LocalDate date, LocalTime start, LocalTime end, int capacity, int adminId) {
+		// TODO Auto-generated method stub
+		
+	}
 }

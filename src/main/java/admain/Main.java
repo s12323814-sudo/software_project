@@ -1,18 +1,18 @@
 package admain;
 
-	import java.time.LocalDateTime;
-	import java.time.format.DateTimeFormatter;
-	import java.util.Scanner;
-	import java.util.concurrent.Executors;
-	import java.util.concurrent.ScheduledExecutorService;
-	import java.util.concurrent.TimeUnit;
+	import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 	public class Main {
 
 	    static Scanner sc = new Scanner(System.in);
 	    private static SlotService_y slotService = new SlotService_y();
-	    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-	 
 	    private static NotificationService_y notificationService = new MockNotificationService_y(); 
 	    private static ReminderManager_y reminderManager = new ReminderManager_y(slotService, notificationService);
 	    public static void main(String[] args) {
@@ -155,43 +155,49 @@ package admain;
 	    }
 
 	    public static void adminSession() {
-
 	        while (session_y.currentAdmin != null) {
-
 	            System.out.println("\nWelcome Admin: " + session_y.currentAdmin.getUsername());
-	            System.out.println("1- Logout");
-	            System.out.println("2- book");
+	            System.out.println("1- View Slots");
+	            System.out.println("2- Add Slot");
+	            System.out.println("3- Logout");
 
 	            int choice = Integer.parseInt(sc.nextLine());
-
-	            if (choice == 1) {
-	                session_y.logout();
-	            } else if (choice == 2) {
-	                bookAppointment();
+	            switch (choice) {
+	                case 1: viewAvailableSlots(); break;
+	                case 2: addSlot(); break;
+	                case 3: session_y.logout(); break;
+	                default: System.out.println("Invalid choice!");
 	            }
 	        }
 	    }
 
-	    private static void bookAppointment() {
-
+	    private static void addSlot() {
 	        try {
+	            System.out.print("Enter Date (yyyy-MM-dd): "); LocalDate date = LocalDate.parse(sc.nextLine());
+	            System.out.print("Enter Start Time (HH:mm): "); LocalTime start = LocalTime.parse(sc.nextLine());
+	            System.out.print("Enter End Time (HH:mm): "); LocalTime end = LocalTime.parse(sc.nextLine());
 
-	            System.out.print("Enter Slot ID: ");
-	            int slotId = Integer.parseInt(sc.nextLine());
+	            long duration = Duration.between(start, end).toMinutes();
+	            if (duration < 30 || duration > 120) { System.out.println("Invalid duration! Must be 30-120 min."); return; }
 
-	            System.out.print("Enter Number of Participants: ");
-	            int participants = Integer.parseInt(sc.nextLine());
+	            System.out.print("Enter Capacity (Max 5): "); int capacity = Math.min(Integer.parseInt(sc.nextLine()), 5);
+	            int adminId = session_y.currentAdmin.getAdminId();
 
-	            slotService.bookSlot(slotId, participants);
+	            slotService.addSlot(date, start, end, capacity, adminId);
+	            System.out.println("Slot added successfully!");
+	        } catch (Exception e) { System.out.println("Error: " + e.getMessage()); }
+	    }
 
-	            System.out.println("Appointment booked successfully!");
+	    private static void viewAvailableSlots() {
+	        List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
+	        if (slots.isEmpty()) { System.out.println("No available slots."); return; }
 
-	        } catch (NumberFormatException e) {
-	            System.out.println("Invalid number input.");
-	        } catch (Exception e) {
-	            System.out.println("Error: " + e.getMessage());
+	        System.out.printf("%-5s %-12s %-10s %-10s %-10s %-10s%n","ID","Date","Start","End","Capacity","Remaining");
+	        for (AppointmentSlot_y slot : slots) {
+	            int remaining = slot.getMaxCapacity() - slot.getBookedCount();
+	            System.out.printf("%-5d %-12s %-10s %-10s %-10d %-10d%n",
+	                    slot.getId(), slot.getDate(), slot.getStartTime(), slot.getEndTime(),
+	                    slot.getMaxCapacity(), remaining);
 	        }
-	    
+	    }
 	}
-
-}

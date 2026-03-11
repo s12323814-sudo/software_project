@@ -17,7 +17,7 @@ public class DBConnection {
 
     private static final String URL =
             "jdbc:postgresql://localhost:5432/clinic_db";
-    private static final String USER = "postgres";
+    private static final String USER = "postgresql";
     private static final String PASSWORD = "your_password";
 
     public static Connection getConnection() {
