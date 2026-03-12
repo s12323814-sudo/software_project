@@ -1,58 +1,72 @@
 package admain;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 public class AppointmentService {
-    private SlotService slotService = new SlotService();
+
+    private final SlotService_y slotService = new SlotService_y();
+    private final scheduleRepository repo = new scheduleRepository();
     private final int MIN_DURATION = 30;
     private final int MAX_DURATION = 120;
 
-    public boolean bookAppointment(int slotId, LocalDateTime start, LocalDateTime end, int participants) {
-        long duration = Duration.between(start, end).toMinutes();
-        if (duration < MIN_DURATION || duration > MAX_DURATION)
-            throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
+    // =========================
+    // حجز موعد للمستخدم
+    // =========================
+    public void bookAppointment(int userId, int slotId, int participants) throws SQLException {
+        try (Connection conn = database_connection.getConnection()) {
+            conn.setAutoCommit(false);
 
-        try {
-            slotService.bookSlot(slotId, start, end, participants);
+            AppointmentSlot_y slot = slotService.getSlotById(slotId);
+            if (slot == null) throw new SQLException("Slot not found.");
+
+            int remaining = slot.getMaxCapacity() - slot.getBookedCount();
+            if (participants > remaining)
+                throw new SQLException("Not enough capacity. Remaining: " + remaining);
+
+            LocalDateTime start = slot.getStartDateTime();
+            LocalDateTime end = slot.getEndDateTime();
+            long duration = Duration.between(start, end).toMinutes();
+
+            if (duration < MIN_DURATION || duration > MAX_DURATION)
+                throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
+
+            // إنشاء Appointment
+            Appointment appt = new Appointment(new TimeSlot(slotId, start, end), participants, "General");
+
+            // إضافة الحجز في DB
+            repo.addAppointment(conn, appt);
+
+            conn.commit();
+
             System.out.println("Appointment booked successfully!");
-            return true;
+            System.out.println("Remaining capacity: " + (remaining - participants));
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new SQLException("Booking failed: " + e.getMessage(), e);
         }
     }
 
-    public List<Appointment> getAppointments() {
-        List<Appointment> list = new ArrayList<>();
-        String sql = "SELECT slot_id, start_time, end_time, participants, status FROM appointments ORDER BY start_time";
+    // =========================
+    // جلب كل المواعيد
+    // =========================
+    public List<Appointment> getAppointments() throws SQLException {
+        return repo.getAppointments();
+    }
 
-        try (Connection conn = database_connection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+    // =========================
+    // جلب كل الـ Slots المتاحة
+    // =========================
+    public List<AppointmentSlot_y> getAvailableSlots() {
+        return slotService.getAvailableSlots();
+    }
 
-            while (rs.next()) {
-                int slotId = rs.getInt("slot_id");
-                LocalDateTime start = rs.getTimestamp("start_time").toLocalDateTime();
-                LocalDateTime end = rs.getTimestamp("end_time").toLocalDateTime();
-                int participants = rs.getInt("participants");
-                String status = rs.getString("status");
-
-                Appointment appt = new Appointment(
-                        new TimeSlot(slotId, start, end),
-                        participants,
-                        "General"
-                );
-                appt.setStatus(status);
-                list.add(appt);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
+    // =========================
+    // إضافة Slot جديد (Admin)
+    // =========================
+    public void addSlot(LocalDateTime start, LocalDateTime end, int capacity, int adminId) {
+        slotService.addSlot(start.toLocalDate(), start.toLocalTime(), end.toLocalTime(), capacity, adminId);
     }
 }

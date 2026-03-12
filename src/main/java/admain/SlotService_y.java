@@ -36,7 +36,52 @@ public class SlotService_y {
 
         return slots;
     }
+    public boolean adminCancelAppointment(int appointmentId) throws SQLException {
 
+        String selectSql = "SELECT slot_id, participants FROM appointments WHERE appointment_id = ?";
+
+        try (Connection conn = database_connection.getConnection()) {
+
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+
+                ps.setInt(1, appointmentId);
+                ResultSet rs = ps.executeQuery();
+
+                if (!rs.next()) {
+                    System.out.println("Appointment not found.");
+                    return false;
+                }
+
+                int slotId = rs.getInt("slot_id");
+                int participants = rs.getInt("participants");
+
+                String deleteSql = "DELETE FROM appointments WHERE appointment_id = ?";
+                try (PreparedStatement delPs = conn.prepareStatement(deleteSql)) {
+                    delPs.setInt(1, appointmentId);
+                    delPs.executeUpdate();
+                }
+
+                String updateSql = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
+                try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                    updatePs.setInt(1, participants);
+                    updatePs.setInt(2, slotId);
+                    updatePs.executeUpdate();
+                }
+
+                conn.commit();
+
+                System.out.println("Appointment cancelled successfully by admin.");
+                return true;
+
+            } catch (Exception e) {
+
+                conn.rollback();
+                throw e;
+            }
+        }
+    }
  
     public AppointmentSlot_y getSlotById(int slotId) {
         String sql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
@@ -173,10 +218,28 @@ public class SlotService_y {
             conn.commit();
         }
     }
+    public void addSlot(LocalDate date, LocalTime start, LocalTime end, int capacity, int adminId) {
+        String sql = "INSERT INTO appointment_slot "
+                   + "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, admin_id) "
+                   + "VALUES (?, ?, ?, ?, 0, ?)";
 
+        try (Connection conn = database_connection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-	public void addSlot(LocalDate date, LocalTime start, LocalTime end, int capacity, int adminId) {
-		// TODO Auto-generated method stub
-		
-	}
+            stmt.setDate(1, java.sql.Date.valueOf(date));
+            stmt.setTime(2, java.sql.Time.valueOf(start));
+            stmt.setTime(3, java.sql.Time.valueOf(end));
+            stmt.setInt(4, capacity);
+            stmt.setInt(5, adminId);
+
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Slot added to database successfully!");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+        }
+    }
+
 }
