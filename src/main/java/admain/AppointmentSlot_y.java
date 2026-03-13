@@ -3,6 +3,8 @@ package admain;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,12 +26,12 @@ public class AppointmentSlot_y {
         this.bookedCount = bookedCount;
     }
 
-    public LocalDateTime getStartDateTime() {
-        return LocalDateTime.of(date, startTime);
+    public ZonedDateTime getStartDateTime() {
+        return ZonedDateTime.of(date, startTime ,ZoneId.of("Asia/Hebron"));
     }
 
-    public LocalDateTime getEndDateTime() {
-        return LocalDateTime.of(date, endTime);
+    public ZonedDateTime getEndDateTime() {
+        return ZonedDateTime.of(date, endTime,ZoneId.of("Asia/Hebron"));
     }
 
     public int getId() {
@@ -60,17 +62,7 @@ public class AppointmentSlot_y {
         return bookedCount >= maxCapacity;
     }
 
-    private List<Booking_y> bookings = new ArrayList<>();
-
-    public List<Booking_y> getBookings() {
-        return bookings;
-    }
-
-    public void addBooking(Booking_y booking) {
-        bookings.add(booking);
-        bookedCount++;
-    }
-
+ 
     @Override
     public String toString() {
         return "ID: " + id +

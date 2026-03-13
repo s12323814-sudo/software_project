@@ -3,16 +3,15 @@ package admain;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class scheduleRepository {
 
-    private SlotService slotService = new SlotService();
+    private SlotService_y slotService = new SlotService_y();
 
-    // =========================
-    // التحقق إذا Slot متاح
-    // =========================
     public boolean isSlotAvailable(Connection conn, int slotId, int participants) throws SQLException {
         String sql = "SELECT max_capacity, booked_count FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -28,32 +27,30 @@ public class scheduleRepository {
         return false;
     }
 
-    // =========================
-    // إضافة Appointment في DB
-    // =========================
     public void addAppointment(Connection conn, Appointment appointment) throws SQLException {
-        // التحقق من مدة الحجز
+        int slotId = appointment.getTimeSlot().getId();
+        int participants = appointment.getParticipants();
+        ZonedDateTime startZ = appointment.getTimeSlot().getStart();
+        ZonedDateTime endZ = appointment.getTimeSlot().getEnd();
+
+        if (!isSlotAvailable(conn, slotId, participants))
+            throw new SQLException("Not enough capacity for this slot.");
+
         long duration = Duration.between(
                 appointment.getTimeSlot().getStart(),
                 appointment.getTimeSlot().getEnd()
         ).toMinutes();
-        if (duration < 30 || duration > 120) {
+        if (duration < 30 || duration > 120)
             throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
-        }
 
-        // تحقق من السعة
-        if (!isSlotAvailable(conn, appointment.getTimeSlot().getId(), appointment.getParticipants())) {
-            throw new SQLException("Not enough capacity for this slot.");
-        }
-
-        // إدخال الحجز
+        // إدخال Appointment
         String insertSql = "INSERT INTO appointments (slot_id, start_time, end_time, duration, participants, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-            ps.setInt(1, appointment.getTimeSlot().getId());
-            ps.setTimestamp(2, Timestamp.valueOf(appointment.getTimeSlot().getStart()));
-            ps.setTimestamp(3, Timestamp.valueOf(appointment.getTimeSlot().getEnd()));
+            ps.setInt(1, slotId);
+            ps.setTimestamp(2, Timestamp.valueOf(startZ.toLocalDateTime()));
+            ps.setTimestamp(3, Timestamp.valueOf(endZ.toLocalDateTime()));
             ps.setInt(4, (int) duration);
-            ps.setInt(5, appointment.getParticipants());
+            ps.setInt(5, participants);
             ps.setString(6, "CONFIRMED");
             ps.executeUpdate();
         }
@@ -61,15 +58,67 @@ public class scheduleRepository {
         // تحديث booked_count
         String updateSql = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-            ps.setInt(1, appointment.getParticipants());
-            ps.setInt(2, appointment.getTimeSlot().getId());
+            ps.setInt(1, participants);
+            ps.setInt(2, slotId);
             ps.executeUpdate();
         }
-    }
+    }// =========================
+ // تعديل Appointment
+ // =========================
+ public void modifyAppointment(int appointmentId, int newSlotId, int newParticipants) throws SQLException {
+     try (Connection conn = database_connection.getConnection()) {
+         conn.setAutoCommit(false);
 
-    // =========================
-    // جلب كل Appointments
-    // =========================
+         // جلب البيانات القديمة للAppointment
+         String oldSql = "SELECT slot_id, participants FROM appointments WHERE appointment_id = ? FOR UPDATE";
+         int oldSlotId = 0;
+         int oldParticipants = 0;
+
+         try (PreparedStatement ps = conn.prepareStatement(oldSql)) {
+             ps.setInt(1, appointmentId);
+             ResultSet rs = ps.executeQuery();
+             if (!rs.next()) {
+                 throw new SQLException("Appointment not found.");
+             }
+             oldSlotId = rs.getInt("slot_id");
+             oldParticipants = rs.getInt("participants");
+         }
+
+         // تحقق من السعة الجديدة
+         if (!isSlotAvailable(conn, newSlotId, newParticipants)) {
+             throw new SQLException("Not enough capacity for the new slot.");
+         }
+
+         // تحديث Appointment
+         String updateSql = "UPDATE appointments SET slot_id=?, participants=? WHERE appointment_id=?";
+         try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+             ps.setInt(1, newSlotId);
+             ps.setInt(2, newParticipants);
+             ps.setInt(3, appointmentId);
+             ps.executeUpdate();
+         }
+
+         // تحديث booked_count للSlot القديم والنيو
+         String decOldSlot = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id=?";
+         try (PreparedStatement ps = conn.prepareStatement(decOldSlot)) {
+             ps.setInt(1, oldParticipants);
+             ps.setInt(2, oldSlotId);
+             ps.executeUpdate();
+         }
+
+         String incNewSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id=?";
+         try (PreparedStatement ps = conn.prepareStatement(incNewSlot)) {
+             ps.setInt(1, newParticipants);
+             ps.setInt(2, newSlotId);
+             ps.executeUpdate();
+         }
+
+         conn.commit();
+         System.out.println("Appointment modified successfully!");
+     }
+ }
+  
+ 
     public List<Appointment> getAppointments() throws SQLException {
         List<Appointment> appointments = new ArrayList<>();
         String sql = "SELECT slot_id, start_time, end_time, participants, status FROM appointments ORDER BY start_time";
@@ -80,22 +129,17 @@ public class scheduleRepository {
 
             while (rs.next()) {
                 int slotId = rs.getInt("slot_id");
-                LocalDateTime start = rs.getTimestamp("start_time").toLocalDateTime();
-                LocalDateTime end = rs.getTimestamp("end_time").toLocalDateTime();
+                ZonedDateTime start = rs.getTimestamp("start_time").toInstant().atZone(ZoneId.of("Asia/Hebron"));
+                ZonedDateTime end = rs.getTimestamp("end_time").toInstant().atZone(ZoneId.of("Asia/Hebron"));
                 int participants = rs.getInt("participants");
-                String statusStr = rs.getString("status");
+                String status = rs.getString("status");
 
-                // جلب الـ AppointmentSlot من slot_id
                 AppointmentSlot_y slot = slotService.getSlotById(slotId);
-                if (slot == null) continue; // إذا لم يوجد Slot
+                if (slot == null) continue;
 
-                Appointment appointment = new Appointment(
-                        new TimeSlot(slotId, start, end),
-                        participants,
-                        "General"
-                );
-                appointment.setStatus(statusStr);
-                appointments.add(appointment);
+                Appointment appt = new Appointment(new TimeSlot(slotId, start, end), participants, "General");
+                appt.setStatus(status);
+                appointments.add(appt);
             }
         }
 

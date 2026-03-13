@@ -1,54 +1,63 @@
 package admain;
 
+
+
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ReminderManager_y {
 
-    private SlotService_y slotService;
+    private AppointmentRepository_y appointmentRepository;
     private NotificationService_y notificationService;
 
-    public ReminderManager_y(SlotService_y slotService, NotificationService_y notificationService) {
-        this.slotService = slotService;
+    // لتخزين IDs التي تم إرسال التذكير لها
+    private Set<Integer> remindedOneHour = new HashSet<>();
+    private Set<Integer> remindedTenMinutes = new HashSet<>();
+
+    public ReminderManager_y(AppointmentRepository_y appointmentRepository,
+                             NotificationService_y notificationService) {
+        this.appointmentRepository = appointmentRepository;
         this.notificationService = notificationService;
     }
 
     public void checkReminders() {
+        if (session_y.currentUser == null) return;
 
-        List<AppointmentSlot_y> upcomingSlots = slotService.getAvailableSlots();
-        LocalDateTime now = LocalDateTime.now();
+        try {
+            List<Appointment> upcomingAppointments =
+                appointmentRepository.getUserUpcomingAppointments(
+                    session_y.currentUser.getUserId()
+                );
 
-        for (AppointmentSlot_y slot : upcomingSlots) {
+            LocalDateTime now = LocalDateTime.now();
 
-            LocalDateTime slotDateTime = slot.getStartDateTime();
+            for (Appointment appt : upcomingAppointments) {
+                ZonedDateTime slotStart = appt.getTimeSlot().getStart();
+                long minutesUntilStart = java.time.Duration.between(now, slotStart).toMinutes();
 
-            long minutes = java.time.Duration.between(now, slotDateTime).toMinutes();
-
-            if (minutes > 0 && minutes <= 60) {
-
-                if (slot.getBookings().isEmpty()) {
-                    continue;
+                // قبل ساعة
+                if (minutesUntilStart <= 60 && minutesUntilStart > 59 && !remindedOneHour.contains(appt.getTimeSlot().getId())) {
+                    sendReminder(appt, "Reminder: Appointment in 1 hour!");
+                    remindedOneHour.add(appt.getTimeSlot().getId());
                 }
 
-                for (Booking_y booking : slot.getBookings()) {
-
-                    if (session_y.currentUser != null &&
-                    		booking.getUserEmail().equals(session_y.currentUser.getEmail())) {
-
-                        String message = "Reminder: Upcoming appointment! Slot ID: "
-                                + slot.getId() + " at " + slotDateTime;
-
-                        notificationService.sendReminder(booking.getUserEmail(), message);
-
-                        System.out.println("Reminder sent to " + booking.getUserEmail());
-                        System.out.println("Slot ID: " + slot.getId());
-                        System.out.println("Date: " + slot.getDate());
-                        System.out.println("Start Time: " + slot.getStartTime());
-                        System.out.println("End Time: " + slot.getEndTime());
-                        System.out.println("---------------------------");
-                    }
+                // قبل 10 دقائق
+                else if (minutesUntilStart <= 10 && minutesUntilStart > 9 && !remindedTenMinutes.contains(appt.getTimeSlot().getId())) {
+                    sendReminder(appt, "Reminder: Appointment in 10 minutes!");
+                    remindedTenMinutes.add(appt.getTimeSlot().getId());
                 }
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
+
+    private void sendReminder(Appointment appt, String message) {
+        notificationService.sendReminder(session_y.currentUser.getEmail(), message);
+        System.out.println("Reminder sent for Appointment ID: " + appt.getTimeSlot().getId() + " | " + message);
     }
 }

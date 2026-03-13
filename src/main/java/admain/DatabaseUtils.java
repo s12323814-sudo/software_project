@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 public class DatabaseUtils {
 
     public static TimeSlot getTimeSlotById(int slotId) throws SQLException {
@@ -15,9 +17,10 @@ public class DatabaseUtils {
             ps.setInt(1, slotId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    LocalDateTime start = rs.getDate("slot_date").toLocalDate()
-                            .atTime(rs.getTime("slot_time").toLocalTime());
-                    LocalDateTime end = start.plusMinutes(60); // مدة افتراضية
+                	ZonedDateTime start = rs.getDate("slot_date").toLocalDate()
+                            .atTime(rs.getTime("slot_time").toLocalTime())
+                            .atZone(ZoneId.of("Asia/Hebron"));
+                    ZonedDateTime end = start.plusMinutes(60); 
                     return new TimeSlot(slotId, start, end);
                 } else {
                     throw new IllegalArgumentException("Slot not found");
