@@ -1,6 +1,8 @@
 package admain;
 import java.sql.*;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import admain.Admin_y;
 public class login_foradmin_y {
 
@@ -34,15 +36,19 @@ public class login_foradmin_y {
 
 	        try (Connection conn = database_connection.getConnection()) {
 
+	            
+	            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
 	            String sql = "INSERT INTO admin(username, password, email) VALUES (?,?,?)";
 	            PreparedStatement stmt = conn.prepareStatement(sql);
 
 	            stmt.setString(1, username);
-	            stmt.setString(2, password);
+	            stmt.setString(2, hashedPassword);
 	            stmt.setString(3, email);
 
 	            stmt.executeUpdate();
 
+	          
 	            return login(username, password);
 
 	        } catch (SQLException e) {

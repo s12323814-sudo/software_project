@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Scanner;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 public class UserMenu_y {
 
     private static SlotService_y slotService = new SlotService_y();
@@ -121,10 +123,19 @@ public class UserMenu_y {
         System.out.print("New Password: ");
         String password = sc.nextLine();
 
+        
+        if (password.length() < 8) {
+            System.out.println("Password must be at least 8 characters.");
+            return;
+        }
+
         System.out.print("Email: ");
         String email = sc.nextLine();
 
-        if (login_foruser_y.register(username, password, email)) {
+       
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
+        if (login_foruser_y.register(username, hashedPassword, email)) {
 
             System.out.println("Account created successfully!");
 

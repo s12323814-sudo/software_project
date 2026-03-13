@@ -5,10 +5,10 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class database_connection {
-
+	String dbPassword = System.getenv("db");
     private static final String URL = "jdbc:postgresql://localhost:5432/Appointment";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "123456";
+    private static final String PASSWORD = "dbPassword";
 
     private static Connection connection = null;
 
