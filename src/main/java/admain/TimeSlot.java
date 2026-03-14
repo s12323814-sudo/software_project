@@ -1,7 +1,6 @@
 package admain;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
 public class TimeSlot {
@@ -15,9 +14,17 @@ public class TimeSlot {
         this.end = end;
     }
 
-    public int getId() { return id; }
-    public ZonedDateTime getStart() { return start; }
-    public ZonedDateTime getEnd() { return end; }
+    public int getId() {
+        return id;
+    }
+
+    public ZonedDateTime getStart() {
+        return start;
+    }
+
+    public ZonedDateTime getEnd() {
+        return end;
+    }
 
     public int getDurationMinutes() {
         return (int) Duration.between(start, end).toMinutes();
@@ -25,7 +32,11 @@ public class TimeSlot {
 
     @Override
     public String toString() {
-        return "TimeSlot{id=" + id + ", start=" + start + ", end=" + end +
-                ", duration=" + getDurationMinutes() + " minutes}";
+        return "TimeSlot{" +
+                "id=" + id +
+                ", start=" + start +
+                ", end=" + end +
+                ", duration=" + getDurationMinutes() + " minutes" +
+                '}';
     }
 }

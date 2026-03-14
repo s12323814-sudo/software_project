@@ -1,48 +1,46 @@
 package admain;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
 public class Appointment {
+
+    private int userId;
     private TimeSlot timeSlot;
     private int participants;
     private String status;
-    private String type;
-    private int bookedCount;
-    public Appointment(TimeSlot timeSlot, int participants, String type) {
+
+    // Constructor كامل
+    public Appointment(int userId, TimeSlot timeSlot, int participants, String status) {
+        this.userId = userId;
         this.timeSlot = timeSlot;
         this.participants = participants;
-        this.type = type;
-        this.status = "PENDING";
+        this.status = status;
     }
 
-    public TimeSlot getTimeSlot() { return timeSlot; }
-    public int getParticipants() { return participants; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getType() { return type; }
-
-    public int getDuration() {
-        return (int) Duration.between(timeSlot.getStart(), timeSlot.getEnd()).toMinutes();
-    }
-    private List<Booking_y> bookings = new ArrayList<>();
-
-    public List<Booking_y> getBookings() {
-        return bookings;
+    // Constructor بدون userId (اختياري)
+    public Appointment(TimeSlot timeSlot, int participants, String status) {
+        this.timeSlot = timeSlot;
+        this.participants = participants;
+        this.status = status;
     }
 
-    public void addBooking(Booking_y booking) {
-        bookings.add(booking);
-        bookedCount++;
+    // Getters
+    public int getUserId() {
+        return userId;
     }
 
-    @Override
-    public String toString() {
-        return "Appointment{Start=" + timeSlot.getStart() +
-                ", End=" + timeSlot.getEnd() +
-                ", Participants=" + participants +
-                ", Status=" + status +
-                ", Type='" + type + "'}";
+    public TimeSlot getTimeSlot() {
+        return timeSlot;
+    }
+
+    public int getParticipants() {
+        return participants;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    // Setter للـ status
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

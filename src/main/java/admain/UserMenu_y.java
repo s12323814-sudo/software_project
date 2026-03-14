@@ -7,7 +7,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Scanner;
 
@@ -188,165 +191,173 @@ public class UserMenu_y {
 
                 default:
                     System.out.println("Invalid choice.");
-            }
-        }
-    }private static void viewUserAppointments() {
-        if (session_y.currentUser == null) {
-            System.out.println("Please login first!");
-            return;
-        }
-
-        String sql = "SELECT a.appointment_id, s.slot_date, s.slot_start_time, s.slot_end_time, " +
-                     "a.participants, a.status " +
-                     "FROM appointments a " +
-                     "JOIN appointment_slot s ON a.slot_id = s.slot_id " +
-                     "WHERE a.user_id = ? " +
-                     "ORDER BY s.slot_date, s.slot_start_time";
-
-        try (Connection conn = database_connection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, session_y.currentUser.getUserId());
-            try (ResultSet rs = ps.executeQuery()) {
-                System.out.printf("%-5s %-12s %-10s %-10s %-12s %-10s%n",
-                                  "ID", "Date", "Start", "End", "Participants", "Status");
-                boolean hasAppointments = false;
-                while (rs.next()) {
-                    hasAppointments = true;
-                    int id = rs.getInt("appointment_id");
-                    Date date = rs.getDate("slot_date");
-                    Time start = rs.getTime("slot_start_time");
-                    Time end = rs.getTime("slot_end_time");
-                    int participants = rs.getInt("participants");
-                    String status = rs.getString("status");
-
-                    System.out.printf("%-5d %-12s %-10s %-10s %-12d %-10s%n",
-                                      id, date.toString(), start.toString(), end.toString(),
-                                      participants, status);
-                }
-                if (!hasAppointments) {
-                    System.out.println("No upcoming appointments.");
-                }
+            
+        }}}
+        private static void viewUserAppointments() {
+            if (session_y.currentUser == null) {
+                System.out.println("Please login first!");
+                return;
             }
 
-        } catch (SQLException e) {
-            System.out.println("Error fetching appointments: " + e.getMessage());
+            String sql = "SELECT appointment_id, start_time, end_time, participants, status " +
+                         "FROM appointments " +
+                         "WHERE user_id = ? " +
+                         "ORDER BY start_time";
+
+            try (Connection conn = database_connection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setInt(1, session_y.currentUser.getUserId());
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    System.out.printf("%-5s %-20s %-20s %-12s %-10s%n",
+                                      "ID", "Start Time", "End Time", "Participants", "Status");
+
+                    boolean hasAppointments = false;
+
+                    while (rs.next()) {
+                        hasAppointments = true;
+                        int id = rs.getInt("appointment_id");
+                        Timestamp start = rs.getTimestamp("start_time");
+                        Timestamp end = rs.getTimestamp("end_time");
+                        int participants = rs.getInt("participants");
+                        String status = rs.getString("status");
+
+                        System.out.printf("%-5d %-20s %-20s %-12d %-10s%n",
+                                          id, start.toString(), end.toString(),
+                                          participants, status);
+                    }
+
+                    if (!hasAppointments) {
+                        System.out.println("No upcoming appointments.");
+                    }
+                }
+
+            } catch (SQLException e) {
+                System.out.println("Error fetching appointments: " + e.getMessage());
+            }
         }
-    }
-    
-    
-    private static void updateAppointment() {
-        if (session_y.currentUser == null) {
-            System.out.println("Please login first!");
-            return;
-        }
+        private static void updateAppointment() {
+            if (session_y.currentUser == null) {
+                System.out.println("Please login first!");
+                return;
+            }
 
-        try (Connection conn = database_connection.getConnection()) {
-            System.out.print("Enter Appointment ID to update: ");
-            int appointmentId = Integer.parseInt(sc.nextLine());
+            try {
+                System.out.print("Enter Appointment ID to update: ");
+                int appointmentId = Integer.parseInt(sc.nextLine());
 
-            // جلب معلومات الموعد الحالي
-            String selectSql = "SELECT slot_id, participants, start_time FROM appointments WHERE appointment_id = ? AND user_id = ?";
-            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
-                ps.setInt(1, appointmentId);
-                ps.setInt(2, session_y.currentUser.getUserId());
+                // جلب معلومات الموعد الحالي
+                AppointmentService apptService = new AppointmentService();
+                List<Appointment> userAppointments = apptService.getUserAppointments(session_y.currentUser.getUserId());
+                Appointment currentAppt = null;
+                for (Appointment a : userAppointments) {
+                    if (a.getTimeSlot().getId() == appointmentId) {
+                        currentAppt = a;
+                        break;
+                    }
+                }
 
-                ResultSet rs = ps.executeQuery();
-                if (!rs.next()) {
+                if (currentAppt == null) {
                     System.out.println("Appointment not found or cannot be modified.");
                     return;
                 }
 
-                int oldSlotId = rs.getInt("slot_id");
-                int oldParticipants = rs.getInt("participants");
-                java.sql.Timestamp startTime = rs.getTimestamp("start_time");
-
-                if (startTime.toLocalDateTime().isBefore(java.time.LocalDateTime.now())) {
+                if (currentAppt.getTimeSlot().getStart().toLocalDateTime().isBefore(java.time.LocalDateTime.now())) {
                     System.out.println("Cannot update past appointments.");
                     return;
                 }
 
-                // عرض السلوطات المتاحة
-                List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
+                // عرض كل الـ Slots المتاحة قبل فتح Connection
+                List<AppointmentSlot_y> slots = apptService.getAvailableSlots();
                 System.out.println("\nAvailable Slots:");
                 for (AppointmentSlot_y slot : slots) {
                     int remaining = slot.getMaxCapacity() - slot.getBookedCount();
-                    System.out.printf("ID: %d | Date: %s | Start: %s | End: %s | Remaining: %d%n",
-                            slot.getId(), slot.getDate(), slot.getStartTime(), slot.getEndTime(), remaining);
+                    System.out.printf("ID: %d | Date: %s | Start: %s | End: %s | Capacity: %d | Booked: %d | Remaining: %d%n",
+                            slot.getId(), slot.getDate(), slot.getStartTime(), slot.getEndTime(),
+                            slot.getMaxCapacity(), slot.getBookedCount(), remaining);
                 }
 
-                // اختيار سلوط جديد
                 System.out.print("Enter new Slot ID: ");
                 int newSlotId = Integer.parseInt(sc.nextLine());
-                AppointmentSlot_y newSlot = slotService.getSlotById(newSlotId);
+
+                AppointmentSlot_y newSlot = null;
+                for (AppointmentSlot_y slot : slots) {
+                    if (slot.getId() == newSlotId) {
+                        newSlot = slot;
+                        break;
+                    }
+                }
                 if (newSlot == null) {
                     System.out.println("Slot not found.");
                     return;
                 }
 
                 int remaining = newSlot.getMaxCapacity() - newSlot.getBookedCount();
-                if (oldSlotId != newSlotId) { // إذا غير السلوط، نتحقق من السعة
-                    if (remaining <= 0) {
-                        System.out.println("This slot is fully booked. Cannot update.");
-                        return;
-                    }
-                }
-
                 System.out.print("Enter number of participants: ");
                 int newParticipants = Integer.parseInt(sc.nextLine());
-                if (newParticipants > remaining && oldSlotId != newSlotId) {
+
+                if (newParticipants > remaining && currentAppt.getTimeSlot().getId() != newSlotId) {
                     System.out.println("Cannot book more than remaining capacity (" + remaining + ").");
                     return;
                 }
 
-                conn.setAutoCommit(false);
+                // فتح Connection لتعديل appointments و booked_count
+                try (Connection conn = database_connection.getConnection()) {
+                    conn.setAutoCommit(false);
 
-                // إعادة تحديث booked_count للسلوط القديم (إذا غير السلوط)
-                if (oldSlotId != newSlotId) {
-                    String updateOldSlot = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
-                    try (PreparedStatement updOld = conn.prepareStatement(updateOldSlot)) {
-                        updOld.setInt(1, oldParticipants);
-                        updOld.setInt(2, oldSlotId);
-                        updOld.executeUpdate();
+                    int oldSlotId = currentAppt.getTimeSlot().getId();
+                    int oldParticipants = currentAppt.getParticipants();
+
+                    // تعديل booked_count للسلوط القديم والجديد
+                    if (oldSlotId != newSlotId) {
+                        String updateOldSlot = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
+                        try (PreparedStatement ps = conn.prepareStatement(updateOldSlot)) {
+                            ps.setInt(1, oldParticipants);
+                            ps.setInt(2, oldSlotId);
+                            ps.executeUpdate();
+                        }
+
+                        String updateNewSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
+                        try (PreparedStatement ps = conn.prepareStatement(updateNewSlot)) {
+                            ps.setInt(1, newParticipants);
+                            ps.setInt(2, newSlotId);
+                            ps.executeUpdate();
+                        }
+                    } else {
+                        int diff = newParticipants - oldParticipants;
+                        String updateSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
+                        try (PreparedStatement ps = conn.prepareStatement(updateSlot)) {
+                            ps.setInt(1, diff);
+                            ps.setInt(2, oldSlotId);
+                            ps.executeUpdate();
+                        }
                     }
 
-                    String updateNewSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
-                    try (PreparedStatement updNew = conn.prepareStatement(updateNewSlot)) {
-                        updNew.setInt(1, newParticipants);
-                        updNew.setInt(2, newSlotId);
-                        updNew.executeUpdate();
+                    // تحديث appointments
+                    String updateAppt = "UPDATE appointments SET slot_id = ?, participants = ? WHERE appointment_id = ?";
+                    try (PreparedStatement ps = conn.prepareStatement(updateAppt)) {
+                        ps.setInt(1, newSlotId);
+                        ps.setInt(2, newParticipants);
+                        ps.setInt(3, appointmentId);
+                        ps.executeUpdate();
                     }
-                } else { // إذا نفس السلوط فقط نحدث عدد المحجوزين
-                    int diff = newParticipants - oldParticipants;
-                    String updateSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
-                    try (PreparedStatement upd = conn.prepareStatement(updateSlot)) {
-                        upd.setInt(1, diff);
-                        upd.setInt(2, oldSlotId);
-                        upd.executeUpdate();
-                    }
+
+                    conn.commit();
+                    System.out.println("Appointment updated successfully!");
+                } catch (SQLException e) {
+                    System.out.println("Error updating appointment: " + e.getMessage());
                 }
-
-                // تحديث appointments
-                String updateAppt = "UPDATE appointments SET slot_id = ?, participants = ? WHERE appointment_id = ?";
-                try (PreparedStatement updAppt = conn.prepareStatement(updateAppt)) {
-                    updAppt.setInt(1, newSlotId);
-                    updAppt.setInt(2, newParticipants);
-                    updAppt.setInt(3, appointmentId);
-                    updAppt.executeUpdate();
-                }
-
-                conn.commit();
-                System.out.println("Appointment updated successfully!");
 
             } catch (Exception e) {
-                conn.rollback();
-                System.out.println("Error updating appointment: " + e.getMessage());
+                System.out.println("Error: " + e.getMessage());
             }
-
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
         }
-    }
+
+
+
+
+
     private static void viewAvailableSlots() {
 
         List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
@@ -444,61 +455,100 @@ public class UserMenu_y {
         }
     }
     private static void bookAppointment() {
-
         if (session_y.currentUser == null) {
-
             System.out.println("Please login first!");
-
             return;
         }
 
         try {
-
             System.out.print("Enter Slot ID to book: ");
-
             int slotId = Integer.parseInt(sc.nextLine());
 
-            AppointmentSlot_y slot = slotService.getSlotById(slotId);
-
-            if (slot == null) {
-
-                System.out.println("Slot not found.");
-
-                return;
-            }
-
-            int remaining = slot.getMaxCapacity() - slot.getBookedCount();
-
-            if (remaining <= 0) {
-
-                System.out.println("This slot is fully booked.");
-
-                return;
-            }
-
             System.out.print("Enter Number of Participants: ");
-
             int participants = Integer.parseInt(sc.nextLine());
 
-            if (participants > remaining) {
+            // فتح اتصال بالـ DB
+            try (Connection conn = database_connection.getConnection()) {
+                conn.setAutoCommit(false);
 
-                System.out.println("Cannot book more than remaining capacity (" + remaining + ").");
+                // جلب بيانات الـ slot
+                String sql = "SELECT slot_date, slot_start_time, slot_end_time, max_capacity, booked_count " +
+                             "FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, slotId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            System.out.println("Slot not found.");
+                            return;
+                        }
 
-                System.out.println("You can book up to " + remaining + " participants for this slot.");
+                        // تحويل التاريخ والوقت إلى LocalDateTime
+                        LocalDateTime start = LocalDateTime.of(
+                            rs.getDate("slot_date").toLocalDate(),
+                            rs.getTime("slot_start_time").toLocalTime()
+                        );
+                        LocalDateTime end = LocalDateTime.of(
+                            rs.getDate("slot_date").toLocalDate(),
+                            rs.getTime("slot_end_time").toLocalTime()
+                        );
 
-                return;
+                        int capacity = rs.getInt("max_capacity");
+                        int booked = rs.getInt("booked_count");
+
+                        // منع الحجز بالماضي
+                        if (start.isBefore(LocalDateTime.now())) {
+                            System.out.println("Cannot book a past slot.");
+                            return;
+                        }
+
+                        int remaining = capacity - booked;
+                        if (participants > remaining) {
+                            System.out.println("Not enough capacity. Remaining: " + remaining);
+                            return;
+                        }
+
+                        long duration = Duration.between(start, end).toMinutes();
+                        if (duration < 30 || duration > 120) {
+                            System.out.println("Slot duration must be between 30 and 120 minutes.");
+                            return;
+                        }
+
+                        // إدخال الحجز
+                        String insert = "INSERT INTO appointments " +
+                                        "(user_id, slot_id, start_time, end_time, duration, participants, status) " +
+                                        "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        try (PreparedStatement psInsert = conn.prepareStatement(insert)) {
+                            psInsert.setInt(1, session_y.currentUser.getUserId());
+                            psInsert.setInt(2, slotId);
+                            psInsert.setTimestamp(3, Timestamp.valueOf(start));
+                            psInsert.setTimestamp(4, Timestamp.valueOf(end));
+                            psInsert.setInt(5, (int) duration);
+                            psInsert.setInt(6, participants);
+                            psInsert.setString(7, "CONFIRMED");
+                            psInsert.executeUpdate();
+                        }
+
+                        // تحديث booked_count
+                        String update = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
+                        try (PreparedStatement psUpdate = conn.prepareStatement(update)) {
+                            psUpdate.setInt(1, participants);
+                            psUpdate.setInt(2, slotId);
+                            psUpdate.executeUpdate();
+                        }
+
+                        conn.commit();
+
+                        System.out.println("Appointment booked successfully!");
+                        System.out.println("Remaining capacity: " + (remaining - participants));
+                    }
+                }
             }
 
-            slotService.bookSlotForUser(session_y.currentUser.getUserId(), slotId, participants);
-
-            int newRemaining = remaining - participants;
-
-            System.out.println("Appointment booked successfully!");
-
-            System.out.println("Remaining capacity: " + newRemaining);
-
+        } catch (SQLException e) {
+            System.out.println("Booking failed: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
         } catch (Exception e) {
-
             System.out.println("Error: " + e.getMessage());
         }
     }
