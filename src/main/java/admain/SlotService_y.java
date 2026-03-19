@@ -5,13 +5,13 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Scanner;
+
 
 public class SlotService_y {
 
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
-    private static Scanner sc = new Scanner(System.in);
+   // private static Scanner sc = new Scanner(System.in);
     // Dependency Injection
     public SlotService_y(AppointmentRepository_y appointmentRepo,
                          SlotRepository_y slotRepo) {
@@ -27,7 +27,7 @@ public class SlotService_y {
 
     /////////////////////////////
     // BOOK APPOINTMENT
-    public boolean bookAppointment(int userId, int slotId, int participants) throws SQLException {
+    public boolean bookAppointment(int userId, int slotId, int participants,AppointmentType_y type) throws SQLException {
 
         if (participants <= 0) return false;
 
@@ -39,7 +39,7 @@ public class SlotService_y {
 
         if (participants > remaining) return false;
 
-        return appointmentRepo.book(userId, slotId, participants);
+        return appointmentRepo.book(userId, slotId, participants,type);
     }
 
     /////////////////////////////
@@ -63,11 +63,11 @@ public class SlotService_y {
     /////////////////////////////
     // ADMIN: ADD SLOT
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
-                           int capacity, int adminId, AppointmentType_y type) {
+                           int capacity, int adminId) {
 
         if (capacity <= 0) return false;
 
-        return slotRepo.addSlot(date, start, end, capacity, adminId, type);
+        return slotRepo.addSlot(date, start, end, capacity, adminId);
     }
 
     /////////////////////////////
@@ -102,44 +102,15 @@ public class SlotService_y {
                 throw new RuntimeException(e);
             }
         }}
-        public void addSlotInteractive(Account_y admin) {
-            if (admin == null || !admin.isAdmin()) {
-                System.out.println("Admin only!");
-                return;
-            }
+    public void addSlot(Account_y admin, LocalDate date, LocalTime start,
+            LocalTime end, int capacity) {
 
-            try {
-                System.out.print("Enter date (YYYY-MM-DD): ");
-                LocalDate date = LocalDate.parse(sc.nextLine());
+if (admin == null || !admin.isAdmin()) {
+System.out.println("Admin only!");
+return;
+}
 
-                System.out.print("Enter start time (HH:MM): ");
-                LocalTime start = LocalTime.parse(sc.nextLine());
-
-                System.out.print("Enter end time (HH:MM): ");
-                LocalTime end = LocalTime.parse(sc.nextLine());
-
-                System.out.print("Enter max capacity: ");
-                int capacity = Integer.parseInt(sc.nextLine());
-
-                System.out.println("Choose Appointment Type:");
-                AppointmentType_y[] types = AppointmentType_y.values();
-                for (int i = 0; i < types.length; i++) {
-                    System.out.println((i + 1) + "- " + types[i]);
-                }
-
-                int typeChoice = Integer.parseInt(sc.nextLine());
-                if (typeChoice < 1 || typeChoice > types.length) {
-                    System.out.println("Invalid type choice!");
-                    return;
-                }
-
-                AppointmentType_y selectedType = types[typeChoice - 1];
-
-                slotRepo.addSlot(date, start, end, capacity, admin.getAccountId(), selectedType);
-                System.out.println("Slot added successfully!");
-
-            } catch (Exception e) {
-                System.out.println("Error adding slot: " + e.getMessage());
-            }
-        }
+slotRepo.addSlot(date, start, end, capacity, admin.getAccountId());
+System.out.println("Slot added successfully!");
+}
     }

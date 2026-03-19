@@ -92,7 +92,7 @@ public class AppointmentService {
     }
 
   
-    public void addSlot(LocalDateTime start, LocalDateTime end, int capacity, int adminId, AppointmentType_y type) {
-        slotService.addSlot(start.toLocalDate(), start.toLocalTime(), end.toLocalTime(), capacity, adminId,  type);
+    public void addSlot(LocalDateTime start, LocalDateTime end, int capacity, int adminId) {
+        slotService.addSlot(start.toLocalDate(), start.toLocalTime(), end.toLocalTime(), capacity, adminId);
     }
 }

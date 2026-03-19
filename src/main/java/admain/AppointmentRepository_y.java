@@ -135,7 +135,7 @@ public class AppointmentRepository_y {
         }
     }
  // BOOK
-    public boolean book(int userId, int slotId, int participants) throws SQLException {
+    public boolean book(int userId, int slotId, int participants,AppointmentType_y type) throws SQLException {
         String sql = "INSERT INTO appointments(account_id, slot_id, participants, status, type) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -2,7 +2,8 @@ package admain;
 
 
 import java.sql.*;
-
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -14,9 +15,10 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 	 static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
     private static Scanner sc = new Scanner(System.in);
-	 private static AppointmentRepository_y appointmentRepo;
-	    private static SlotRepository_y slotRepo;
- private  static SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo);
+    private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
+    private static SlotRepository_y slotRepo = new SlotRepository_y();
+
+    private static SlotService_y slotService = new SlotService_y(appointmentRepo, slotRepo);
     private static authService_y authService = new authService_y();
     private static session_y session;
     private static Account_y user;
@@ -79,7 +81,10 @@ public class Main {
             return;
         }
 
-        System.out.println("Login successful! Role: " + session.getAccount().getRole());
+        // تعيين الـ user من الـ session
+        user = session.getAccount();
+
+        System.out.println("Login successful! Role: " + user.getRole());
 
         if (session.isAdmin()) adminSession();
         else userSession();
@@ -149,18 +154,20 @@ public class Main {
             System.out.println("4- Logout");
 
             int choice;
-            try { choice = Integer.parseInt(sc.nextLine()); } catch(Exception e){ choice=-1; }
 
+            try {
+                choice = Integer.parseInt(sc.nextLine());
+            } catch (Exception e) {
+                System.out.println("Invalid input! Enter a number.");
+                continue; 
+            }
             switch(choice) {
                 case 1: viewAvailableSlots(); break;
                 case 2: addSlot(); break;
-                case 3: try {
+                case 3: 
 					adminCancelAppointment();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} break;
-                case 4: session_y.logoutAdmin(); break;
+				 break;
+                case 4: session_y.logoutAdmin();    return;
                 default: System.out.println("Invalid choice");
             }
         }
@@ -201,8 +208,28 @@ public class Main {
             int slotId = Integer.parseInt(sc.nextLine());
             System.out.print("Enter number of participants: ");
             int participants = Integer.parseInt(sc.nextLine());
+            System.out.println("Choose Appointment Type:");
+            AppointmentType_y[] types = AppointmentType_y.values();
+            for (int i = 0; i < types.length; i++) {
+                System.out.println((i + 1) + "- " + types[i]);
+            }
 
-            boolean success = slotService.bookAppointment(user.getAccountId(), slotId, participants);
+            AppointmentType_y selectedType = null;
+            while (selectedType == null) {
+                try {
+                    System.out.print("Enter type number: ");
+                    int typeChoice = Integer.parseInt(sc.nextLine());
+
+                    if (typeChoice < 1 || typeChoice > types.length) {
+                        System.out.println("Invalid choice, please select a valid number.");
+                    } else {
+                        selectedType = types[typeChoice - 1];
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid input! Please enter a number.");
+                }
+            }
+            boolean success = slotService.bookAppointment(user.getAccountId(), slotId, participants,selectedType);
             if (success) {
                 System.out.println("Appointment booked successfully!");
             } else {
@@ -255,18 +282,43 @@ public class Main {
     }
   
     private static void addSlot() {
-        slotService.addSlotInteractive(user); // user = admin
-    }
+        System.out.print("Enter date (YYYY-MM-DD): ");
+        LocalDate date = LocalDate.parse(sc.nextLine());
 
-    private static void adminCancelAppointment() throws SQLException {
-        try (Scanner sc = new Scanner(System.in)) {
-			System.out.print("Enter appointment ID to cancel by admin: ");
-			int appointmentId = Integer.parseInt(sc.nextLine());
-			slotService.adminCancelAppointment( appointmentId); // user = admin
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        System.out.print("Enter start time (HH:MM): ");
+        LocalTime start = LocalTime.parse(sc.nextLine());
+
+        System.out.print("Enter end time (HH:MM): ");
+        LocalTime end = LocalTime.parse(sc.nextLine());
+
+        System.out.print("Enter max capacity: ");
+        int capacity = Integer.parseInt(sc.nextLine());
+
+  
+        slotService.addSlot(session.getAccount(), date, start, end, capacity);
+    }
+    private static void adminCancelAppointment() {
+        System.out.print("Enter appointment ID to cancel by admin: ");
+        String input = sc.nextLine();
+        int appointmentId;
+
+        try {
+            appointmentId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid ID! Please enter a valid number.");
+            return;
+        }
+
+        try {
+            boolean success = slotService.adminCancelAppointment(appointmentId);
+            if (success) {
+                System.out.println("Appointment cancelled successfully!");
+            } else {
+                System.out.println("Appointment ID not found or could not be cancelled.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error cancelling appointment: " + e.getMessage());
+        }
     }
    
 }

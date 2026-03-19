@@ -60,19 +60,22 @@ public class SlotRepository_y {
 
     /////////////////////////////
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
-                           int capacity, int adminId, AppointmentType_y type) {
+                           int capacity, int adminId) {
 
-        String sql = "INSERT INTO appointment_slot VALUES (DEFAULT, ?, ?, ?, ?, 0, ?, ?)";
+        String sql = "INSERT INTO appointment_slot VALUES (DEFAULT, ?, ?, 0, ?,?, ?)";
 
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        	
             ps.setDate(1, Date.valueOf(date));
-            ps.setTime(2, Time.valueOf(start));
-            ps.setTime(3, Time.valueOf(end));
-            ps.setInt(4, capacity);
+            ps.setInt(2, capacity);
+            
+            ps.setTime(3, Time.valueOf(start));
+            ps.setTime(4, Time.valueOf(end));
+       
             ps.setInt(5, adminId);
-            ps.setString(6, type.name());
+          
+        
 
             return ps.executeUpdate() > 0;
 
