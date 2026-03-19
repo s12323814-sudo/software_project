@@ -1,245 +1,145 @@
 package admain;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class SlotService_y {
 
-    
-    public List<AppointmentSlot_y> getAvailableSlots() {
-        List<AppointmentSlot_y> slots = new ArrayList<>();
-        String sql = "SELECT * FROM appointment_slot WHERE booked_count < max_capacity";
-
-        try (Connection conn = database_connection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                int id = rs.getInt("slot_id");
-                LocalDate date = rs.getDate("slot_date").toLocalDate();
-                LocalTime startTime = rs.getTime("slot_start_time").toLocalTime();
-                LocalTime endTime = rs.getTime("slot_end_time").toLocalTime();
-                int maxCap = rs.getInt("max_capacity");
-                int booked = rs.getInt("booked_count");
-
-                AppointmentSlot_y slot = new AppointmentSlot_y(id, date, startTime, endTime, maxCap, booked);
-                slots.add(slot);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return slots;
+    private AppointmentRepository_y appointmentRepo;
+    private SlotRepository_y slotRepo;
+    private static Scanner sc = new Scanner(System.in);
+    // Dependency Injection
+    public SlotService_y(AppointmentRepository_y appointmentRepo,
+                         SlotRepository_y slotRepo) {
+        this.appointmentRepo = appointmentRepo;
+        this.slotRepo = slotRepo;
     }
-    public boolean adminCancelAppointment(int appointmentId) throws SQLException {
 
-        String selectSql = "SELECT slot_id, participants FROM appointments WHERE appointment_id = ?";
+    /////////////////////////////
+    // GET AVAILABLE SLOTS
+    public List<AppointmentSlot_y> getAvailableSlots() {
+        return slotRepo.findAvailableSlots();
+    }
+
+    /////////////////////////////
+    // BOOK APPOINTMENT
+    public boolean bookAppointment(int userId, int slotId, int participants) throws SQLException {
+
+        if (participants <= 0) return false;
+
+        AppointmentSlot_y slot = slotRepo.findById(slotId);
+
+        if (slot == null) return false;
+
+        int remaining = slot.getMaxCapacity() - slot.getBookedCount();
+
+        if (participants > remaining) return false;
+
+        return appointmentRepo.book(userId, slotId, participants);
+    }
+
+    /////////////////////////////
+    // CANCEL (USER)
+    public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {
+        return appointmentRepo.cancel(userId, appointmentId);
+    }
+
+    /////////////////////////////
+    // UPDATE
+    public boolean updateAppointment(int userId, int appointmentId, int participants) throws SQLException {
+        return appointmentRepo.update(userId, appointmentId, participants);
+    }
+
+    /////////////////////////////
+    // VIEW USER APPOINTMENTS
+    public List<Appointment> viewUserAppointments(int userId) throws SQLException {
+        return appointmentRepo.getUserUpcomingAppointments(userId);
+    }
+
+    /////////////////////////////
+    // ADMIN: ADD SLOT
+    public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
+                           int capacity, int adminId, AppointmentType_y type) {
+
+        if (capacity <= 0) return false;
+
+        return slotRepo.addSlot(date, start, end, capacity, adminId, type);
+    }
+
+    /////////////////////////////
+    // ADMIN: CANCEL WITH TRANSACTION (IMPORTANT)
+    public boolean adminCancelAppointment(int appointmentId) throws SQLException {
 
         try (Connection conn = database_connection.getConnection()) {
 
             conn.setAutoCommit(false);
 
-            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+            try {
+                Appointment appointment = appointmentRepo.findById(appointmentId, conn);
 
-                ps.setInt(1, appointmentId);
-                ResultSet rs = ps.executeQuery();
-
-                if (!rs.next()) {
-                    System.out.println("Appointment not found.");
+                if (appointment == null) {
+                    conn.rollback();
                     return false;
                 }
 
-                int slotId = rs.getInt("slot_id");
-                int participants = rs.getInt("participants");
+                appointmentRepo.delete(appointmentId, conn);
 
-                String deleteSql = "DELETE FROM appointments WHERE appointment_id = ?";
-                try (PreparedStatement delPs = conn.prepareStatement(deleteSql)) {
-                    delPs.setInt(1, appointmentId);
-                    delPs.executeUpdate();
-                }
-
-                String updateSql = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
-                try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
-                    updatePs.setInt(1, participants);
-                    updatePs.setInt(2, slotId);
-                    updatePs.executeUpdate();
-                }
+                slotRepo.decreaseBookedCount(
+                        appointment.getSlotId(),
+                        appointment.getParticipants(),
+                        conn
+                );
 
                 conn.commit();
-
-                System.out.println("Appointment cancelled successfully by admin.");
                 return true;
 
             } catch (Exception e) {
-
                 conn.rollback();
-                throw e;
+                throw new RuntimeException(e);
             }
-        }
-    }
- 
-    public AppointmentSlot_y getSlotById(int slotId) {
-        String sql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
+        }}
+        public void addSlotInteractive(Account_y admin) {
+            if (admin == null || !admin.isAdmin()) {
+                System.out.println("Admin only!");
+                return;
+            }
 
-        try (Connection conn = database_connection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try {
+                System.out.print("Enter date (YYYY-MM-DD): ");
+                LocalDate date = LocalDate.parse(sc.nextLine());
 
-            ps.setInt(1, slotId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    int id = rs.getInt("slot_id");
-                    LocalDate date = rs.getDate("slot_date").toLocalDate();
-                    LocalTime startTime = rs.getTime("slot_start_time").toLocalTime();
-                    LocalTime endTime = rs.getTime("slot_end_time").toLocalTime();
-                    int maxCap = rs.getInt("max_capacity");
-                    int booked = rs.getInt("booked_count");
+                System.out.print("Enter start time (HH:MM): ");
+                LocalTime start = LocalTime.parse(sc.nextLine());
 
-                    return new AppointmentSlot_y(id, date, startTime, endTime, maxCap, booked);
+                System.out.print("Enter end time (HH:MM): ");
+                LocalTime end = LocalTime.parse(sc.nextLine());
+
+                System.out.print("Enter max capacity: ");
+                int capacity = Integer.parseInt(sc.nextLine());
+
+                System.out.println("Choose Appointment Type:");
+                AppointmentType_y[] types = AppointmentType_y.values();
+                for (int i = 0; i < types.length; i++) {
+                    System.out.println((i + 1) + "- " + types[i]);
                 }
-            }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    
-    public void bookSlotForUser(int userId, int slotId, int participants) throws SQLException {
-        try (Connection conn = database_connection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            String checkSql = "SELECT max_capacity, booked_count, slot_date, slot_start_time, slot_end_time FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
-            try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
-                ps.setInt(1, slotId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw new SQLException("Slot not found.");
-                    }
-
-                    int capacity = rs.getInt("max_capacity");
-                    int booked = rs.getInt("booked_count");
-                    LocalDate date = rs.getDate("slot_date").toLocalDate();
-                    LocalTime startTime = rs.getTime("slot_start_time").toLocalTime();
-                    LocalTime endTime = rs.getTime("slot_end_time").toLocalTime();
-
-                    int remaining = capacity - booked;
-                    if (participants > remaining) {
-                        throw new SQLException("Not enough capacity. Remaining: " + remaining);
-                    }
-
-                    LocalDateTime startDateTime = LocalDateTime.of(date, startTime);
-                    LocalDateTime endDateTime = LocalDateTime.of(date, endTime);
-                    long durationMinutes = java.time.Duration.between(startDateTime, endDateTime).toMinutes();
-
-                    String insertSql = "INSERT INTO appointments(slot_id, user_id, participants, status, start_time, end_time, duration) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                    try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
-                        insertPs.setInt(1, slotId);
-                        insertPs.setInt(2, userId);
-                        insertPs.setInt(3, participants);
-                        insertPs.setString(4, "CONFIRMED");
-                        insertPs.setTimestamp(5, Timestamp.valueOf(startDateTime));
-                        insertPs.setTimestamp(6, Timestamp.valueOf(endDateTime));
-                        insertPs.setLong(7, durationMinutes);
-                        insertPs.executeUpdate();
-                    }
-
-                    
-                    String updateSql = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
-                    try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
-                        updatePs.setInt(1, participants);
-                        updatePs.setInt(2, slotId);
-                        updatePs.executeUpdate();
-                    }
+                int typeChoice = Integer.parseInt(sc.nextLine());
+                if (typeChoice < 1 || typeChoice > types.length) {
+                    System.out.println("Invalid type choice!");
+                    return;
                 }
-            }
 
-            conn.commit();
-        } catch (SQLException e) {
-            throw e;
+                AppointmentType_y selectedType = types[typeChoice - 1];
+
+                slotRepo.addSlot(date, start, end, capacity, admin.getAccountId(), selectedType);
+                System.out.println("Slot added successfully!");
+
+            } catch (Exception e) {
+                System.out.println("Error adding slot: " + e.getMessage());
+            }
         }
     }
-
-
-    public void bookSlot(int slotId, int participants) throws SQLException {
-        try (Connection conn = database_connection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            String checkSql = "SELECT max_capacity, booked_count, slot_start_time, slot_end_time, slot_date FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
-            try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
-                ps.setInt(1, slotId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw new IllegalArgumentException("Slot not found.");
-                    }
-
-                    int capacity = rs.getInt("max_capacity");
-                    int booked = rs.getInt("booked_count");
-                    LocalTime startTime = rs.getTime("slot_start_time").toLocalTime();
-                    LocalTime endTime = rs.getTime("slot_end_time").toLocalTime();
-                    LocalDate date = rs.getDate("slot_date").toLocalDate();
-
-                    if (booked + participants > capacity) {
-                        throw new IllegalArgumentException("Participant limit exceeded.");
-                    }
-
-                    LocalDateTime startDateTime = LocalDateTime.of(date, startTime);
-                    LocalDateTime endDateTime = LocalDateTime.of(date, endTime);
-                    long durationMinutes = java.time.Duration.between(startDateTime, endDateTime).toMinutes();
-                    String insertSql = "INSERT INTO appointments(slot_id, participants, status, start_time, end_time,duration) VALUES (?, ?, ?, ?, ?)";
-                    try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
-                        insertPs.setInt(1, slotId);
-                        insertPs.setInt(2, participants);
-                        insertPs.setString(3, "CONFIRMED");
-                        insertPs.setTimestamp(4, Timestamp.valueOf(startDateTime));
-                        insertPs.setTimestamp(5, Timestamp.valueOf(endDateTime));
-                        insertPs.setLong(6, durationMinutes); 
-                        
-                        insertPs.executeUpdate();
-                    }
-
-                    String updateSql = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
-                    try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
-                        updatePs.setInt(1, participants);
-                        updatePs.setInt(2, slotId);
-                        updatePs.executeUpdate();
-                    }
-                }
-            }
-
-            conn.commit();
-        }
-    }
-    public void addSlot(LocalDate date, LocalTime start, LocalTime end, int capacity, int adminId) {
-        String sql = "INSERT INTO appointment_slot "
-                   + "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, admin_id) "
-                   + "VALUES (?, ?, ?, ?, 0, ?)";
-
-        try (Connection conn = database_connection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setDate(1, java.sql.Date.valueOf(date));
-            stmt.setTime(2, java.sql.Time.valueOf(start));
-            stmt.setTime(3, java.sql.Time.valueOf(end));
-            stmt.setInt(4, capacity);
-            stmt.setInt(5, adminId);
-
-            int rows = stmt.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Slot added to database successfully!");
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e.getMessage());
-        }
-    }
-
-}

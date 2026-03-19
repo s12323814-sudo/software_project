@@ -1,251 +1,272 @@
 package admain;
-import java.sql.Timestamp;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalTime;
+
+
+import java.sql.*;
+
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+
+
 public class Main {
-
-    static Scanner sc = new Scanner(System.in);
-    static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
-    static SlotService_y slotService = new SlotService_y();
+	 static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
+    private static Scanner sc = new Scanner(System.in);
+	 private static AppointmentRepository_y appointmentRepo;
+	    private static SlotRepository_y slotRepo;
+ private  static SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo);
+    private static authService_y authService = new authService_y();
+    private static session_y session;
+    private static Account_y user;
     private static NotificationService_y notificationService = new MockNotificationService_y();
-
+    private static session_y currentSession = null;
     private static ReminderManager_y reminderManager =
             new ReminderManager_y(appointmentRepository, notificationService);
     public static void main(String[] args) {
-
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(() -> {
-            if (session_y.currentUser != null || session_y.currentAdmin != null) {
-                reminderManager.checkReminders();
-            }
-        }, 0, 1, TimeUnit.MINUTES);
+    	 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	        scheduler.scheduleAtFixedRate(() -> {
+	            if (currentSession != null) {
+	                reminderManager.checkReminders();
+	            }
+	        }, 0, 1, TimeUnit.MINUTES);
 
         while (true) {
-            System.out.println("=== Main Menu ===");
-            System.out.println("1- Login as User");
-            System.out.println("2- Login as Admin");
-            System.out.println("3- Exit");
+            System.out.println("\n=== Main Menu ===");
+            System.out.println("1- Login as User/Admin");
+            System.out.println("2- Register");
+            System.out.println("3- Forgot Password");
+            System.out.println("4- Exit");
 
             int choice;
             try {
                 choice = Integer.parseInt(sc.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter a number.");
-                continue; }
+            } catch (Exception e) {
+                System.out.println("Invalid input!");
+                continue;
+            }
 
             switch (choice) {
-                case 1 : 
-                	UserMenu_y.showMenu();
-                	break;
-                case 2 :
-                	adminMenu();
-                	break;
-                
-                case 3 : 
+                case 1:
+                    loginMenu();
+                    break;
+                case 2:
+                    registerMenu();
+                    break;
+                case 3:
+                    forgotPasswordMenu();
+                    break;
+                case 4:
                     System.out.println("Goodbye!");
                     System.exit(0);
                     break;
-                default :
-                	System.out.println("Invalid choice!");
-                	break;
+                default:
+                    System.out.println("Invalid choice");
             }
         }
     }
 
-    public static void adminMenu() {
-        while (true) {
-            System.out.println("\n--- Admin Menu ---");
-            System.out.println("1- Login");
-            System.out.println("2- Create Account");
-            System.out.println("3- Forgot Password");
-            System.out.println("4- Back");
-int choice;
+    private static void loginMenu() {
+        System.out.print("Username or Email: ");
+        String input = sc.nextLine();
+        System.out.print("Password: ");
+        String password = sc.nextLine();
 
-            try {
-                choice = Integer.parseInt(sc.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter a number.");
-                continue; 
-            }
-
-            switch (choice) {
-                case 1 : {
-                    System.out.print("Username: ");
-                    String username = sc.nextLine();
-                    System.out.print("Password: ");
-                    String password = sc.nextLine();
-
-                    Admin_y admin = login_foradmin_y.login(username, password);
-                    if (admin != null) {
-                        session_y.currentAdmin = admin;
-                        System.out.println("Login Successful!");
-                        adminSession();
-                    } else {
-                        System.out.println("Login Failed!");
-                    }
-                }
-                break;
-                case 2 : {
-                    System.out.print("New Username: ");
-                    String newUser = sc.nextLine();
-                    System.out.print("New Password: ");
-                    String newPass = sc.nextLine();
-                    System.out.print("Email: ");
-                    String email = sc.nextLine();
-
-                    Admin_y adminR = login_foradmin_y.register(newUser, newPass, email);
-                    if (adminR != null) {
-                        session_y.currentAdmin = adminR;
-                        System.out.println("Account created and logged in!");
-                        adminSession();
-                    } else {
-                        System.out.println("Account creation failed!");
-                    }
-                }
-                break;
-                case 3 :
-                	forgotPassword();
-                	break;
-                case 4 :
-                    System.out.println("Exiting..."); 
-                    return; 
-                default :
-                	System.out.println("Invalid choice.");
-                	break;
-            }
+        session = authService.login(input, password);
+        if (session == null) {
+            System.out.println("Login failed!");
+            return;
         }
+
+        System.out.println("Login successful! Role: " + session.getAccount().getRole());
+
+        if (session.isAdmin()) adminSession();
+        else userSession();
     }
 
-    public static void forgotPassword() {
+    private static void registerMenu() {
+        System.out.print("Username: ");
+        String username = sc.nextLine();
+        System.out.print("Password: ");
+        String password = sc.nextLine();
+        System.out.print("Email: ");
+        String email = sc.nextLine();
+        System.out.print("Role (USER/ADMIN): ");
+        String role = sc.nextLine().trim().toUpperCase();
+        Account_y acc = authService.register(username, password, email, role);
+        if (acc != null) System.out.println("Account created successfully!");
+        else System.out.println("Registration failed!");
+    }
+
+    private static void forgotPasswordMenu() {
         System.out.print("Enter your email: ");
         String email = sc.nextLine();
+        System.out.print("Enter new password: ");
+        String newPassword = sc.nextLine();
 
-        if (!login_foradmin_y.emailExists(email)) {
-            System.out.println("Email not found!");
-            return;
-        }
-
-        String otp = OTPGenerator_y.generateOTP();
-        EmailService_y emailService = new MockEmailService_y();
-        emailService.sendOTP(email, otp);
-
-        System.out.print("Enter OTP sent to your email: ");
-        String userOtp = sc.nextLine();
-
-        if (otp.equals(userOtp)) {
-            System.out.print("Enter new password: ");
-            String newPassword = sc.nextLine();
-
-            if (login_foradmin_y.updatePassword(email, newPassword)) {
-                System.out.println("Password updated successfully!");
-            }
-        } else {
-            System.out.println("Wrong OTP.");
-        }
+        if (authService.updatePassword(email, newPassword))
+            System.out.println("Password updated successfully!");
+        else
+            System.out.println("Failed to update password!");
     }
 
-    public static void adminSession() {
-        while (session_y.currentAdmin != null) {
-            System.out.println("\nWelcome Admin: " + session_y.currentAdmin.getUsername());
-            System.out.println("1- View Slots");
-            System.out.println("2- Add Slot");
-            System.out.println("3- cancel Appointment");
-            System.out.println("4- Logout");
+    // -------------------- User Menu --------------------
+    private static void userSession() {
+        while (session != null && session.isUser()) {
+            System.out.println("\n--- User Menu ---");
+            System.out.println("1- View Available Slots");
+            System.out.println("2- View My Appointments");
+            System.out.println("3- Book Appointment");
+            System.out.println("4- Update Appointment");
+            System.out.println("5- Cancel Appointment");
+            System.out.println("6- Logout");
 
-            int choice ;
+            int choice;
             try {
                 choice = Integer.parseInt(sc.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter a number.");
-                continue; 
-            }
+            } catch (Exception e) { choice = -1; }
 
             switch (choice) {
-
-            case 1:
-                viewAvailableSlots();
-                break;
-
-            case 2:
-                addSlotInteractive();
-                break;
-
-            case 3:
-                adminCancelAppointmentInteractive();
-                break;
-
-            case 4:
-                session_y.logout();
-                break;
-
-            default:
-                System.out.println("Invalid choice!");
-        }}}
-   
-    	private static void adminCancelAppointmentInteractive() {
-
-    	    try {
-
-    	        System.out.print("Enter Appointment ID to cancel: ");
-    	        int appointmentId = Integer.parseInt(sc.nextLine());
-
-    	        boolean result = slotService.adminCancelAppointment(appointmentId);
-
-    	        if (!result) {
-    	            System.out.println("Cancellation failed.");
-    	        }
-
-    	    } catch (Exception e) {
-    	        System.out.println("Error: " + e.getMessage());
-    	    }
-    	}
-    public static void addSlotInteractive() {
-        try {
-            System.out.print("Enter date (YYYY-MM-DD): ");
-            LocalDate date = LocalDate.parse(sc.nextLine());
-
-            System.out.print("Enter start time (HH:MM): ");
-            LocalTime start = LocalTime.parse(sc.nextLine());
-
-            System.out.print("Enter end time (HH:MM): ");
-            LocalTime end = LocalTime.parse(sc.nextLine());
-
-            System.out.print("Enter max capacity: ");
-            int capacity = Integer.parseInt(sc.nextLine());
-
-            int adminId = session_y.currentAdmin.getAdminId();
-
-            slotService.addSlot(date, start, end, capacity, adminId);
-            System.out.println("Slot added successfully!");
-
-        } catch (Exception e) {
-            System.out.println("Error adding slot: " + e.getMessage());
+                case 1: viewAvailableSlots(); break;
+                case 2: viewUserAppointments(); break;
+                case 3: bookAppointment(); break;
+                case 4: updateAppointment(); break;
+                case 5: cancelAppointment(); break;
+                case 6: session_y.logoutUser(); break;
+                default: System.out.println("Invalid choice"); 
+            }
         }
     }
 
+    // -------------------- Admin Menu --------------------
+    private static void adminSession() {
+        while (session != null && session.isAdmin()) {
+            System.out.println("\n--- Admin Menu ---");
+            System.out.println("1- View Slots");
+            System.out.println("2- Add Slot");
+            System.out.println("3- Cancel Appointment");
+            System.out.println("4- Logout");
+
+            int choice;
+            try { choice = Integer.parseInt(sc.nextLine()); } catch(Exception e){ choice=-1; }
+
+            switch(choice) {
+                case 1: viewAvailableSlots(); break;
+                case 2: addSlot(); break;
+                case 3: try {
+					adminCancelAppointment();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} break;
+                case 4: session_y.logoutAdmin(); break;
+                default: System.out.println("Invalid choice");
+            }
+        }
+    }
+
+    // -------------------- Methods for Users & Admins --------------------
     private static void viewAvailableSlots() {
         List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
-        if (slots.isEmpty()) {
-            System.out.println("No available slots.");
-            return;
-        }
+        if (slots.isEmpty()) { System.out.println("No available slots."); return; }
 
-        System.out.printf("%-5s %-12s %-10s %-10s %-10s %-10s%n","ID","Date","Start","End","Capacity","Remaining");
+        System.out.printf("%-5s %-12s %-10s %-10s %-10s %-10s%n",
+                "ID","Date","Start","End","Capacity","Remaining");
+
         for (AppointmentSlot_y slot : slots) {
             int remaining = slot.getMaxCapacity() - slot.getBookedCount();
             System.out.printf("%-5d %-12s %-10s %-10s %-10d %-10d%n",
-                    slot.getId(), slot.getDate(), slot.getStartTime(), slot.getEndTime(),
-                    slot.getMaxCapacity(), remaining);
+                    slot.getId(), slot.getDate(), slot.getStartTime(),
+                    slot.getEndTime(), slot.getMaxCapacity(), remaining);
         }
     }
+
+    private static void viewUserAppointments() {
+        try {
+            List<Appointment> list = slotService.viewUserAppointments(user.getAccountId());
+            if (list.isEmpty()) {
+                System.out.println("No appointments found.");
+            } else {
+                list.forEach(System.out::println);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+   
+    private static void bookAppointment() {
+        try (Scanner sc = new Scanner(System.in)) {
+            System.out.print("Enter slot ID: ");
+            int slotId = Integer.parseInt(sc.nextLine());
+            System.out.print("Enter number of participants: ");
+            int participants = Integer.parseInt(sc.nextLine());
+
+            boolean success = slotService.bookAppointment(user.getAccountId(), slotId, participants);
+            if (success) {
+                System.out.println("Appointment booked successfully!");
+            } else {
+                System.out.println("Booking failed!");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+			
+			e.printStackTrace();
+		}
+    }
+    private static void updateAppointment() {
+        try (Scanner sc = new Scanner(System.in)) {
+            System.out.print("Enter appointment ID to update: ");
+            int appointmentId = Integer.parseInt(sc.nextLine());
+            System.out.print("Enter new number of participants: ");
+            int participants = Integer.parseInt(sc.nextLine());
+
+            boolean success = slotService.updateAppointment(user.getAccountId(), appointmentId, participants);
+            if (success) {
+                System.out.println("Appointment updated successfully!");
+            } else {
+                System.out.println("Update failed!");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    private static void cancelAppointment() {
+        try (Scanner sc = new Scanner(System.in)) {
+            System.out.print("Enter appointment ID to cancel: ");
+            int appointmentId = Integer.parseInt(sc.nextLine());
+
+            boolean success = slotService.cancelAppointment(user.getAccountId(), appointmentId);
+            if (success) {
+                System.out.println("Appointment cancelled successfully!");
+            } else {
+                System.out.println("Cancel failed!");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+  
+    private static void addSlot() {
+        slotService.addSlotInteractive(user); // user = admin
+    }
+
+    private static void adminCancelAppointment() throws SQLException {
+        try (Scanner sc = new Scanner(System.in)) {
+			System.out.print("Enter appointment ID to cancel by admin: ");
+			int appointmentId = Integer.parseInt(sc.nextLine());
+			slotService.adminCancelAppointment( appointmentId); // user = admin
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+   
 }

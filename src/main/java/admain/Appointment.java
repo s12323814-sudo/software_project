@@ -2,29 +2,68 @@ package admain;
 
 public class Appointment {
 
+    private int appointmentId;     // Primary Key
     private int userId;
-    private TimeSlot timeSlot;
+    private int slotId;            // مهم للـ DB
+    private TimeSlot timeSlot;     // optional (للـ JOIN)
     private int participants;
-    private String status;
+    private AppointmentStatus_y status;
+    private AppointmentType_y type;
 
-    // Constructor كامل
-    public Appointment(int userId, TimeSlot timeSlot, int participants, String status) {
+    //////////////////////////////////////
+   
+    public Appointment(int appointmentId, int userId, int slotId,
+                       TimeSlot timeSlot, int participants,
+                       AppointmentStatus_y status,
+                       AppointmentType_y type) {
+
+        this.appointmentId = appointmentId;
         this.userId = userId;
+        this.slotId = slotId;
         this.timeSlot = timeSlot;
         this.participants = participants;
         this.status = status;
+        this.type = type;
     }
 
-    // Constructor بدون userId (اختياري)
-    public Appointment(TimeSlot timeSlot, int participants, String status) {
-        this.timeSlot = timeSlot;
+
+
+    public Appointment(int appointmentId, int userId, int slotId,
+                       int participants,
+                       AppointmentStatus_y status,
+                       AppointmentType_y type) {
+
+        this.appointmentId = appointmentId;
+        this.userId = userId;
+        this.slotId = slotId;
         this.participants = participants;
         this.status = status;
+        this.type = type;
     }
 
-    // Getters
+    public Appointment(int userId, int slotId,
+                       int participants,
+                       AppointmentStatus_y status,
+                       AppointmentType_y type) {
+
+        this.userId = userId;
+        this.slotId = slotId;
+        this.participants = participants;
+        this.status = status;
+        this.type = type;
+    }
+
+
+    public int getAppointmentId() {
+        return appointmentId;
+    }
+
     public int getUserId() {
         return userId;
+    }
+
+    public int getSlotId() {
+        return slotId;
     }
 
     public TimeSlot getTimeSlot() {
@@ -35,12 +74,37 @@ public class Appointment {
         return participants;
     }
 
-    public String getStatus() {
+    public AppointmentStatus_y getStatus() {
         return status;
     }
 
-    // Setter للـ status
-    public void setStatus(String status) {
+    public AppointmentType_y getType() {
+        return type;
+    }
+
+    public void setStatus(AppointmentStatus_y status) {
         this.status = status;
+    }
+
+    public void setParticipants(int participants) {
+        this.participants = participants;
+    }
+
+    public void setTimeSlot(TimeSlot timeSlot) {
+        this.timeSlot = timeSlot;
+    }
+
+    
+    @Override
+    public String toString() {
+        return "Appointment{" +
+                "id=" + appointmentId +
+                ", userId=" + userId +
+                ", slotId=" + slotId +
+                ", participants=" + participants +
+                ", status=" + status +
+                ", type=" + type +
+                (timeSlot != null ? ", timeSlot=" + timeSlot : "") +
+                '}';
     }
 }

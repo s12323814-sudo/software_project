@@ -29,7 +29,7 @@ public class ReminderManager_y {
         try {
             List<Appointment> upcomingAppointments =
                 appointmentRepository.getUserUpcomingAppointments(
-                    session_y.currentUser.getUserId()
+                    session_y.currentUser.getAccountId()
                 );
 
             LocalDateTime now = LocalDateTime.now();

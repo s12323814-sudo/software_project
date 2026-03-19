@@ -1,12 +1,12 @@
 package admain;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+
+
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
+
 
 public class AppointmentSlot_y {
 
@@ -17,6 +17,7 @@ public class AppointmentSlot_y {
     private int maxCapacity;
     private int bookedCount;
 
+
     public AppointmentSlot_y(int id, LocalDate date, LocalTime startTime, LocalTime endTime, int maxCapacity, int bookedCount) {
         this.id = id;
         this.date = date;
@@ -24,8 +25,11 @@ public class AppointmentSlot_y {
         this.endTime = endTime;
         this.maxCapacity = maxCapacity;
         this.bookedCount = bookedCount;
+      
+        
+        
     }
-
+   
     public ZonedDateTime getStartDateTime() {
         return ZonedDateTime.of(date, startTime ,ZoneId.of("Asia/Hebron"));
     }
