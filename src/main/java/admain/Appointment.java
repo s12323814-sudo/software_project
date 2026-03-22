@@ -41,18 +41,7 @@ public class Appointment {
         this.type = type;
     }
 
-    public Appointment(int userId, int slotId,
-                       int participants,
-                       AppointmentStatus_y status,
-                       AppointmentType_y type) {
-
-        this.userId = userId;
-        this.slotId = slotId;
-        this.participants = participants;
-        this.status = status;
-        this.type = type;
-    }
-
+  
 
     public int getAppointmentId() {
         return appointmentId;

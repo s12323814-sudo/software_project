@@ -60,30 +60,27 @@ public class SlotRepository_y {
 
     /////////////////////////////
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
-                           int capacity, int adminId) {
+            int capacity, int accountId) {
 
-        String sql = "INSERT INTO appointment_slot VALUES (DEFAULT, ?, ?, 0, ?,?, ?)";
+String sql = "INSERT INTO appointment_slot " +
+      "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, account_id) " +
+      "VALUES (?, ?, ?, ?, 0, ?)";
 
-        try (Connection conn = database_connection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-        	
-            ps.setDate(1, Date.valueOf(date));
-            ps.setInt(2, capacity);
-            
-            ps.setTime(3, Time.valueOf(start));
-            ps.setTime(4, Time.valueOf(end));
-       
-            ps.setInt(5, adminId);
-          
-        
+try (Connection conn = database_connection.getConnection();
+PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            return ps.executeUpdate() > 0;
+ps.setDate(1, Date.valueOf(date));
+ps.setTime(2, Time.valueOf(start));
+ps.setTime(3, Time.valueOf(end));
+ps.setInt(4, capacity);
+ps.setInt(5, accountId);
 
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+return ps.executeUpdate() > 0;
 
+} catch (SQLException e) {
+throw new RuntimeException(e);
+}
+}
     /////////////////////////////
     public void decreaseBookedCount(int slotId, int participants, Connection conn) throws SQLException {
 

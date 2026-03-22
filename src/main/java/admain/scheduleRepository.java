@@ -25,19 +25,19 @@ public class scheduleRepository {
         return false;
     }
 
-    private AppointmentStatus_y determineStatus(Connection conn, int slotId, int participants,
-                                                ZonedDateTime start, ZonedDateTime end) throws SQLException {
-        ZonedDateTime now = ZonedDateTime.now(ZONE);
+    public static AppointmentStatus_y determineStatus(ZonedDateTime start, ZonedDateTime end, int participants, AppointmentSlot_y slot) {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Hebron"));
 
         if (now.isAfter(end)) {
-            return AppointmentStatus_y.COMPLETED;
+            return AppointmentStatus_y.COMPLETED;  // لو انتهى
         } else if (!now.isBefore(start) && now.isBefore(end)) {
-            return AppointmentStatus_y.ONGOING;
+            return AppointmentStatus_y.ONGOING;    // لو جاري
         } else {
-            return isSlotAvailable(conn, slotId, participants) ? AppointmentStatus_y.CONFIRMED : AppointmentStatus_y.WAITLIST;
+            return (slot.getMaxCapacity() - slot.getBookedCount() >= participants)
+                    ? AppointmentStatus_y.CONFIRMED
+                    : AppointmentStatus_y.WAITLIST; // لو ما بدها حجز
         }
     }
-
   
     public void addAppointment(Appointment appointment) throws SQLException {
         try (Connection conn = database_connection.getConnection()) {
@@ -175,4 +175,10 @@ public class scheduleRepository {
         }
         return appointments;
     }
+
+	public AppointmentStatus_y determineStatus(Connection conn, int slotId, int participants, ZonedDateTime startZ,
+			ZonedDateTime endZ) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

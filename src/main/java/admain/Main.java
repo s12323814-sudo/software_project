@@ -4,6 +4,8 @@ package admain;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -68,7 +70,6 @@ public class Main {
             }
         }
     }
-
     private static void loginMenu() {
         System.out.print("Username or Email: ");
         String input = sc.nextLine();
@@ -83,6 +84,13 @@ public class Main {
 
         // تعيين الـ user من الـ session
         user = session.getAccount();
+        
+        // تعيين الـ user في الجلسة العامة
+        if (session.isAdmin()) {
+            session_y.currentAdmin = user;
+        } else {
+            session_y.currentUser = user;
+        }
 
         System.out.println("Login successful! Role: " + user.getRole());
 
@@ -138,7 +146,7 @@ public class Main {
                 case 3: bookAppointment(); break;
                 case 4: updateAppointment(); break;
                 case 5: cancelAppointment(); break;
-                case 6: session_y.logoutUser(); break;
+                case 6: session_y.logoutUser(); session = null; break;
                 default: System.out.println("Invalid choice"); 
             }
         }
@@ -175,20 +183,36 @@ public class Main {
 
     // -------------------- Methods for Users & Admins --------------------
     private static void viewAvailableSlots() {
-        List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
-        if (slots.isEmpty()) { System.out.println("No available slots."); return; }
+        try {
+            List<AppointmentSlot_y> slots = slotService.getAvailableSlots();
+            if (slots.isEmpty()) { 
+                System.out.println("No available slots."); 
+                return; 
+            }
 
-        System.out.printf("%-5s %-12s %-10s %-10s %-10s %-10s%n",
-                "ID","Date","Start","End","Capacity","Remaining");
+            System.out.printf("%-5s %-12s %-10s %-10s %-10s %-10s %-10s%n",
+                    "ID", "Date", "Start", "End", "Capacity", "Remaining", "Status");
 
-        for (AppointmentSlot_y slot : slots) {
-            int remaining = slot.getMaxCapacity() - slot.getBookedCount();
-            System.out.printf("%-5d %-12s %-10s %-10s %-10d %-10d%n",
-                    slot.getId(), slot.getDate(), slot.getStartTime(),
-                    slot.getEndTime(), slot.getMaxCapacity(), remaining);
+            for (AppointmentSlot_y slot : slots) {
+                int remaining = slot.getMaxCapacity() - slot.getBookedCount();
+
+                // تحديد الحالة باستخدام الدالة الجاهزة
+                ZonedDateTime startZ = ZonedDateTime.of(slot.getDate(), slot.getStartTime(), ZoneId.of("Asia/Hebron"));
+                ZonedDateTime endZ = ZonedDateTime.of(slot.getDate(), slot.getEndTime(), ZoneId.of("Asia/Hebron"));
+
+                // نفرض participant = 1 للعرض
+                AppointmentStatus_y status = scheduleRepository.determineStatus(startZ, endZ, 1, slot);
+
+                System.out.printf("%-5d %-12s %-10s %-10s %-10d %-10d %-10s%n",
+                        slot.getId(), slot.getDate(), slot.getStartTime(),
+                        slot.getEndTime(), slot.getMaxCapacity(), remaining, status);
+            }
+
+        } catch (Exception e) {
+            System.out.println("Unexpected error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
-
     private static void viewUserAppointments() {
         try {
             List<Appointment> list = slotService.viewUserAppointments(user.getAccountId());
@@ -203,18 +227,22 @@ public class Main {
     }
    
     private static void bookAppointment() {
-        try (Scanner sc = new Scanner(System.in)) {
+        try {
             System.out.print("Enter slot ID: ");
             int slotId = Integer.parseInt(sc.nextLine());
+
             System.out.print("Enter number of participants: ");
             int participants = Integer.parseInt(sc.nextLine());
+
             System.out.println("Choose Appointment Type:");
             AppointmentType_y[] types = AppointmentType_y.values();
+
             for (int i = 0; i < types.length; i++) {
                 System.out.println((i + 1) + "- " + types[i]);
             }
 
             AppointmentType_y selectedType = null;
+
             while (selectedType == null) {
                 try {
                     System.out.print("Enter type number: ");
@@ -225,100 +253,126 @@ public class Main {
                     } else {
                         selectedType = types[typeChoice - 1];
                     }
+
                 } catch (NumberFormatException e) {
                     System.out.println("Invalid input! Please enter a number.");
                 }
             }
-            boolean success = slotService.bookAppointment(user.getAccountId(), slotId, participants,selectedType);
+
+            boolean success = slotService.bookAppointment(
+                    user.getAccountId(),
+                    slotId,
+                    participants,
+                    selectedType
+            );
+
             if (success) {
                 System.out.println("Appointment booked successfully!");
             } else {
                 System.out.println("Booking failed!");
             }
-        } catch (SQLException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (NumberFormatException e) {
-			
-			e.printStackTrace();
-		}
+        }
     }
     private static void updateAppointment() {
-        try (Scanner sc = new Scanner(System.in)) {
-            System.out.print("Enter appointment ID to update: ");
-            int appointmentId = Integer.parseInt(sc.nextLine());
-            System.out.print("Enter new number of participants: ");
-            int participants = Integer.parseInt(sc.nextLine());
+        while (true) {
+            try {
+                System.out.print("Enter appointment ID to update: ");
+                int appointmentId = Integer.parseInt(sc.nextLine());
 
-            boolean success = slotService.updateAppointment(user.getAccountId(), appointmentId, participants);
-            if (success) {
-                System.out.println("Appointment updated successfully!");
-            } else {
-                System.out.println("Update failed!");
+                System.out.print("Enter new number of participants: ");
+                int participants = Integer.parseInt(sc.nextLine());
+
+                boolean success = slotService.updateAppointment(user.getAccountId(), appointmentId, participants);
+                if (success) {
+                    System.out.println("Appointment updated successfully!");
+                } else {
+                    System.out.println("Update failed! Check appointment ID or participants.");
+                }
+                break; // نخرج من اللوب بعد المحاولة
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter numbers only.");
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e.getMessage());
+                break;
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        }
     }
+
     private static void cancelAppointment() {
-        try (Scanner sc = new Scanner(System.in)) {
-            System.out.print("Enter appointment ID to cancel: ");
-            int appointmentId = Integer.parseInt(sc.nextLine());
+        while (true) {
+            try {
+                System.out.print("Enter appointment ID to cancel: ");
+                int appointmentId = Integer.parseInt(sc.nextLine());
 
-            boolean success = slotService.cancelAppointment(user.getAccountId(), appointmentId);
-            if (success) {
-                System.out.println("Appointment cancelled successfully!");
-            } else {
-                System.out.println("Cancel failed!");
+                boolean success = slotService.cancelAppointment(user.getAccountId(), appointmentId);
+                if (success) {
+                    System.out.println("Appointment cancelled successfully!");
+                } else {
+                    System.out.println("Cancel failed! Check appointment ID.");
+                }
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter numbers only.");
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e.getMessage());
+                break;
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        }
     }
-  
+
     private static void addSlot() {
-        System.out.print("Enter date (YYYY-MM-DD): ");
-        LocalDate date = LocalDate.parse(sc.nextLine());
+        while (true) {
+            try {
+                System.out.print("Enter date (YYYY-MM-DD): ");
+                LocalDate date = LocalDate.parse(sc.nextLine());
 
-        System.out.print("Enter start time (HH:MM): ");
-        LocalTime start = LocalTime.parse(sc.nextLine());
+                System.out.print("Enter start time (HH:MM): ");
+                LocalTime start = LocalTime.parse(sc.nextLine());
 
-        System.out.print("Enter end time (HH:MM): ");
-        LocalTime end = LocalTime.parse(sc.nextLine());
+                System.out.print("Enter end time (HH:MM): ");
+                LocalTime end = LocalTime.parse(sc.nextLine());
 
-        System.out.print("Enter max capacity: ");
-        int capacity = Integer.parseInt(sc.nextLine());
+                System.out.print("Enter max capacity: ");
+                int capacity = Integer.parseInt(sc.nextLine());
 
-  
-        slotService.addSlot(session.getAccount(), date, start, end, capacity);
-    }
-    private static void adminCancelAppointment() {
-        System.out.print("Enter appointment ID to cancel by admin: ");
-        String input = sc.nextLine();
-        int appointmentId;
-
-        try {
-            appointmentId = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid ID! Please enter a valid number.");
-            return;
-        }
-
-        try {
-            boolean success = slotService.adminCancelAppointment(appointmentId);
-            if (success) {
-                System.out.println("Appointment cancelled successfully!");
-            } else {
-                System.out.println("Appointment ID not found or could not be cancelled.");
+                slotService.addSlot(session.getAccount(), date, start, end, capacity);
+                System.out.println("Slot added successfully!");
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number input! Try again.");
+            } catch (Exception e) {
+                System.out.println("Error adding slot: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Error cancelling appointment: " + e.getMessage());
         }
     }
-   
-}
+
+    private static void adminCancelAppointment() {
+        while (true) {
+            System.out.print("Enter appointment ID to cancel by admin: ");
+            String input = sc.nextLine();
+            int appointmentId;
+
+            try {
+                appointmentId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid ID! Please enter a valid number.");
+                continue; // يرجع يطلب مرة ثانية
+            }
+
+            try {
+                boolean success = slotService.adminCancelAppointment(appointmentId);
+                if (success) {
+                    System.out.println("Appointment cancelled successfully!");
+                } else {
+                    System.out.println("Appointment ID not found or could not be cancelled.");
+                }
+                break; // نخرج من اللوب بعد محاولة ناجحة
+            } catch (SQLException e) {
+                System.out.println("Error cancelling appointment: " + e.getMessage());
+                break;
+            }
+        }
+    }}
