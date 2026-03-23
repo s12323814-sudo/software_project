@@ -113,4 +113,9 @@ return;
 slotRepo.addSlot(date, start, end, capacity, admin.getAccountId());
 System.out.println("Slot added successfully!");
 }
+
+	public void adminCancelSlot(int slotId) {
+		// TODO Auto-generated method stub
+		
+	}
     }

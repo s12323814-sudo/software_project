@@ -1,8 +1,10 @@
 package admain;
 
 public enum AppointmentStatus_y {
-	COMPLETED,
-	ONGOING,
+	COMPLETED,  STANDARD,
+    PREMIUM,
+    VIP
+	,ONGOING,
 	CONFIRMED,
 	WAITLIST
 }

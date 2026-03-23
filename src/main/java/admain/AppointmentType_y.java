@@ -9,5 +9,5 @@ public enum AppointmentType_y {
     IN_PERSON,
     INDIVIDUAL,
     GROUP,
-    GENERAL
+    GENERAL, STANDARD
 }

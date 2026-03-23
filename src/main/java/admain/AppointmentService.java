@@ -14,17 +14,32 @@ import java.util.List;
 public class AppointmentService {
 	 private AppointmentRepository_y appointmentRepo;
 	    private SlotRepository_y slotRepo;
-    private final SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo);
-    private final scheduleRepository repo = new scheduleRepository();
+    private  SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo);
+    private scheduleRepository repo = new scheduleRepository();
     private final int MIN_DURATION = 30;
     private final int MAX_DURATION = 120;
+ // داخل AppointmentService.java
+    private Connection testConnection = null;
 
-  
+    public AppointmentService(Connection conn, SlotService_y slotService, scheduleRepository repo) {
+        this.testConnection = conn;
+        this.slotService = slotService;
+        this.repo = repo;
+    }
+
+    public AppointmentService() {
+        this.slotService = new SlotService_y(null, null);
+        this.repo = new scheduleRepository();
+    }
+
+
+    // داخل bookAppointment
+    Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection();
     public void bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
-        try (Connection conn = database_connection.getConnection()) {
+        // استخدم testConnection إذا موجود، أو الاتصال الحقيقي
+        try (Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection()) {
             conn.setAutoCommit(false);
 
-      
             String sql = "SELECT start_time, end_time, max_capacity, booked_count " +
                          "FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -58,12 +73,11 @@ public class AppointmentService {
                         psInsert.setTimestamp(4, Timestamp.valueOf(end));
                         psInsert.setInt(5, (int) duration);
                         psInsert.setInt(6, participants);
-                        psInsert.setString(7, AppointmentStatus_y.CONFIRMED.name()); // حالة افتراضية
-                        psInsert.setString(8, type.name()); // النوع المرسل كـ parameter
+                        psInsert.setString(7, AppointmentStatus_y.CONFIRMED.name());
+                        psInsert.setString(8, type.name());
                         psInsert.executeUpdate();
                     }
 
-                    // تحديث booked_count
                     String update = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
                     try (PreparedStatement psUpdate = conn.prepareStatement(update)) {
                         psUpdate.setInt(1, participants);

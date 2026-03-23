@@ -158,7 +158,8 @@ public class Main {
             System.out.println("\n--- Admin Menu ---");
             System.out.println("1- View Slots");
             System.out.println("2- Add Slot");
-            System.out.println("3- Cancel Appointment");
+            System.out.println("3- Cancel slot");
+            System.out.println("4- Cancel Appointment");
             System.out.println("4- Logout");
 
             int choice;
@@ -172,15 +173,51 @@ public class Main {
             switch(choice) {
                 case 1: viewAvailableSlots(); break;
                 case 2: addSlot(); break;
-                case 3: 
+                case 3:
+                    System.out.print("Enter Slot ID to cancel: ");
+                    int slotId = Integer.parseInt(sc.nextLine());
+                    slotService.adminCancelSlot(slotId); // نادى على الدالة الجديدة
+                    break;
+                case 4: 
 					adminCancelAppointment();
 				 break;
-                case 4: session_y.logoutAdmin();    return;
+                case 5: session_y.logoutAdmin();    return;
                 default: System.out.println("Invalid choice");
             }
         }
     }
+    public boolean adminCancelSlot(int slotId) throws SQLException {
+        String selectSql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
+        String deleteSql = "DELETE FROM appointment_slot WHERE slot_id = ?";
 
+        try (Connection conn = database_connection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            // تحقق من وجود الـ Slot
+            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+                ps.setInt(1, slotId);
+                ResultSet rs = ps.executeQuery();
+                if (!rs.next()) {
+                    System.out.println("Slot not found.");
+                    return false;
+                }
+            }
+
+            // احذف الـ Slot (وبالتالي كل المواعيد المرتبطة فيه)
+            try (PreparedStatement psDelete = conn.prepareStatement(deleteSql)) {
+                psDelete.setInt(1, slotId);
+                psDelete.executeUpdate();
+            }
+
+            conn.commit();
+            System.out.println("Slot and all its appointments cancelled successfully!");
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
     // -------------------- Methods for Users & Admins --------------------
     private static void viewAvailableSlots() {
         try {
