@@ -6,36 +6,47 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class authService_y {
 
-    private AccountRepository_y repo = new AccountRepository_y();
+    private AccountRepository_y repo ;
+   
+  
+    public authService_y(AccountRepository_y repo) {
+        this.repo = repo;
+    }
 
+  
+    public authService_y() {
+        this.repo = new AccountRepository_y();
+    }
     // ================= LOGIN =================
     public session_y login(String input, String password) {
-
-        if (input == null || input.isEmpty()) {
+      
+        if (input == null || input.isBlank()) {
             System.out.println("Username or Email required");
             return null;
         }
-
-        if (password == null || password.isEmpty()) {
+        if (password == null || password.isBlank()) {
             System.out.println("Password required");
             return null;
         }
 
         Account_y acc = repo.findByUsernameOrEmail(input);
-
         if (acc == null) {
             System.out.println("Invalid credentials");
             return null;
         }
 
-        if (!BCrypt.checkpw(password, acc.getPasswordHash())) {
+        String hash = acc.getPasswordHash();
+        if (hash == null) {
+            throw new RuntimeException("Password hash is null");
+        }
+
+        if (!org.mindrot.jbcrypt.BCrypt.checkpw(password, hash)) {
             System.out.println("Invalid credentials");
             return null;
         }
 
         return new session_y(acc);
     }
-
     // ================= REGISTER =================
     public Account_y register(String username, String password, String email, String role) {
 

@@ -27,21 +27,48 @@ public class SlotService_y {
 
     /////////////////////////////
     // BOOK APPOINTMENT
-    public boolean bookAppointment(int userId, int slotId, int participants,AppointmentType_y type) throws SQLException {
-
-        if (participants <= 0) return false;
+    public boolean bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
 
         AppointmentSlot_y slot = slotRepo.findById(slotId);
-
         if (slot == null) return false;
 
         int remaining = slot.getMaxCapacity() - slot.getBookedCount();
 
-        if (participants > remaining) return false;
+        // 🔥 RULES حسب النوع
+        switch (type) {
 
-        return appointmentRepo.book(userId, slotId, participants,type);
+            case URGENT:
+            case INDIVIDUAL:
+                if (participants != 1) {
+                    System.out.println("This type allows only 1 participant.");
+                    return false;
+                }
+                break;
+
+            case GROUP:
+                if (participants < 2) {
+                    System.out.println("Group must have at least 2 participants.");
+                    return false;
+                }
+                break;
+
+            case VIRTUAL:
+                // مثال: ما نهتم بالcapacity
+                remaining = Integer.MAX_VALUE;
+                break;
+
+            default:
+                // GENERAL, FOLLOW_UP, ASSESSMENT
+                break;
+        }
+
+        if (participants > remaining) {
+            System.out.println("Not enough capacity.");
+            return false;
+        }
+
+        return appointmentRepo.book(userId, slotId, participants, type);
     }
-
     /////////////////////////////
     // CANCEL (USER)
     public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {
