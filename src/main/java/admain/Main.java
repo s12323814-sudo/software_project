@@ -145,7 +145,7 @@ public class Main {
                 case 2: viewUserAppointments(); break;
                 case 3: bookAppointment(); break;
                 case 4: updateAppointment(); break;
-                case 5: cancelAppointment(); break;
+                case 5: adminCancelAppointment(); break;
                 case 6: session_y.logoutUser(); session = null; break;
                 default: System.out.println("Invalid choice"); 
             }
@@ -160,7 +160,7 @@ public class Main {
             System.out.println("2- Add Slot");
             System.out.println("3- Cancel slot");
             System.out.println("4- Cancel Appointment");
-            System.out.println("4- Logout");
+            System.out.println("5- Logout");
 
             int choice;
 
@@ -338,24 +338,45 @@ public class Main {
         }
     }
 
-    private static void cancelAppointment() {
-        while (true) {
-            try {
-                System.out.print("Enter appointment ID to cancel: ");
-                int appointmentId = Integer.parseInt(sc.nextLine());
+    public boolean adminCancelAppointment(int appointmentId) throws SQLException {
+        try (Connection conn = database_connection.getConnection()) {
+            conn.setAutoCommit(false);
 
-                boolean success = slotService.cancelAppointment(user.getAccountId(), appointmentId);
-                if (success) {
-                    System.out.println("Appointment cancelled successfully!");
-                } else {
-                    System.out.println("Cancel failed! Check appointment ID.");
+            try {
+                // 1️⃣ إيجاد الموعد
+                Appointment appointment = appointmentRepo.findById(appointmentId, conn);
+                if (appointment == null) {
+                    conn.rollback();
+                    System.out.println("Appointment not found!");
+                    return false;
                 }
-                break;
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter numbers only.");
-            } catch (SQLException e) {
-                System.out.println("Database error: " + e.getMessage());
-                break;
+
+                int slotId = appointment.getSlotId();
+                int participants = appointment.getParticipants();
+                int userId = appointment.getUserId();
+
+                // 2️⃣ حذف الموعد
+                appointmentRepo.delete(appointmentId, conn);
+
+                // 3️⃣ تحديث عدد الحجوزات في الـ Slot
+                slotRepo.decreaseBookedCount(slotId, participants, conn);
+
+                conn.commit();
+
+                // 4️⃣ إرسال إشعار للمستخدم
+                System.out.println("User " + userId + ": Your appointment was cancelled by admin.");
+
+                // 5️⃣ التحقق إذا مازال نفس الـ Slot متاح لإعادة الحجز
+                AppointmentSlot_y slot = slotRepo.findById(slotId);
+                if (slot != null && (slot.getMaxCapacity() - slot.getBookedCount() >= participants)) {
+                    System.out.println("Slot is still available. User can rebook the same slot if desired.");
+                    // هنا ممكن تستدعي دالة الحجز تلقائياً أو تنتظر اختيار المستخدم
+                }
+
+                return true;
+            } catch (Exception e) {
+                conn.rollback();
+                throw new RuntimeException(e);
             }
         }
     }
