@@ -6,17 +6,20 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 public class SlotService_y {
-
+	private NotificationService_y notificationService;
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
    // private static Scanner sc = new Scanner(System.in);
     // Dependency Injection
     public SlotService_y(AppointmentRepository_y appointmentRepo,
-                         SlotRepository_y slotRepo) {
+                         SlotRepository_y slotRepo ,NotificationService_y notificationService) {
         this.appointmentRepo = appointmentRepo;
         this.slotRepo = slotRepo;
+        this.notificationService = notificationService;
     }
 
     /////////////////////////////
@@ -99,50 +102,129 @@ public class SlotService_y {
 
     /////////////////////////////
     // ADMIN: CANCEL WITH TRANSACTION (IMPORTANT)
+  
     public boolean adminCancelAppointment(int appointmentId) throws SQLException {
-
         try (Connection conn = database_connection.getConnection()) {
-
             conn.setAutoCommit(false);
 
-            try {
-                Appointment appointment = appointmentRepo.findById(appointmentId, conn);
-
-                if (appointment == null) {
-                    conn.rollback();
-                    return false;
-                }
-
-                appointmentRepo.delete(appointmentId, conn);
-
-                slotRepo.decreaseBookedCount(
-                        appointment.getSlotId(),
-                        appointment.getParticipants(),
-                        conn
-                );
-
-                conn.commit();
-                return true;
-
-            } catch (Exception e) {
+            Appointment appointment = appointmentRepo.findById(appointmentId, conn);
+            if (appointment == null) {
                 conn.rollback();
-                throw new RuntimeException(e);
+                return false;
             }
-        }}
-    public void addSlot(Account_y admin, LocalDate date, LocalTime start,
-            LocalTime end, int capacity) {
 
-if (admin == null || !admin.isAdmin()) {
-System.out.println("Admin only!");
-return;
-}
+            int userId = appointment.getUserId();
+            int slotId = appointment.getSlotId();
+            int participants = appointment.getParticipants();
 
-slotRepo.addSlot(date, start, end, capacity, admin.getAccountId());
-System.out.println("Slot added successfully!");
-}
+            // 🔹 جيب معلومات السلووت
+            AppointmentSlot_y originalSlot = slotRepo.findById(slotId);
 
-	public void adminCancelSlot(int slotId) {
-		// TODO Auto-generated method stub
-		
-	}
+            // 🔹 حذف الموعد
+            appointmentRepo.delete(appointmentId, conn);
+
+            // 🔹 تحديث الكاباسيتي
+            slotRepo.decreaseBookedCount(slotId, participants, conn);
+
+            conn.commit();
+
+            // 🔹 إشعار الإلغاء
+            notificationService.sendNotification(
+                userId,
+                "⚠️ Your appointment was cancelled by admin."
+            );
+
+            // 🔥 اقتراح بدائل
+            if (originalSlot != null) {
+
+                List<AppointmentSlot_y> alternatives =
+                    slotRepo.findAvailableSlotsByDate(originalSlot.getDate());
+
+                // نحذف نفس السلووت
+                alternatives.removeIf(s -> s.getId() == slotId);
+
+                if (!alternatives.isEmpty()) {
+
+                    String msg = "📅 Available alternatives:\n";
+
+                    for (AppointmentSlot_y s : alternatives) {
+                        msg += "ID: " + s.getId() +
+                               " | " + s.getStartTime() +
+                               " - " + s.getEndTime() + "\n";
+                    }
+
+                    notificationService.sendNotification(userId, msg);
+
+                } else {
+                    notificationService.sendNotification(
+                        userId,
+                        "❗ No alternative slots available."
+                    );
+                }
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
+    // ---------------- Cancel Entire Slot ----------------
+    public boolean adminCancelSlot(int slotId) {
+        // نجيب كل المستخدمين اللي عندهم مواعيد في هذا الـ Slot
+        String getUsers = "SELECT account_id FROM appointments WHERE slot_id = ?";
+        String deleteAppointments = "DELETE FROM appointments WHERE slot_id = ?";
+        String deleteSlot = "DELETE FROM appointment_slot WHERE slot_id = ?";
+
+        List<Integer> userIds = new ArrayList<>();
+
+        try (Connection conn = database_connection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            // جمع جميع المستخدمين
+            try (PreparedStatement psUsers = conn.prepareStatement(getUsers)) {
+                psUsers.setInt(1, slotId);
+                ResultSet rs = psUsers.executeQuery();
+                while (rs.next()) {
+                    userIds.add(rs.getInt("account_id")); // صححنا هنا
+                }
+            }
+
+            // حذف المواعيد المرتبطة
+            try (PreparedStatement psDelAppt = conn.prepareStatement(deleteAppointments)) {
+                psDelAppt.setInt(1, slotId);
+                int apptsDeleted = psDelAppt.executeUpdate();
+                System.out.println("Appointments deleted: " + apptsDeleted);
+            }
+
+            // حذف الـ Slot نفسه
+            int slotDeleted = 0;
+            try (PreparedStatement psDelSlot = conn.prepareStatement(deleteSlot)) {
+                psDelSlot.setInt(1, slotId);
+                slotDeleted = psDelSlot.executeUpdate();
+            }
+
+            if (slotDeleted > 0) {
+                conn.commit();
+
+                // إشعار جميع المستخدمين
+                for (Integer userId : userIds) {
+                    notificationService.sendNotification(
+                        userId,
+                        "⚠️ Your appointment in slot ID " + slotId + " was cancelled by admin."
+                    );
+                }
+                System.out.println("✅ Slot and its appointments cancelled successfully and users notified!");
+                return true;
+            } else {
+                conn.rollback();
+                System.out.println("❌ Failed to delete slot!");
+                return false;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }}

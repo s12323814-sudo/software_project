@@ -130,9 +130,9 @@ public class AppointmentRepository_y {
 
                 TimeSlot slot = new TimeSlot(
                         rs.getInt("slot_id"),
-                        rs.getTimestamp("slot_start_time")
+                        rs.getTimestamp("start_time")
                           .toInstant().atZone(java.time.ZoneId.systemDefault()),
-                        rs.getTimestamp("slot_end_time")
+                        rs.getTimestamp("end_time")
                           .toInstant().atZone(java.time.ZoneId.systemDefault())
                 );
 

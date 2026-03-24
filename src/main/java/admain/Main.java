@@ -1,6 +1,6 @@
 package admain;
 
-
+import java.util.ArrayList;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -20,11 +20,12 @@ public class Main {
     private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
     private static SlotRepository_y slotRepo = new SlotRepository_y();
 
-    private static SlotService_y slotService = new SlotService_y(appointmentRepo, slotRepo);
+    private static NotificationService_y notificationService = new MockNotificationService_y();
+    private static SlotService_y slotService = new SlotService_y(appointmentRepo, slotRepo, notificationService);
     private static authService_y authService = new authService_y();
     private static session_y session;
     private static Account_y user;
-    private static NotificationService_y notificationService = new MockNotificationService_y();
+   
     private static session_y currentSession = null;
     private static ReminderManager_y reminderManager =
             new ReminderManager_y(appointmentRepository, notificationService);
@@ -90,12 +91,24 @@ public class Main {
             session_y.currentAdmin = user;
         } else {
             session_y.currentUser = user;
+            List<String> messages = notificationService.getSentMessages();
+            if (!messages.isEmpty()) {
+                System.out.println("\n--- Notifications ---");
+                messages.forEach(System.out::println);
+                notificationService.clear(); // تم مسح الرسائل بعد العرض
+            }
         }
 
         System.out.println("Login successful! Role: " + user.getRole());
 
-        if (session.isAdmin()) adminSession();
-        else userSession();
+        if (session.isAdmin())
+			try {
+				adminSession();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		else userSession();
     }
 
     private static void registerMenu() {
@@ -132,7 +145,7 @@ public class Main {
             System.out.println("2- View My Appointments");
             System.out.println("3- Book Appointment");
             System.out.println("4- Update Appointment");
-            System.out.println("5- Cancel Appointment");
+            System.out.println("5- Cancel MY Appointment");
             System.out.println("6- Logout");
 
             int choice;
@@ -145,7 +158,9 @@ public class Main {
                 case 2: viewUserAppointments(); break;
                 case 3: bookAppointment(); break;
                 case 4: updateAppointment(); break;
-                case 5: adminCancelAppointment(); break;
+                case 5: cancelMyAppointment(); 
+                   
+                    break;
                 case 6: session_y.logoutUser(); session = null; break;
                 default: System.out.println("Invalid choice"); 
             }
@@ -153,7 +168,7 @@ public class Main {
     }
 
     // -------------------- Admin Menu --------------------
-    private static void adminSession() {
+    private static void adminSession() throws SQLException {
         while (session != null && session.isAdmin()) {
             System.out.println("\n--- Admin Menu ---");
             System.out.println("1- View Slots");
@@ -176,48 +191,39 @@ public class Main {
                 case 3:
                     System.out.print("Enter Slot ID to cancel: ");
                     int slotId = Integer.parseInt(sc.nextLine());
-                    slotService.adminCancelSlot(slotId); // نادى على الدالة الجديدة
+                    if (!slotService.adminCancelSlot(slotId)) {
+                        System.out.println("❌ Slot ID not found or could not be deleted.");
+                    }
                     break;
-                case 4: 
-					adminCancelAppointment();
-				 break;
-                case 5: session_y.logoutAdmin();    return;
+                case 4:
+                    System.out.print("Enter Appointment ID to cancel: ");
+                    int appointmentId = Integer.parseInt(sc.nextLine());
+                    if (!slotService.adminCancelAppointment(appointmentId)) {
+                        System.out.println("❌ Appointment ID not found or could not be cancelled.");
+                    }
+                    break;                case 5: session_y.logoutAdmin();    return;
                 default: System.out.println("Invalid choice");
             }
         }
     }
-    public boolean adminCancelSlot(int slotId) throws SQLException {
-        String selectSql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
-        String deleteSql = "DELETE FROM appointment_slot WHERE slot_id = ?";
+    private static void cancelMyAppointment() {
+        try {
+            System.out.print("Enter your Appointment ID to cancel: ");
+            int appointmentId = Integer.parseInt(sc.nextLine());
 
-        try (Connection conn = database_connection.getConnection()) {
-            conn.setAutoCommit(false);
+            boolean success = slotService.cancelAppointment(user.getAccountId(), appointmentId);
 
-            // تحقق من وجود الـ Slot
-            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
-                ps.setInt(1, slotId);
-                ResultSet rs = ps.executeQuery();
-                if (!rs.next()) {
-                    System.out.println("Slot not found.");
-                    return false;
-                }
+            if (success) {
+                System.out.println("✅ Your appointment cancelled successfully!");
+            } else {
+                System.out.println("❌ Cancel failed! Check ID.");
             }
-
-            // احذف الـ Slot (وبالتالي كل المواعيد المرتبطة فيه)
-            try (PreparedStatement psDelete = conn.prepareStatement(deleteSql)) {
-                psDelete.setInt(1, slotId);
-                psDelete.executeUpdate();
-            }
-
-            conn.commit();
-            System.out.println("Slot and all its appointments cancelled successfully!");
-            return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            System.out.println("Error: " + e.getMessage());
         }
     }
+  
     // -------------------- Methods for Users & Admins --------------------
     private static void viewAvailableSlots() {
         try {
@@ -338,48 +344,7 @@ public class Main {
         }
     }
 
-    public boolean adminCancelAppointment(int appointmentId) throws SQLException {
-        try (Connection conn = database_connection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            try {
-                // 1️⃣ إيجاد الموعد
-                Appointment appointment = appointmentRepo.findById(appointmentId, conn);
-                if (appointment == null) {
-                    conn.rollback();
-                    System.out.println("Appointment not found!");
-                    return false;
-                }
-
-                int slotId = appointment.getSlotId();
-                int participants = appointment.getParticipants();
-                int userId = appointment.getUserId();
-
-                // 2️⃣ حذف الموعد
-                appointmentRepo.delete(appointmentId, conn);
-
-                // 3️⃣ تحديث عدد الحجوزات في الـ Slot
-                slotRepo.decreaseBookedCount(slotId, participants, conn);
-
-                conn.commit();
-
-                // 4️⃣ إرسال إشعار للمستخدم
-                System.out.println("User " + userId + ": Your appointment was cancelled by admin.");
-
-                // 5️⃣ التحقق إذا مازال نفس الـ Slot متاح لإعادة الحجز
-                AppointmentSlot_y slot = slotRepo.findById(slotId);
-                if (slot != null && (slot.getMaxCapacity() - slot.getBookedCount() >= participants)) {
-                    System.out.println("Slot is still available. User can rebook the same slot if desired.");
-                    // هنا ممكن تستدعي دالة الحجز تلقائياً أو تنتظر اختيار المستخدم
-                }
-
-                return true;
-            } catch (Exception e) {
-                conn.rollback();
-                throw new RuntimeException(e);
-            }
-        }
-    }
+   
 
     private static void addSlot() {
         while (true) {
@@ -396,7 +361,7 @@ public class Main {
                 System.out.print("Enter max capacity: ");
                 int capacity = Integer.parseInt(sc.nextLine());
 
-                slotService.addSlot(session.getAccount(), date, start, end, capacity);
+                slotService.addSlot(date, start, end, capacity, user.getAccountId());
                 System.out.println("Slot added successfully!");
                 break;
             } catch (NumberFormatException e) {
@@ -407,30 +372,4 @@ public class Main {
         }
     }
 
-    private static void adminCancelAppointment() {
-        while (true) {
-            System.out.print("Enter appointment ID to cancel by admin: ");
-            String input = sc.nextLine();
-            int appointmentId;
-
-            try {
-                appointmentId = Integer.parseInt(input);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid ID! Please enter a valid number.");
-                continue; // يرجع يطلب مرة ثانية
-            }
-
-            try {
-                boolean success = slotService.adminCancelAppointment(appointmentId);
-                if (success) {
-                    System.out.println("Appointment cancelled successfully!");
-                } else {
-                    System.out.println("Appointment ID not found or could not be cancelled.");
-                }
-                break; // نخرج من اللوب بعد محاولة ناجحة
-            } catch (SQLException e) {
-                System.out.println("Error cancelling appointment: " + e.getMessage());
-                break;
-            }
-        }
-    }}
+}

@@ -15,6 +15,11 @@ public class MockNotificationService_y implements NotificationService_y {
         System.out.println(log);
     }
 
+    public void sendNotification(int userId, String message) {
+        String log = "Mock Notification to UserID " + userId + ": " + message;
+        sentMessages.add(log);
+        System.out.println(log);
+    }
     public List<String> getSentMessages() {
         return sentMessages;
     }

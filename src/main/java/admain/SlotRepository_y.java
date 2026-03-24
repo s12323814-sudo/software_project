@@ -57,7 +57,28 @@ public class SlotRepository_y {
 
         return null;
     }
+    public List<AppointmentSlot_y> findAvailableSlotsByDate(LocalDate date) {
 
+        List<AppointmentSlot_y> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM appointment_slot WHERE slot_date = ? AND booked_count < max_capacity";
+
+        try (Connection conn = database_connection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDate(1, Date.valueOf(date));
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
     /////////////////////////////
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
             int capacity, int accountId) {
