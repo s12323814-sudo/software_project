@@ -273,10 +273,7 @@ public class Main {
         try {
             System.out.print("Enter slot ID: ");
             int slotId = Integer.parseInt(sc.nextLine());
-
-            System.out.print("Enter number of participants: ");
-            int participants = Integer.parseInt(sc.nextLine());
-
+            
             System.out.println("Choose Appointment Type:");
             AppointmentType_y[] types = AppointmentType_y.values();
 
@@ -301,6 +298,60 @@ public class Main {
                     System.out.println("Invalid input! Please enter a number.");
                 }
             }
+            switch (selectedType) {
+
+            case URGENT:
+                System.out.println("⚠️ URGENT appointment:");
+                System.out.println("- Only 1 participant allowed.");
+                System.out.println("- Priority will be given.");
+                break;
+
+            case INDIVIDUAL:
+                System.out.println("ℹ️ INDIVIDUAL appointment:");
+                System.out.println("- Only 1 participant is allowed.");
+                break;
+
+            case GROUP:
+                System.out.println("ℹ️ GROUP appointment:");
+                System.out.println("- Minimum 2 participants required.");
+                System.out.println("- Make sure slot has enough capacity.");
+                break;
+
+            case VIRTUAL:
+                System.out.println("🌐 VIRTUAL appointment:");
+                System.out.println("- No physical capacity limit.");
+                System.out.println("- You can add many participants.");
+                break;
+
+            case IN_PERSON:
+                System.out.println("🏥 IN-PERSON appointment:");
+                System.out.println("- Limited by slot capacity.");
+                System.out.println("- Check available seats before booking.");
+                break;
+
+            case FOLLOW_UP:
+                System.out.println("🔁 FOLLOW-UP appointment:");
+                System.out.println("- Usually short and for existing cases.");
+                System.out.println("- Recommended 1 participant.");
+                break;
+
+            case ASSESSMENT:
+                System.out.println("📋 ASSESSMENT appointment:");
+                System.out.println("- Initial evaluation session.");
+                System.out.println("- Typically 1 participant.");
+                break;
+
+            case GENERAL:
+                System.out.println("ℹ️ GENERAL appointment:");
+                System.out.println("- Flexible type.");
+                System.out.println("- Follow slot capacity rules.");
+                break;
+
+            default:
+                System.out.println("Unknown type.");
+        }
+            System.out.print("Enter number of participants: ");
+            int participants = Integer.parseInt(sc.nextLine());
 
             boolean success = slotService.bookAppointment(
                     user.getAccountId(),

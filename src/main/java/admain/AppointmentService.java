@@ -12,9 +12,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class AppointmentService {
-	 private AppointmentRepository_y appointmentRepo;
-	    private SlotRepository_y slotRepo;
-    private  SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo);
+	private AppointmentRepository_y appointmentRepo;
+	private SlotRepository_y slotRepo;
+	private  NotificationService_y notificationService;
+    private  SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo, notificationService);
     private scheduleRepository repo = new scheduleRepository();
     private final int MIN_DURATION = 30;
     private final int MAX_DURATION = 120;
@@ -28,7 +29,7 @@ public class AppointmentService {
     }
 
     public AppointmentService() {
-        this.slotService = new SlotService_y(null, null);
+        this.slotService = new SlotService_y(null, null,null);
         this.repo = new scheduleRepository();
     }
 

@@ -3,6 +3,7 @@ package admain;
 
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.HashSet;
@@ -32,22 +33,22 @@ public class ReminderManager_y {
                     session_y.currentUser.getAccountId()
                 );
 
-            LocalDateTime now = LocalDateTime.now();
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Hebron"));
 
             for (Appointment appt : upcomingAppointments) {
                 ZonedDateTime slotStart = appt.getTimeSlot().getStart();
                 long minutesUntilStart = java.time.Duration.between(now, slotStart).toMinutes();
 
                 // قبل ساعة
-                if (minutesUntilStart <= 60 && minutesUntilStart > 59 && !remindedOneHour.contains(appt.getTimeSlot().getId())) {
+                if (minutesUntilStart <= 60 && minutesUntilStart > 59 && !remindedOneHour.contains(appt.getAppointmentId())) {
                     sendReminder(appt, "Reminder: Appointment in 1 hour!");
-                    remindedOneHour.add(appt.getTimeSlot().getId());
+                    remindedOneHour.add(appt.getAppointmentId());
                 }
 
                 // قبل 10 دقائق
-                else if (minutesUntilStart <= 10 && minutesUntilStart > 9 && !remindedTenMinutes.contains(appt.getTimeSlot().getId())) {
+                else if (minutesUntilStart <= 10 && minutesUntilStart >9 && !remindedTenMinutes.contains(appt.getAppointmentId())) {
                     sendReminder(appt, "Reminder: Appointment in 10 minutes!");
-                    remindedTenMinutes.add(appt.getTimeSlot().getId());
+                    remindedTenMinutes.add(appt.getAppointmentId());
                 }
             }
 
