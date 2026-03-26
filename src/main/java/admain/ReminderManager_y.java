@@ -40,13 +40,13 @@ public class ReminderManager_y {
                 long minutesUntilStart = java.time.Duration.between(now, slotStart).toMinutes();
 
                 // قبل ساعة
-                if (minutesUntilStart <= 60 && minutesUntilStart > 59 && !remindedOneHour.contains(appt.getAppointmentId())) {
+                if (minutesUntilStart <= 60 && minutesUntilStart > 50 && !remindedOneHour.contains(appt.getAppointmentId())) {
                     sendReminder(appt, "Reminder: Appointment in 1 hour!");
                     remindedOneHour.add(appt.getAppointmentId());
                 }
 
                 // قبل 10 دقائق
-                else if (minutesUntilStart <= 10 && minutesUntilStart >9 && !remindedTenMinutes.contains(appt.getAppointmentId())) {
+                else if (minutesUntilStart <= 10 && minutesUntilStart >0&& !remindedTenMinutes.contains(appt.getAppointmentId())) {
                     sendReminder(appt, "Reminder: Appointment in 10 minutes!");
                     remindedTenMinutes.add(appt.getAppointmentId());
                 }

@@ -117,14 +117,19 @@
         }
     
     @Test
+   
     void shouldHandleNullPasswordHash() {
-        Account_y acc = new Account_y(1, "user", null, "test@test.com", Role_y.USER);
 
+        Account_y acc = mock(Account_y.class);
+
+        when(acc.getPasswordHash()).thenReturn(null);
         when(repo.findByUsernameOrEmail("user")).thenReturn(acc);
 
-        assertThrows(Exception.class, () -> {
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
             authService.login("user", "123");
         });
+
+        assertEquals("Password hash is null", ex.getMessage());
     }
     @Test
     void shouldHandleDatabaseException() {
