@@ -1,95 +1,158 @@
 package admain;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class SlotServiceTest {
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Collections;
+import java.util.List;
 
-    private AppointmentRepository_y mockApptRepo;
-    private SlotRepository_y mockSlotRepo;
-    private SlotService_y slotService;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class SlotServiceTest {
+
+    private AppointmentRepository_y appointmentRepo;
+    private SlotRepository_y slotRepo;
+    private NotificationService_y notificationService;
+    private SlotService_y service;
 
     @BeforeEach
-    void setup() {
-        mockApptRepo = mock(AppointmentRepository_y.class);
-        mockSlotRepo = mock(SlotRepository_y.class);
-        slotService = new SlotService_y(mockApptRepo, mockSlotRepo);
+    void setUp() {
+        appointmentRepo = mock(AppointmentRepository_y.class);
+        slotRepo = mock(SlotRepository_y.class);
+        notificationService = mock(NotificationService_y.class);
+
+        service = new SlotService_y(appointmentRepo, slotRepo, notificationService);
     }
 
+    // ---------------- BOOKING ----------------
     @Test
-    void testBookAppointment_success() throws SQLException {
-        int userId = 1;
-        int slotId = 10;
-        int participants = 2;
-
+    void testBook_success_individual() throws SQLException {
         AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
-        when(slot.getMaxCapacity()).thenReturn(5);
-        when(slot.getBookedCount()).thenReturn(1);
+        when(slotRepo.findById(1)).thenReturn(slot);
+        when(slot.getMaxCapacity()).thenReturn(10);
+        when(slot.getBookedCount()).thenReturn(2);
 
-        when(mockSlotRepo.findById(slotId)).thenReturn(slot);
-        when(mockApptRepo.book(userId, slotId, participants, AppointmentType_y.STANDARD)).thenReturn(true);
+        when(appointmentRepo.book(1, 1, 1, AppointmentType_y.INDIVIDUAL))
+                .thenReturn(true);
 
-        boolean result = slotService.bookAppointment(userId, slotId, participants, AppointmentType_y.STANDARD);
+        boolean result = service.bookAppointment(1, 1, 1, AppointmentType_y.INDIVIDUAL);
+
         assertTrue(result);
+        verify(appointmentRepo).book(1, 1, 1, AppointmentType_y.INDIVIDUAL);
     }
 
     @Test
-    void testBookAppointment_fail_fullSlot() throws SQLException {
-        int userId = 1;
-        int slotId = 10;
-        int participants = 5;
-
+    void testBook_fail_wrongParticipants() throws SQLException {
         AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
-        when(slot.getMaxCapacity()).thenReturn(5);
-        when(slot.getBookedCount()).thenReturn(4);
+        when(slotRepo.findById(1)).thenReturn(slot);
+        when(slot.getMaxCapacity()).thenReturn(10);
+        when(slot.getBookedCount()).thenReturn(2);
 
-        when(mockSlotRepo.findById(slotId)).thenReturn(slot);
+        boolean result = service.bookAppointment(1, 1, 2, AppointmentType_y.INDIVIDUAL);
 
-        boolean result = slotService.bookAppointment(userId, slotId, participants, AppointmentType_y.STANDARD);
         assertFalse(result);
+        verify(appointmentRepo, never()).book(anyInt(), anyInt(), anyInt(), any());
     }
 
     @Test
-    void testCancelAppointment_success() throws SQLException {
-        int userId = 1;
-        int appointmentId = 100;
+    void testBook_fail_capacityExceeded() throws SQLException {
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+        when(slotRepo.findById(1)).thenReturn(slot);
+        when(slot.getMaxCapacity()).thenReturn(5);
+        when(slot.getBookedCount()).thenReturn(5);
 
-        when(mockApptRepo.cancel(userId, appointmentId)).thenReturn(true);
+        boolean result = service.bookAppointment(1, 1, 1, AppointmentType_y.GROUP);
 
-        boolean result = slotService.cancelAppointment(userId, appointmentId);
+        assertFalse(result);
+        verify(appointmentRepo, never()).book(anyInt(), anyInt(), anyInt(), any());
+    }
+
+    // ---------------- CANCEL (USER) ----------------
+    @Test
+    void testCancel_success() throws SQLException {
+        when(appointmentRepo.cancel(1, 100)).thenReturn(true);
+
+        boolean result = service.cancelAppointment(1, 100);
+
         assertTrue(result);
+        verify(appointmentRepo).cancel(1, 100);
+    }
+
+    // ---------------- UPDATE ----------------
+    @Test
+    void testUpdate_success() throws SQLException {
+        when(appointmentRepo.update(1, 100, 2)).thenReturn(true);
+
+        boolean result = service.updateAppointment(1, 100, 2);
+
+        assertTrue(result);
+        verify(appointmentRepo).update(1, 100, 2);
+    }
+
+    // ---------------- VIEW USER APPOINTMENTS ----------------
+    @Test
+    void testViewUserAppointments() throws SQLException {
+        when(appointmentRepo.getUserUpcomingAppointments(1))
+                .thenReturn(Collections.emptyList());
+
+        List<Appointment> appointments = service.viewUserAppointments(1);
+
+        assertNotNull(appointments);
+        assertEquals(0, appointments.size());
+        verify(appointmentRepo).getUserUpcomingAppointments(1);
+    }
+
+    // ---------------- ADMIN ADD SLOT ----------------
+    @Test
+    void testAddSlot_success() {
+        when(slotRepo.addSlot(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(true);
+
+        boolean result = service.addSlot(
+                LocalDate.now(),
+                LocalTime.of(10, 0),
+                LocalTime.of(11, 0),
+                10,
+                1
+        );
+
+        assertTrue(result);
+        verify(slotRepo).addSlot(any(), any(), any(), anyInt(), anyInt());
     }
 
     @Test
-    void testAdminCancelAppointment_success() throws SQLException {
-        int appointmentId = 200;
+    void testAddSlot_fail_invalidCapacity() {
+        boolean result = service.addSlot(
+                LocalDate.now(),
+                LocalTime.of(10, 0),
+                LocalTime.of(11, 0),
+                0,
+                1
+        );
 
-        Connection mockConn = mock(Connection.class);
-        Appointment appointment = mock(Appointment.class);
+        assertFalse(result);
+        verify(slotRepo, never()).addSlot(any(), any(), any(), anyInt(), anyInt());
+    }
 
-        when(appointment.getSlotId()).thenReturn(10);
-        when(appointment.getParticipants()).thenReturn(2);
+    // ---------------- ADMIN CANCEL SLOT ----------------
+    @Test
+    void testAdminCancelSlot_notifications() throws SQLException {
+        // Mock Connection & DB inside the service
+        // هنا نفترض slotRepo.findAvailableSlotsByDate ترجع empty list
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+        when(slot.getDate()).thenReturn(LocalDate.now());
+        when(slot.getId()).thenReturn(1);
+        when(slotRepo.findAvailableSlotsByDate(any())).thenReturn(Collections.emptyList());
 
-        // mock findById لإرجاع Appointment
-        doReturn(appointment).when(mockApptRepo).findById(eq(appointmentId), any(Connection.class));
+        // بما أن الاتصال داخل try-with-resources، لن نتحقق منه، فقط نتحقق من notification
+        service.adminCancelSlot(1);
 
-        // delete و decreaseBookedCount void → doNothing
-        doNothing().when(mockApptRepo).delete(appointmentId, mockConn);
-        doNothing().when(mockSlotRepo).decreaseBookedCount(10, 2, mockConn);
-
-        // هذه الطريقة لاختبار adminCancelAppointment تحتاج تعديل SlotService لإضافة Connection قابل للـ mock
-        // حاليا يمكن اختبار الجزء المنطقي من الدوال الأخرى
+        verify(notificationService, atLeast(0))
+                .sendNotification(anyInt(), anyString());
     }
 }

@@ -9,14 +9,20 @@ import java.util.List;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+
 public class SlotService_y {
-	private NotificationService_y notificationService;
+
+    private NotificationService_y notificationService;
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
-   // private static Scanner sc = new Scanner(System.in);
+
+    // private static Scanner sc = new Scanner(System.in);
+
     // Dependency Injection
     public SlotService_y(AppointmentRepository_y appointmentRepo,
-                         SlotRepository_y slotRepo ,NotificationService_y notificationService) {
+                         SlotRepository_y slotRepo,
+                         NotificationService_y notificationService) {
+
         this.appointmentRepo = appointmentRepo;
         this.slotRepo = slotRepo;
         this.notificationService = notificationService;
@@ -72,6 +78,7 @@ public class SlotService_y {
 
         return appointmentRepo.book(userId, slotId, participants, type);
     }
+
     /////////////////////////////
     // CANCEL (USER)
     public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {
@@ -102,7 +109,6 @@ public class SlotService_y {
 
     /////////////////////////////
     // ADMIN: CANCEL WITH TRANSACTION (IMPORTANT)
-  
     public boolean adminCancelAppointment(int appointmentId) throws SQLException {
         try (Connection conn = database_connection.getConnection()) {
             conn.setAutoCommit(false);
@@ -170,9 +176,10 @@ public class SlotService_y {
             return false;
         }
     }
+
     // ---------------- Cancel Entire Slot ----------------
     public boolean adminCancelSlot(int slotId) {
-        // نجيب كل المستخدمين اللي عندهم مواعيد في هذا الـ Slot
+
         String getUsers = "SELECT account_id FROM appointments WHERE slot_id = ?";
         String deleteAppointments = "DELETE FROM appointments WHERE slot_id = ?";
         String deleteSlot = "DELETE FROM appointment_slot WHERE slot_id = ?";
@@ -187,7 +194,7 @@ public class SlotService_y {
                 psUsers.setInt(1, slotId);
                 ResultSet rs = psUsers.executeQuery();
                 while (rs.next()) {
-                    userIds.add(rs.getInt("account_id")); // صححنا هنا
+                    userIds.add(rs.getInt("account_id"));
                 }
             }
 
@@ -215,8 +222,10 @@ public class SlotService_y {
                         "⚠️ Your appointment in slot ID " + slotId + " was cancelled by admin."
                     );
                 }
+
                 System.out.println("✅ Slot and its appointments cancelled successfully and users notified!");
                 return true;
+
             } else {
                 conn.rollback();
                 System.out.println("❌ Failed to delete slot!");
@@ -227,4 +236,5 @@ public class SlotService_y {
             e.printStackTrace();
             return false;
         }
-    }}
+    }
+}

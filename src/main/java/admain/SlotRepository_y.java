@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SlotRepository_y {
-
+	 protected Connection getConnection() throws SQLException {
+	        return database_connection.getConnection();
+	    }
     /////////////////////////////
     public List<AppointmentSlot_y> findAvailableSlots() {
 
@@ -15,7 +17,7 @@ public class SlotRepository_y {
 
         String sql = "SELECT * FROM appointment_slot";
 
-        try (Connection conn = database_connection.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
@@ -40,7 +42,7 @@ public class SlotRepository_y {
 
         String sql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
 
-        try (Connection conn = database_connection.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
@@ -63,7 +65,7 @@ public class SlotRepository_y {
 
         String sql = "SELECT * FROM appointment_slot WHERE slot_date = ? AND booked_count < max_capacity";
 
-        try (Connection conn = database_connection.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setDate(1, Date.valueOf(date));
@@ -87,7 +89,7 @@ String sql = "INSERT INTO appointment_slot " +
       "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, account_id) " +
       "VALUES (?, ?, ?, ?, 0, ?)";
 
-try (Connection conn = database_connection.getConnection();
+try (Connection conn = getConnection();
 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 ps.setDate(1, Date.valueOf(date));

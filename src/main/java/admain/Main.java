@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
 	 static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
-    private static Scanner sc = new Scanner(System.in);
+    static Scanner sc = new Scanner(System.in);
     private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
     private static SlotRepository_y slotRepo = new SlotRepository_y();
 
