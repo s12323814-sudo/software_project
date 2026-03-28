@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class Main {
+	private static EmailService_y emailService = new EmailSender_y();
 	 static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
     static Scanner sc = new Scanner(System.in);
     private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
@@ -126,8 +127,27 @@ public class Main {
     }
 
     private static void forgotPasswordMenu() {
+
         System.out.print("Enter your email: ");
         String email = sc.nextLine();
+
+        if (!authService.emailExists(email)) {
+            System.out.println("Email not found!");
+            return;
+        }
+
+        String otp = OTPGenerator_y.generateOTP();
+
+        emailService.sendOTP(email, otp);
+
+        System.out.print("Enter the OTP sent to your email: ");
+        String enteredOtp = sc.nextLine();
+
+        if (!otp.equals(enteredOtp)) {
+            System.out.println("Invalid OTP!");
+            return;
+        }
+
         System.out.print("Enter new password: ");
         String newPassword = sc.nextLine();
 
@@ -136,7 +156,7 @@ public class Main {
         else
             System.out.println("Failed to update password!");
     }
-
+    
     // -------------------- User Menu --------------------
     private static void userSession() {
         while (session != null && session.isUser()) {

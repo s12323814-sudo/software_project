@@ -150,7 +150,9 @@ public class AppointmentRepository_y {
 
         return null;
     }
-
+    protected Connection getConnection() throws SQLException {
+        return database_connection.getConnection();
+    }
     /////////////////////////////////
 
     public void delete(int id, Connection conn) throws SQLException {

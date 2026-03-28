@@ -11,7 +11,7 @@ public class EmailSender_y implements EmailService_y {
     public void sendOTP(String toEmail, String otp) {
 
         final String fromEmail = "yasmeenalqaduomi@gmail.com";
-        final String password = "nlng knkr juiv znqb";
+        final String password = "your_app_password";
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -36,12 +36,15 @@ public class EmailSender_y implements EmailService_y {
             message.setSubject("Password Reset Code");
             message.setText("Your OTP code is: " + otp);
 
-            Transport.send(message);
-
-            System.out.println("OTP sent to email");
+            send(message); // 👈 بدل Transport.send مباشرة
 
         } catch (MessagingException e) {
             e.printStackTrace();
         }
+    }
+
+    // ميثود قابلة للـ override في التست
+    protected void send(Message message) throws MessagingException {
+        Transport.send(message);
     }
 }

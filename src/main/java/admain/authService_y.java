@@ -94,7 +94,9 @@ public class authService_y {
 
         return repo.updatePassword(email, hashed);
     }
-
+    public boolean emailExists(String email) {
+        return repo.findByEmail(email) != null;
+    }
     // ================= GET ACCOUNT =================
     public Account_y getAccountByEmail(String email) {
         return repo.findByEmail(email);
