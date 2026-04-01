@@ -16,8 +16,15 @@ import java.util.List;
 public class AppointmentRepository_y {
 	Connection conn = database_connection.getConnection();
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
-    private SlotRepository_y slotRepo = new SlotRepository_y();
-  
+    private SlotRepository_y slotRepo ;
+    public AppointmentRepository_y() {
+        this.slotRepo = new SlotRepository_y();
+    }
+
+    
+    public AppointmentRepository_y(SlotRepository_y slotRepo) {
+        this.slotRepo = slotRepo;
+    }
     public List<Appointment> getUpcomingAppointments() throws SQLException {
         List<Appointment> appointments = new ArrayList<>();
 
