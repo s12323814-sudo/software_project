@@ -19,7 +19,7 @@ public class AppointmentService {
     private scheduleRepository repo = new scheduleRepository();
     private final int MIN_DURATION = 30;
     private final int MAX_DURATION = 120;
- // داخل AppointmentService.java
+
     private Connection testConnection = null;
 
     public AppointmentService(Connection conn, SlotService_y slotService, scheduleRepository repo) {
@@ -34,36 +34,33 @@ public class AppointmentService {
     }
 
 
-    // داخل bookAppointment
+
     Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection();
     public void bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
-        // استخدم testConnection إذا موجود، أو الاتصال الحقيقي
         try (Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection()) {
             conn.setAutoCommit(false);
 
-            String sql = "SELECT start_time, end_time, max_capacity, booked_count " +
+           
+            String sql = "SELECT slot_date AS start_date, slot_start_time AS start_time, slot_end_time AS end_time, max_capacity, booked_count " +
                          "FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, slotId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) throw new SQLException("Slot not found");
 
-                    LocalDateTime start = rs.getTimestamp("start_time").toLocalDateTime();
-                    LocalDateTime end = rs.getTimestamp("end_time").toLocalDateTime();
+                    LocalDateTime start = rs.getDate("start_date").toLocalDate().atTime(rs.getTime("start_time").toLocalTime());
+                    LocalDateTime end = rs.getDate("start_date").toLocalDate().atTime(rs.getTime("end_time").toLocalTime());
                     int capacity = rs.getInt("max_capacity");
                     int booked = rs.getInt("booked_count");
 
-                    if (start.isBefore(LocalDateTime.now()))
-                        throw new SQLException("Cannot book a past slot");
-
                     int remaining = capacity - booked;
-                    if (participants > remaining)
-                        throw new SQLException("Not enough capacity for this slot");
+                    if (participants > remaining) throw new SQLException("Not enough capacity");
 
                     long duration = Duration.between(start, end).toMinutes();
                     if (duration < MIN_DURATION || duration > MAX_DURATION)
                         throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
 
+                    // حجز الموعد
                     String insert = "INSERT INTO appointments " +
                                     "(account_id, slot_id, start_time, end_time, duration, participants, status, type) " +
                                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -79,6 +76,7 @@ public class AppointmentService {
                         psInsert.executeUpdate();
                     }
 
+                    // تحديث السعة
                     String update = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
                     try (PreparedStatement psUpdate = conn.prepareStatement(update)) {
                         psUpdate.setInt(1, participants);
@@ -95,7 +93,6 @@ public class AppointmentService {
             }
         }
     }
-
 
     public List<Appointment> getUserAppointments(int userId) throws SQLException {
         return repo.getAppointments(userId);

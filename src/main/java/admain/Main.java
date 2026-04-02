@@ -159,43 +159,121 @@ public class Main {
     
     // -------------------- User Menu --------------------
     private static void userSession() {
+        SlotRepository_y slotRepo = new SlotRepository_y();
+        BookingSmartService smart = new BookingSmartService(slotRepo);
+
         while (session != null && session.isUser()) {
             System.out.println("\n--- User Menu ---");
             System.out.println("1- View Available Slots");
             System.out.println("2- View My Appointments");
-            System.out.println("3- Book Appointment");
-            System.out.println("4- Update Appointment");
-            System.out.println("5- Cancel MY Appointment");
-            System.out.println("6- Logout");
+            System.out.println("3- Show Nearest Available Slot");
+            System.out.println("4- Show Best Slot (Less Busy)");
+            System.out.println("5- Sort Slots By Time");
+            System.out.println("6- Sort Slots By Availability");
+            System.out.println("7- Book Appointment");
+            System.out.println("8- Update Appointment");
+            System.out.println("9- Cancel MY Appointment");
+            System.out.println("10- Logout");
 
             int choice;
             try {
                 choice = Integer.parseInt(sc.nextLine());
             } catch (Exception e) { choice = -1; }
 
-            switch (choice) {
-                case 1: viewAvailableSlots(); break;
-                case 2: viewUserAppointments(); break;
-                case 3: bookAppointment(); break;
-                case 4: updateAppointment(); break;
-                case 5: cancelMyAppointment(); 
-                   
-                    break;
-                case 6: session_y.logoutUser(); session = null; break;
-                default: System.out.println("Invalid choice"); 
+            try {
+                switch (choice) {
+                    case 1:
+                        viewAvailableSlots(); 
+                        break;
+                    case 2:
+                        viewUserAppointments(); 
+                        break;
+
+                    // ----- Smart Service Features -----
+                    case 3: // Nearest Slot
+                        AppointmentSlot_y nearest = smart.getNearestAvailableSlot(null);
+                        System.out.println("\n--- Nearest Available Slot ---");
+                        if (nearest != null) {
+                            System.out.println("Date: " + nearest.getDate());
+                            System.out.println("Start: " + nearest.getStartTime());
+                            System.out.println("End: " + nearest.getEndTime());
+                            System.out.println("Available: " + (nearest.getMaxCapacity() - nearest.getBookedCount()));
+                        } else {
+                            System.out.println("No available slots.");
+                        }
+                        break;
+
+                    case 4: // Best Slot (Less Busy)
+                        AppointmentSlot_y best = smart.getBestSlot(null);
+                        System.out.println("\n--- Best Slot (Less Busy) ---");
+                        if (best != null) {
+                            System.out.println("Date: " + best.getDate());
+                            System.out.println("Start: " + best.getStartTime());
+                            System.out.println("End: " + best.getEndTime());
+                            System.out.println("Available: " + (best.getMaxCapacity() - best.getBookedCount()));
+                        } else {
+                            System.out.println("No available slots.");
+                        }
+                        break;
+
+                    case 5: // Sort By Time
+                        List<AppointmentSlot_y> sortedByTime = smart.sortByTime(null);
+                        System.out.println("\n--- Slots Sorted By Time ---");
+                        System.out.printf("%-5s %-12s %-8s %-8s %-10s\n", "ID", "Date", "Start", "End", "Available");
+                        for (AppointmentSlot_y s : sortedByTime) {
+                            int available = s.getMaxCapacity() - s.getBookedCount();
+                            System.out.printf("%-5d %-12s %-8s %-8s %-10d\n",
+                                    s.getId(), s.getDate(), s.getStartTime(), s.getEndTime(), available);
+                        }
+                        break;
+
+                    case 6: // Sort By Availability
+                        List<AppointmentSlot_y> sortedByAvail = smart.sortByAvailability(null);
+                        System.out.println("\n--- Slots Sorted By Availability ---");
+                        System.out.printf("%-5s %-12s %-8s %-8s %-10s\n", "ID", "Date", "Start", "End", "Available");
+                        for (AppointmentSlot_y s : sortedByAvail) {
+                            int available = s.getMaxCapacity() - s.getBookedCount();
+                            System.out.printf("%-5d %-12s %-8s %-8s %-10d\n",
+                                    s.getId(), s.getDate(), s.getStartTime(), s.getEndTime(), available);
+                        }
+                        break;
+
+                    // ----- Original Options -----
+                    case 7:
+                        bookAppointment(); 
+                        break;
+                    case 8:
+                        updateAppointment(); 
+                        break;
+                    case 9:
+                        cancelMyAppointment(); 
+                        break;
+                    case 10:
+                        session_y.logoutUser(); 
+                        session = null; 
+                        break;
+                    default:
+                        System.out.println("Invalid choice"); 
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
-
     // -------------------- Admin Menu --------------------
     private static void adminSession() throws SQLException {
+        SlotRepository_y slotRepo = new SlotRepository_y();
+        BookingSmartService smart = new BookingSmartService(slotRepo);
+
         while (session != null && session.isAdmin()) {
             System.out.println("\n--- Admin Menu ---");
             System.out.println("1- View Slots");
-            System.out.println("2- Add Slot");
-            System.out.println("3- Cancel slot");
-            System.out.println("4- Cancel Appointment");
-            System.out.println("5- Logout");
+            System.out.println("2- View Most Available Slots");
+            System.out.println("3- View Nearest Slot");
+            System.out.println("4- Add Slot");
+            System.out.println("5- Cancel Slot");
+            System.out.println("6- Cancel Appointment");
+            System.out.println("7- Logout");
 
             int choice;
 
@@ -205,24 +283,67 @@ public class Main {
                 System.out.println("Invalid input! Enter a number.");
                 continue; 
             }
-            switch(choice) {
-                case 1: viewAvailableSlots(); break;
-                case 2: addSlot(); break;
-                case 3:
-                    System.out.print("Enter Slot ID to cancel: ");
-                    int slotId = Integer.parseInt(sc.nextLine());
-                    if (!slotService.adminCancelSlot(slotId)) {
-                        System.out.println("❌ Slot ID not found or could not be deleted.");
-                    }
-                    break;
-                case 4:
-                    System.out.print("Enter Appointment ID to cancel: ");
-                    int appointmentId = Integer.parseInt(sc.nextLine());
-                    if (!slotService.adminCancelAppointment(appointmentId)) {
-                        System.out.println("❌ Appointment ID not found or could not be cancelled.");
-                    }
-                    break;                case 5: session_y.logoutAdmin();    return;
-                default: System.out.println("Invalid choice");
+
+            try {
+                switch(choice) {
+                    case 1: 
+                        viewAvailableSlots(); 
+                        break;
+
+                    // ----- Smart Features -----
+                    case 2: // Most Available Slots
+                        List<AppointmentSlot_y> mostAvailable = smart.sortByAvailability(null);
+                        System.out.println("\n--- Slots Sorted By Availability ---");
+                        System.out.printf("%-5s %-12s %-8s %-8s %-10s\n", "ID", "Date", "Start", "End", "Available");
+                        for (AppointmentSlot_y s : mostAvailable) {
+                            int available = s.getMaxCapacity() - s.getBookedCount();
+                            System.out.printf("%-5d %-12s %-8s %-8s %-10d\n",
+                                    s.getId(), s.getDate(), s.getStartTime(), s.getEndTime(), available);
+                        }
+                        break;
+
+                    case 3: // Nearest Slot
+                        AppointmentSlot_y nearest = smart.getNearestAvailableSlot(null);
+                        System.out.println("\n--- Nearest Available Slot ---");
+                        if (nearest != null) {
+                            System.out.println("Date: " + nearest.getDate());
+                            System.out.println("Start: " + nearest.getStartTime());
+                            System.out.println("End: " + nearest.getEndTime());
+                            System.out.println("Available: " + (nearest.getMaxCapacity() - nearest.getBookedCount()));
+                        } else {
+                            System.out.println("No available slots.");
+                        }
+                        break;
+
+                    case 4: 
+                        addSlot(); 
+                        break;
+
+                    case 5:
+                        System.out.print("Enter Slot ID to cancel: ");
+                        int slotId = Integer.parseInt(sc.nextLine());
+                        if (!slotService.adminCancelSlot(slotId)) {
+                            System.out.println("❌ Slot ID not found or could not be deleted.");
+                        }
+                        break;
+
+                    case 6:
+                        System.out.print("Enter Appointment ID to cancel: ");
+                        int appointmentId = Integer.parseInt(sc.nextLine());
+                        if (!slotService.adminCancelAppointment(appointmentId)) {
+                            System.out.println("❌ Appointment ID not found or could not be cancelled.");
+                        }
+                        break;               
+
+                    case 7: 
+                        session_y.logoutAdmin();    
+                        return;
+
+                    default: 
+                        System.out.println("Invalid choice");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }

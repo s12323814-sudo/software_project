@@ -63,6 +63,7 @@ public class AppointmentServiceTest {
         // INSERT + UPDATE
         when(mockInsertPs.executeUpdate()).thenReturn(1);
         when(mockUpdatePs.executeUpdate()).thenReturn(1);
+        when(mockRs.getDate("slot_date")).thenReturn(Date.valueOf(start.toLocalDate()));
     }
 
     /** ============================
