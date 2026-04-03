@@ -35,7 +35,7 @@ public class AppointmentService {
 
 
 
-    Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection();
+   
     public void bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
         try (Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection()) {
             conn.setAutoCommit(false);
@@ -48,13 +48,25 @@ public class AppointmentService {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) throw new SQLException("Slot not found");
 
-                    LocalDateTime start = rs.getDate("start_date").toLocalDate().atTime(rs.getTime("start_time").toLocalTime());
-                    LocalDateTime end = rs.getDate("start_date").toLocalDate().atTime(rs.getTime("end_time").toLocalTime());
+                    java.sql.Date sqlDate = rs.getDate("start_date");
+                    java.sql.Time startTime = rs.getTime("start_time");
+                    java.sql.Time endTime = rs.getTime("end_time");
+
+                    if (sqlDate == null || startTime == null || endTime == null) {
+                        throw new SQLException("Invalid slot data (date/time is null)");
+                    }
+
+                    LocalDateTime start = sqlDate.toLocalDate().atTime(startTime.toLocalTime());
+                    LocalDateTime end = sqlDate.toLocalDate().atTime(endTime.toLocalTime());
+                    LocalDateTime now = LocalDateTime.now();
+                    if (start.isBefore(now)) {
+                        throw new SQLException("Cannot book a past slot");
+                    }
                     int capacity = rs.getInt("max_capacity");
                     int booked = rs.getInt("booked_count");
 
                     int remaining = capacity - booked;
-                    if (participants > remaining) throw new SQLException("Not enough capacity");
+                    if (participants > remaining) throw new SQLException("Not enough capacity for this slot");
 
                     long duration = Duration.between(start, end).toMinutes();
                     if (duration < MIN_DURATION || duration > MAX_DURATION)

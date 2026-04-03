@@ -2,7 +2,6 @@ package admain;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,20 +22,33 @@ class BookingSmartServiceTest {
 
     @BeforeEach
     void setUp() {
-    
         slotRepoMock = mock(SlotRepository_y.class);
         smartService = new BookingSmartService(slotRepoMock);
-       slot1 = new AppointmentSlot_y(1, LocalDate.of(2026,4,5), LocalTime.of(9,0), LocalTime.of(10,0), 10,5);
-        slot2 = new AppointmentSlot_y(2, LocalDate.of(2026,4,5), LocalTime.of(11,0), LocalTime.of(12,0), 8,2);
-        slot3 = new AppointmentSlot_y(3, LocalDate.of(2026,4,6), LocalTime.of(8,0), LocalTime.of(9,0), 5,5);
-        }
+
+      
+        slot1 = new AppointmentSlot_y(1,
+                LocalDate.of(2026, 4, 5),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
+                10, 5);
+
+        slot2 = new AppointmentSlot_y(2,
+                LocalDate.of(2026, 4, 5),
+                LocalTime.of(11, 0),
+                LocalTime.of(12, 0),
+                8, 2);
+
+        slot3 = new AppointmentSlot_y(3,
+                LocalDate.of(2026, 4, 6),
+                LocalTime.of(8, 0),
+                LocalTime.of(9, 0),
+                5, 5);
+    }
 
     @Test
-    void testGetNearestAvailableSlot() throws Exception {
-        // بيانات mock
-        when(slotRepoMock.findAvailableSlots()).thenReturn(Arrays.asList(slot1, slot2, slot3));
-
-        AppointmentSlot_y nearest = smartService.getNearestAvailableSlot(null);
+    void testGetNearestAvailableSlot() {
+        List<AppointmentSlot_y> slots = Arrays.asList(slot1, slot2, slot3);
+        AppointmentSlot_y nearest = smartService.getNearestAvailableSlot(slots);
 
         assertNotNull(nearest);
         assertEquals(slot1.getId(), nearest.getId()); // أقرب وقت متاح
@@ -49,14 +61,14 @@ class BookingSmartServiceTest {
         AppointmentSlot_y best = smartService.getBestSlot(null);
 
         assertNotNull(best);
-        assertEquals(slot2.getId(), best.getId()); // أقل ضغط (available = 6)
+     
+        assertEquals(slot2.getId(), best.getId());
     }
 
     @Test
-    void testSortByTime() throws Exception {
-        when(slotRepoMock.findAvailableSlots()).thenReturn(Arrays.asList(slot2, slot3, slot1));
-
-        List<AppointmentSlot_y> sorted = smartService.sortByTime(null);
+    void testSortByTime() {
+        List<AppointmentSlot_y> slots = Arrays.asList(slot2, slot3, slot1);
+        List<AppointmentSlot_y> sorted = smartService.sortByTime(slots);
 
         assertEquals(3, sorted.size());
         assertEquals(slot1.getId(), sorted.get(0).getId());
@@ -68,12 +80,12 @@ class BookingSmartServiceTest {
     void testSortByAvailability() throws Exception {
         when(slotRepoMock.findAvailableSlots()).thenReturn(Arrays.asList(slot1, slot2, slot3));
 
-       
         List<AppointmentSlot_y> sorted = smartService.sortByAvailability(null);
 
         assertEquals(3, sorted.size());
-        assertEquals(slot3.getId(), sorted.get(0).getId()); // الأقل متوفر
+       
+        assertEquals(slot3.getId(), sorted.get(0).getId());
         assertEquals(slot1.getId(), sorted.get(1).getId());
-        assertEquals(slot2.getId(), sorted.get(2).getId()); // الأكثر متوفر
+        assertEquals(slot2.getId(), sorted.get(2).getId());
     }
 }

@@ -47,7 +47,6 @@ public class AppointmentServiceTest {
      */
     private void setupMockSlot(LocalDateTime start, LocalDateTime end, int capacity, int booked) throws Exception {
 
-        // 🔥 تحديد نوع الاستعلام بدقة
         when(mockConn.prepareStatement(startsWith("SELECT"))).thenReturn(mockSelectPs);
         when(mockConn.prepareStatement(startsWith("INSERT"))).thenReturn(mockInsertPs);
         when(mockConn.prepareStatement(startsWith("UPDATE"))).thenReturn(mockUpdatePs);
@@ -55,15 +54,23 @@ public class AppointmentServiceTest {
         // SELECT behavior
         when(mockSelectPs.executeQuery()).thenReturn(mockRs);
         when(mockRs.next()).thenReturn(true);
-        when(mockRs.getTimestamp("start_time")).thenReturn(Timestamp.valueOf(start));
-        when(mockRs.getTimestamp("end_time")).thenReturn(Timestamp.valueOf(end));
+
+        // 🔥 المهم
+        when(mockRs.getDate("start_date"))
+            .thenReturn(java.sql.Date.valueOf(start.toLocalDate()));
+
+        when(mockRs.getTime("start_time"))
+            .thenReturn(java.sql.Time.valueOf(start.toLocalTime()));
+
+        when(mockRs.getTime("end_time"))
+            .thenReturn(java.sql.Time.valueOf(end.toLocalTime()));
+
         when(mockRs.getInt("max_capacity")).thenReturn(capacity);
         when(mockRs.getInt("booked_count")).thenReturn(booked);
 
-        // INSERT + UPDATE
+        // optional
         when(mockInsertPs.executeUpdate()).thenReturn(1);
         when(mockUpdatePs.executeUpdate()).thenReturn(1);
-        when(mockRs.getDate("slot_date")).thenReturn(Date.valueOf(start.toLocalDate()));
     }
 
     /** ============================
