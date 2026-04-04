@@ -1,6 +1,5 @@
 package admain;
 
-import java.util.ArrayList;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -106,7 +105,6 @@ public class Main {
 			try {
 				adminSession();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		else userSession();
@@ -191,7 +189,7 @@ public class Main {
 
                     // ----- Smart Service Features -----
                     case 3: // Nearest Slot
-                        AppointmentSlot_y nearest = smart.getNearestAvailableSlot(null);
+                        AppointmentSlot_y nearest = smart.getNearestAvailableSlot();
                         System.out.println("\n--- Nearest Available Slot ---");
                         if (nearest != null) {
                             System.out.println("Date: " + nearest.getDate());
@@ -204,7 +202,7 @@ public class Main {
                         break;
 
                     case 4: // Best Slot (Less Busy)
-                        AppointmentSlot_y best = smart.getBestSlot(null);
+                        AppointmentSlot_y best = smart.getBestSlot();
                         System.out.println("\n--- Best Slot (Less Busy) ---");
                         if (best != null) {
                             System.out.println("Date: " + best.getDate());
@@ -217,7 +215,7 @@ public class Main {
                         break;
 
                     case 5: // Sort By Time
-                        List<AppointmentSlot_y> sortedByTime = smart.sortByTime(null);
+                        List<AppointmentSlot_y> sortedByTime = smart.sortByTime();
                         System.out.println("\n--- Slots Sorted By Time ---");
                         System.out.printf("%-5s %-12s %-8s %-8s %-10s\n", "ID", "Date", "Start", "End", "Available");
                         for (AppointmentSlot_y s : sortedByTime) {
@@ -228,7 +226,7 @@ public class Main {
                         break;
 
                     case 6: // Sort By Availability
-                        List<AppointmentSlot_y> sortedByAvail = smart.sortByAvailability(null);
+                        List<AppointmentSlot_y> sortedByAvail = smart.sortByAvailability();
                         System.out.println("\n--- Slots Sorted By Availability ---");
                         System.out.printf("%-5s %-12s %-8s %-8s %-10s\n", "ID", "Date", "Start", "End", "Available");
                         for (AppointmentSlot_y s : sortedByAvail) {
@@ -292,7 +290,7 @@ public class Main {
 
                     // ----- Smart Features -----
                     case 2: // Most Available Slots
-                        List<AppointmentSlot_y> mostAvailable = smart.sortByAvailability(null);
+                        List<AppointmentSlot_y> mostAvailable = smart.sortByAvailability();
                         System.out.println("\n--- Slots Sorted By Availability ---");
                         System.out.printf("%-5s %-12s %-8s %-8s %-10s\n", "ID", "Date", "Start", "End", "Available");
                         for (AppointmentSlot_y s : mostAvailable) {
@@ -303,7 +301,7 @@ public class Main {
                         break;
 
                     case 3: // Nearest Slot
-                        AppointmentSlot_y nearest = smart.getNearestAvailableSlot(null);
+                        AppointmentSlot_y nearest = smart.getNearestAvailableSlot();
                         System.out.println("\n--- Nearest Available Slot ---");
                         if (nearest != null) {
                             System.out.println("Date: " + nearest.getDate());
