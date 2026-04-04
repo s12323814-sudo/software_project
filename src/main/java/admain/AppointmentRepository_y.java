@@ -16,8 +16,15 @@ import java.util.List;
 public class AppointmentRepository_y {
 	Connection conn = database_connection.getConnection();
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
-    private SlotRepository_y slotRepo = new SlotRepository_y();
-  
+    private SlotRepository_y slotRepo ;
+    public AppointmentRepository_y() {
+        this.slotRepo = new SlotRepository_y();
+    }
+
+    
+    public AppointmentRepository_y(SlotRepository_y slotRepo) {
+        this.slotRepo = slotRepo;
+    }
     public List<Appointment> getUpcomingAppointments() throws SQLException {
         List<Appointment> appointments = new ArrayList<>();
 
@@ -166,8 +173,12 @@ public class AppointmentRepository_y {
     }
  // BOOK
     public boolean book(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
+        // جلب الـ Slot
         AppointmentSlot_y slot = slotRepo.findById(slotId);
-        if (slot == null) return false;
+
+        if (slot == null) {
+            throw new IllegalArgumentException("Slot with ID " + slotId + " does not exist.");
+        }
 
         // تحويل الوقت إلى ZonedDateTime
         ZonedDateTime startZ = ZonedDateTime.of(slot.getDate(), slot.getStartTime(), ZoneId.of("Asia/Hebron"));
@@ -176,22 +187,20 @@ public class AppointmentRepository_y {
         // منع حجز المواعيد المنتهية
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Hebron"));
         if (endZ.isBefore(now)) {
-            System.out.println("Cannot book this slot: it has already ended.");
-            return false;
+            throw new IllegalStateException("Cannot book this slot: it has already ended.");
+        }
+
+        // منع حجز أكثر من السعة
+        if (slot.getBookedCount() + participants > slot.getMaxCapacity()) {
+            throw new IllegalStateException("Cannot book this slot: not enough capacity.");
         }
 
         // حساب المدة بالدقائق
         long duration = Duration.between(startZ, endZ).toMinutes();
 
-        // تحويل ZonedDateTime إلى Timestamp للـ PreparedStatement
-        Timestamp startTimestamp = Timestamp.from(startZ.toInstant());
-        Timestamp endTimestamp = Timestamp.from(endZ.toInstant());
-
         try (Connection conn = database_connection.getConnection()) {
-            // تحديد حالة الحجز يدوياً بدل استدعاء determineStatus غير المرئي
-            AppointmentStatus_y status = (slot.getBookedCount() + participants <= slot.getMaxCapacity()) ?
-                                         AppointmentStatus_y.CONFIRMED :
-                                         AppointmentStatus_y.WAITLIST;
+            // تحديد حالة الحجز
+            AppointmentStatus_y status = AppointmentStatus_y.CONFIRMED;
 
             String sql = "INSERT INTO appointments " +
                          "(account_id, slot_id, start_time, end_time, duration, participants, status, type) " +
@@ -200,22 +209,20 @@ public class AppointmentRepository_y {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, userId);
                 ps.setInt(2, slotId);
-                ps.setTimestamp(3, startTimestamp);
-                ps.setTimestamp(4, endTimestamp);
+                ps.setTimestamp(3, Timestamp.from(startZ.toInstant()));
+                ps.setTimestamp(4, Timestamp.from(endZ.toInstant()));
                 ps.setLong(5, duration);
                 ps.setInt(6, participants);
                 ps.setString(7, status.name());
                 ps.setString(8, type.name());
                 int rows = ps.executeUpdate();
 
-                // تحديث booked_count إذا تم التأكيد
-                if (status == AppointmentStatus_y.CONFIRMED) {
-                    String updateSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
-                    try (PreparedStatement ps2 = conn.prepareStatement(updateSlot)) {
-                        ps2.setInt(1, participants);
-                        ps2.setInt(2, slotId);
-                        ps2.executeUpdate();
-                    }
+                // تحديث booked_count
+                String updateSlot = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(updateSlot)) {
+                    ps2.setInt(1, participants);
+                    ps2.setInt(2, slotId);
+                    ps2.executeUpdate();
                 }
 
                 System.out.println("Appointment booked successfully! Status: " + status + ", Type: " + type);

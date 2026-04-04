@@ -1,5 +1,9 @@
 package admain;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 
@@ -17,7 +21,10 @@ public class AppointmentSlot_y {
     private int maxCapacity;
     private int bookedCount;
 
-
+    protected Connection getConnection() throws SQLException {
+        return database_connection.getConnection();
+    }
+    
     public AppointmentSlot_y(int id, LocalDate date, LocalTime startTime, LocalTime endTime, int maxCapacity, int bookedCount) {
         this.id = id;
         this.date = date;
@@ -66,7 +73,27 @@ public class AppointmentSlot_y {
         return bookedCount >= maxCapacity;
     }
 
- 
+    public boolean isSlotAvailableForResource(int slotId, int resourceId) {
+        String sql = "SELECT COUNT(*) FROM appointment_slot a " +
+                     "JOIN appointment b ON a.slot_id = b.slot_id " +
+                     "WHERE a.slot_id = ? AND b.resource_id = ?";
+        SlotRepository_y repo = new SlotRepository_y();
+        try (Connection conn = repo.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, slotId);
+            ps.setInt(2, resourceId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int count = rs.getInt(1);
+                return count == 0; 
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
+    }
     @Override
     public String toString() {
         return "ID: " + id +

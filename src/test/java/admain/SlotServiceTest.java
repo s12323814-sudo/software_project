@@ -71,6 +71,31 @@ class SlotServiceTest {
         assertFalse(result);
         verify(appointmentRepo, never()).book(anyInt(), anyInt(), anyInt(), any());
     }
+    @Test
+    void testBookAppointment_Success() throws Exception {
+
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        NotificationService_y notificationService = mock(NotificationService_y.class);
+
+        SlotService_y service = new SlotService_y(appointmentRepo, slotRepo, notificationService);
+
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1,
+                LocalDate.now(),
+                LocalTime.of(10,0),
+                LocalTime.of(11,0),
+                5,
+                2
+        );
+
+        when(slotRepo.findById(1)).thenReturn(slot);
+        when(appointmentRepo.book(1,1,2, AppointmentType_y.GROUP)).thenReturn(true);
+
+        boolean result = service.bookAppointment(1,1,2, AppointmentType_y.GROUP);
+
+        assertTrue(result);
+    }
 
     // ---------------- CANCEL (USER) ----------------
     @Test
@@ -124,7 +149,191 @@ class SlotServiceTest {
         assertTrue(result);
         verify(slotRepo).addSlot(any(), any(), any(), anyInt(), anyInt());
     }
+    @Test
+    void testIsFull() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.now(),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            5,
+            5
+        );
 
+        assertTrue(slot.isFull());
+    }
+    @Test
+    void testZeroCapacity() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.now(),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            0,
+            0
+        );
+
+        assertTrue(slot.isFull()); // لأنه 0 >= 0
+    }
+    @Test
+    void testTimeZone() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.of(2025,1,1),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            5,
+            2
+        );
+
+        assertEquals("Asia/Hebron", slot.getStartDateTime().getZone().toString());
+    }@Test
+    void testMidnightTime() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.now(),
+            LocalTime.MIDNIGHT,
+            LocalTime.NOON,
+            5,
+            1
+        );
+
+        assertEquals(0, slot.getStartDateTime().getHour());
+    }
+    @Test
+    void testToStringFullContent() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.of(2025,1,1),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            5,
+            2
+        );
+
+        String result = slot.toString();
+
+        assertTrue(result.contains("ID: 1"));
+        assertTrue(result.contains("Date: 2025-01-01"));
+        assertTrue(result.contains("Start: 10:00"));
+        assertTrue(result.contains("End: 11:00"));
+        assertTrue(result.contains("Capacity: 2/5"));
+    }@Test
+    void testAllGetters() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            7,
+            LocalDate.of(2025,6,1),
+            LocalTime.of(8,0),
+            LocalTime.of(9,0),
+            10,
+            4
+        );
+
+        assertEquals(7, slot.getId());
+        assertEquals(LocalDate.of(2025,6,1), slot.getDate());
+        assertEquals(LocalTime.of(8,0), slot.getStartTime());
+        assertEquals(LocalTime.of(9,0), slot.getEndTime());
+        assertEquals(10, slot.getMaxCapacity());
+        assertEquals(4, slot.getBookedCount());
+    }
+    @Test
+    void testIsFull_AllCases() {
+
+        // ========== equal ==========
+        AppointmentSlot_y slot1 = new AppointmentSlot_y(
+            1, LocalDate.now(), LocalTime.NOON, LocalTime.MIDNIGHT, 5, 5);
+        assertTrue(slot1.isFull());
+
+        // ========== less ==========
+        AppointmentSlot_y slot2 = new AppointmentSlot_y(
+            2, LocalDate.now(), LocalTime.NOON, LocalTime.MIDNIGHT, 5, 3);
+        assertFalse(slot2.isFull());
+
+        // ========== greater (edge case) ==========
+        AppointmentSlot_y slot3 = new AppointmentSlot_y(
+            3, LocalDate.now(), LocalTime.NOON, LocalTime.MIDNIGHT, 5, 6);
+        assertTrue(slot3.isFull());
+    }@Test
+    void testEndDateTime() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.of(2025,1,1),
+            LocalTime.of(10,0),
+            LocalTime.of(12,0),
+            5,
+            2
+        );
+
+        assertEquals(12, slot.getEndDateTime().getHour());
+    }
+    @Test
+    void testIsFull_Equal() {
+        // booked == max
+    }
+
+    @Test
+    void testIsFull_Less() {
+        // booked < max
+    }
+
+    @Test
+    void testIsFull_Greater() {
+        // booked > max (edge case)
+    }@Test
+    void testGetters() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            10,
+            LocalDate.of(2025,5,1),
+            LocalTime.of(9,0),
+            LocalTime.of(10,0),
+            20,
+            5
+        );
+
+        assertEquals(10, slot.getId());
+        assertEquals(20, slot.getMaxCapacity());
+        assertEquals(5, slot.getBookedCount());
+        assertEquals(LocalTime.of(9,0), slot.getStartTime());
+    }
+    @Test
+    void testToString() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.of(2025,1,1),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            5,
+            2
+        );
+
+        String result = slot.toString();
+
+        assertTrue(result.contains("ID: 1"));
+    }@Test
+    void testStartDateTime() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.of(2025,1,1),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            5,
+            2
+        );
+
+        assertEquals(10, slot.getStartDateTime().getHour());
+    }@Test
+    void testIsNotFull() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+            1,
+            LocalDate.now(),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            5,
+            3
+        );
+
+        assertFalse(slot.isFull());
+    }
     @Test
     void testAddSlot_fail_invalidCapacity() {
         boolean result = service.addSlot(
@@ -155,4 +364,5 @@ class SlotServiceTest {
         verify(notificationService, atLeast(0))
                 .sendNotification(anyInt(), anyString());
     }
+    
 }

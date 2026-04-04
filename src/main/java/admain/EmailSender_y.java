@@ -11,7 +11,7 @@ public class EmailSender_y implements EmailService_y {
     public void sendOTP(String toEmail, String otp) {
 
         final String fromEmail = "yasmeenalqaduomi@gmail.com";
-        final String password = "your_app_password";
+        final String password = "nlng knkr juiv znqb";
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");

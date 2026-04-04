@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class AppointmentService {
+	public static final String slotService_y = null;
 	private AppointmentRepository_y appointmentRepo;
 	private SlotRepository_y slotRepo;
 	private  NotificationService_y notificationService;
@@ -19,7 +20,7 @@ public class AppointmentService {
     private scheduleRepository repo = new scheduleRepository();
     private final int MIN_DURATION = 30;
     private final int MAX_DURATION = 120;
- // داخل AppointmentService.java
+
     private Connection testConnection = null;
 
     public AppointmentService(Connection conn, SlotService_y slotService, scheduleRepository repo) {
@@ -34,36 +35,45 @@ public class AppointmentService {
     }
 
 
-    // داخل bookAppointment
-    Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection();
+
+   
     public void bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
-        // استخدم testConnection إذا موجود، أو الاتصال الحقيقي
         try (Connection conn = (testConnection != null) ? testConnection : database_connection.getConnection()) {
             conn.setAutoCommit(false);
 
-            String sql = "SELECT start_time, end_time, max_capacity, booked_count " +
+           
+            String sql = "SELECT slot_date AS start_date, slot_start_time AS start_time, slot_end_time AS end_time, max_capacity, booked_count " +
                          "FROM appointment_slot WHERE slot_id = ? FOR UPDATE";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, slotId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) throw new SQLException("Slot not found");
 
-                    LocalDateTime start = rs.getTimestamp("start_time").toLocalDateTime();
-                    LocalDateTime end = rs.getTimestamp("end_time").toLocalDateTime();
+                    java.sql.Date sqlDate = rs.getDate("start_date");
+                    java.sql.Time startTime = rs.getTime("start_time");
+                    java.sql.Time endTime = rs.getTime("end_time");
+
+                    if (sqlDate == null || startTime == null || endTime == null) {
+                        throw new SQLException("Invalid slot data (date/time is null)");
+                    }
+
+                    LocalDateTime start = sqlDate.toLocalDate().atTime(startTime.toLocalTime());
+                    LocalDateTime end = sqlDate.toLocalDate().atTime(endTime.toLocalTime());
+                    LocalDateTime now = LocalDateTime.now();
+                    if (start.isBefore(now)) {
+                        throw new SQLException("Cannot book a past slot");
+                    }
                     int capacity = rs.getInt("max_capacity");
                     int booked = rs.getInt("booked_count");
 
-                    if (start.isBefore(LocalDateTime.now()))
-                        throw new SQLException("Cannot book a past slot");
-
                     int remaining = capacity - booked;
-                    if (participants > remaining)
-                        throw new SQLException("Not enough capacity for this slot");
+                    if (participants > remaining) throw new SQLException("Not enough capacity for this slot");
 
                     long duration = Duration.between(start, end).toMinutes();
                     if (duration < MIN_DURATION || duration > MAX_DURATION)
                         throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
 
+                    // حجز الموعد
                     String insert = "INSERT INTO appointments " +
                                     "(account_id, slot_id, start_time, end_time, duration, participants, status, type) " +
                                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -79,6 +89,7 @@ public class AppointmentService {
                         psInsert.executeUpdate();
                     }
 
+                    // تحديث السعة
                     String update = "UPDATE appointment_slot SET booked_count = booked_count + ? WHERE slot_id = ?";
                     try (PreparedStatement psUpdate = conn.prepareStatement(update)) {
                         psUpdate.setInt(1, participants);
@@ -95,7 +106,6 @@ public class AppointmentService {
             }
         }
     }
-
 
     public List<Appointment> getUserAppointments(int userId) throws SQLException {
         return repo.getAppointments(userId);

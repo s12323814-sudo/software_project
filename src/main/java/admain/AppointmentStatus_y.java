@@ -6,5 +6,7 @@ public enum AppointmentStatus_y {
     VIP
 	,ONGOING,
 	CONFIRMED,
-	WAITLIST
+	WAITLIST,
+	PENDING,
+	CANCELLED
 }
