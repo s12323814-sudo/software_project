@@ -1,5 +1,6 @@
 package admain;
 
 public interface EmailService_y {
-    abstract void sendOTP(String toEmail, String otp);
+    void sendOTP(String toEmail, String otp);
+    void sendEmail(String toEmail, String subject, String message);
 }

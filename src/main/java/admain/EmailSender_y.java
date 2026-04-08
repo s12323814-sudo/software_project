@@ -1,17 +1,23 @@
 package admain;
 
 import java.util.Properties;
-
 import javax.mail.*;
 import javax.mail.internet.*;
 
 public class EmailSender_y implements EmailService_y {
 
+    private final String fromEmail = "yasmeenalqaduomi@gmail.com";
+    private final String password = "nlng knkr juiv znqb";
+
+
     @Override
     public void sendOTP(String toEmail, String otp) {
+        sendEmail(toEmail, "Password Reset Code", "Your OTP code is: " + otp);
+    }
 
-        final String fromEmail = "yasmeenalqaduomi@gmail.com";
-        final String password = "nlng knkr juiv znqb";
+
+    @Override
+    public void sendEmail(String toEmail, String subject, String messageText) {
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -29,21 +35,20 @@ public class EmailSender_y implements EmailService_y {
         try {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(fromEmail));
-            message.setRecipients(
-                    Message.RecipientType.TO,
+            message.setRecipients(Message.RecipientType.TO,
                     InternetAddress.parse(toEmail));
+            message.setSubject(subject);
+            message.setText(messageText);
 
-            message.setSubject("Password Reset Code");
-            message.setText("Your OTP code is: " + otp);
+            send(message);
 
-            send(message); // 👈 بدل Transport.send مباشرة
+            System.out.println("Email sent to: " + toEmail);
 
         } catch (MessagingException e) {
             e.printStackTrace();
         }
     }
 
-    // ميثود قابلة للـ override في التست
     protected void send(Message message) throws MessagingException {
         Transport.send(message);
     }

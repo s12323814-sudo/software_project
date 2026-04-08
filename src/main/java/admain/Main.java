@@ -14,29 +14,31 @@ import java.util.concurrent.TimeUnit;
 
 
 public class Main {
-	private static EmailService_y emailService = new EmailSender_y();
+	
 	 static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
     static Scanner sc = new Scanner(System.in);
     private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
     private static SlotRepository_y slotRepo = new SlotRepository_y();
 
-    private static NotificationService_y notificationService = new MockNotificationService_y();
+    private static EmailService_y emailService = new EmailSender_y();
+
+    private static NotificationService_y notificationService =
+            new EmailNotificationAdapter(emailService);
+
     private static SlotService_y slotService = new SlotService_y(appointmentRepo, slotRepo, notificationService);
     private static authService_y authService = new authService_y();
     private static session_y session;
     private static Account_y user;
    
-    private static session_y currentSession = null;
     private static ReminderManager_y reminderManager =
             new ReminderManager_y(appointmentRepository, notificationService);
+    
+
     public static void main(String[] args) {
     	 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-	        scheduler.scheduleAtFixedRate(() -> {
-	            if (currentSession != null) {
-	                reminderManager.checkReminders();
-	            }
-	        }, 0, 1, TimeUnit.MINUTES);
-
+    	 scheduler.scheduleAtFixedRate(() -> {
+    		    reminderManager.checkReminders();
+    		}, 0, 1, TimeUnit.MINUTES);
         while (true) {
             System.out.println("\n=== Main Menu ===");
             System.out.println("1- Login as User/Admin");
@@ -83,7 +85,6 @@ public class Main {
             return;
         }
 
-        // تعيين الـ user من الـ session
         user = session.getAccount();
         
         // تعيين الـ user في الجلسة العامة
@@ -95,7 +96,7 @@ public class Main {
             if (!messages.isEmpty()) {
                 System.out.println("\n--- Notifications ---");
                 messages.forEach(System.out::println);
-                notificationService.clear(); // تم مسح الرسائل بعد العرض
+                notificationService.clear(); 
             }
         }
 
