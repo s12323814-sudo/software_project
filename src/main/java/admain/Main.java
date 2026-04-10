@@ -15,25 +15,26 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
 	
-	 static AppointmentRepository_y appointmentRepository = new AppointmentRepository_y();
-    static Scanner sc = new Scanner(System.in);
-    private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
-    private static SlotRepository_y slotRepo = new SlotRepository_y();
+	static Scanner sc = new Scanner(System.in);
 
-    private static EmailService_y emailService = new EmailSender_y();
+	private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
+	private static SlotRepository_y slotRepo = new SlotRepository_y();
 
-    private static NotificationService_y notificationService =
-            new EmailNotificationAdapter(emailService);
+	private static EmailService_y emailService = new EmailSender_y();
 
-    private static SlotService_y slotService = new SlotService_y(appointmentRepo, slotRepo, notificationService);
-    private static authService_y authService = new authService_y();
-    private static session_y session;
-    private static Account_y user;
-   
-    private static ReminderManager_y reminderManager =
-            new ReminderManager_y(appointmentRepository, notificationService);
-    
+	private static NotificationService_y notificationService =
+	        new EmailNotificationAdapter(emailService);
 
+	private static SlotService_y slotService =
+	        new SlotService_y(appointmentRepo, slotRepo, notificationService, emailService);
+
+	private static authService_y authService = new authService_y();
+
+	private static session_y session;
+	private static Account_y user;
+
+	private static ReminderManager_y reminderManager =
+	        new ReminderManager_y(appointmentRepo, notificationService);
     public static void main(String[] args) {
     	 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     	 scheduler.scheduleAtFixedRate(() -> {
@@ -56,7 +57,7 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    loginMenu();
+                	loginMenu();
                     break;
                 case 2:
                     registerMenu();
@@ -271,8 +272,9 @@ public class Main {
             System.out.println("3- View Nearest Slot");
             System.out.println("4- Add Slot");
             System.out.println("5- Cancel Slot");
-            System.out.println("6- Cancel Appointment");
-            System.out.println("7- Logout");
+            System.out.println("6- VIEW ALL Appointment");
+            System.out.println("7- Cancel Appointment");
+            System.out.println("8- Logout");
 
             int choice;
 
@@ -325,8 +327,10 @@ public class Main {
                             System.out.println("❌ Slot ID not found or could not be deleted.");
                         }
                         break;
-
                     case 6:
+                        viewAllAppointments();
+                        break;
+                    case 7:
                         System.out.print("Enter Appointment ID to cancel: ");
                         int appointmentId = Integer.parseInt(sc.nextLine());
                         if (!slotService.adminCancelAppointment(appointmentId)) {
@@ -334,10 +338,12 @@ public class Main {
                         }
                         break;               
 
-                    case 7: 
+                    case 8: 
                         session_y.logoutAdmin();    
                         return;
-
+                    case 9:
+                        viewAllAppointments();
+                        break;
                     default: 
                         System.out.println("Invalid choice");
                 }
@@ -509,6 +515,32 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }private static void viewAllAppointments() {
+        try {
+            List<Appointment> list = slotService.getAllAppointments();
+
+            if (list.isEmpty()) {
+                System.out.println("No appointments found.");
+                return;
+            }
+
+            System.out.printf("%-5s %-10s %-8s %-13s %-10s %-10s\n",
+                    "ID", "User", "Slot", "Participants", "Status", "Type");
+
+            for (Appointment a : list) {
+                System.out.printf("%-5d %-10s %-8d %-13d %-10s %-10s\n",
+                        a.getAppointmentId(),
+                        a.getUsername(),
+                        a.getSlotId(),
+                        a.getParticipants(),
+                        a.getStatus(),
+                        a.getType());
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    
     }
     private static void updateAppointment() {
         while (true) {

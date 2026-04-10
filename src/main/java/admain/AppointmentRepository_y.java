@@ -20,7 +20,43 @@ public class AppointmentRepository_y {
     public AppointmentRepository_y() {
         this.slotRepo = new SlotRepository_y();
     }
+    public List<Appointment> getAllAppointments() throws SQLException {
+        List<Appointment> list = new ArrayList<>();
+        String sql = """
+        	    SELECT 
+        	        a.appointment_id,
+        	        a.account_id,
+        	        u.username,
+        	        a.slot_id,
+        	        a.participants,
+        	        a.status,
+        	        a.type
+        	    FROM appointments a
+        	    JOIN accounts u ON a.account_id = u.account_id
+        	""";
 
+        try (Connection conn = database_connection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+
+            	Appointment a = new Appointment(
+            	        rs.getInt("appointment_id"),
+            	        rs.getInt("account_id"),
+            	        rs.getInt("slot_id"),
+            	        rs.getInt("participants"),
+            	        AppointmentStatus_y.valueOf(rs.getString("status")),
+            	        AppointmentType_y.valueOf(rs.getString("type"))
+            	);
+
+            	a.setUsername(rs.getString("username"));
+                list.add(a);
+            }
+        }
+
+        return list;
+    }
     
     public AppointmentRepository_y(SlotRepository_y slotRepo) {
         this.slotRepo = slotRepo;
@@ -129,28 +165,26 @@ public class AppointmentRepository_y {
         String sql = "SELECT * FROM appointments WHERE appointment_id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
 
+            ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
-           
+
             if (rs.next()) {
 
                 TimeSlot slot = new TimeSlot(
-                        rs.getInt("slot_id"),
-                        rs.getTimestamp("start_time")
-                          .toInstant().atZone(java.time.ZoneId.systemDefault()),
-                        rs.getTimestamp("end_time")
-                          .toInstant().atZone(java.time.ZoneId.systemDefault())
+                    rs.getInt("slot_id"),
+                    rs.getTimestamp("start_time").toInstant().atZone(ZoneId.of("Asia/Hebron")),
+                    rs.getTimestamp("end_time").toInstant().atZone(ZoneId.of("Asia/Hebron"))
                 );
 
                 return new Appointment(
-                		rs.getInt("appointment_id"),
-                        rs.getInt("account_id"),
-                        rs.getInt("slot_id"),
-                        slot, 
-                        rs.getInt("participants"),
-                        AppointmentStatus_y.valueOf(rs.getString("status")),
-                        AppointmentType_y.valueOf(rs.getString("type"))
+                    rs.getInt("appointment_id"),
+                    rs.getInt("account_id"),
+                    rs.getInt("slot_id"),
+                    slot,
+                    rs.getInt("participants"),
+                    AppointmentStatus_y.valueOf(rs.getString("status")),
+                    AppointmentType_y.valueOf(rs.getString("type"))
                 );
             }
         }
@@ -162,15 +196,15 @@ public class AppointmentRepository_y {
     }
     /////////////////////////////////
 
-    public void delete(int id, Connection conn) throws SQLException {
-
+    public int delete(int id, Connection conn) throws SQLException {
         String sql = "DELETE FROM appointments WHERE appointment_id = ?";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            ps.executeUpdate();
+            return ps.executeUpdate(); // 🔥
         }
     }
+    
+    
  // BOOK
     public boolean book(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
         // جلب الـ Slot
@@ -184,17 +218,20 @@ public class AppointmentRepository_y {
         ZonedDateTime startZ = ZonedDateTime.of(slot.getDate(), slot.getStartTime(), ZoneId.of("Asia/Hebron"));
         ZonedDateTime endZ = ZonedDateTime.of(slot.getDate(), slot.getEndTime(), ZoneId.of("Asia/Hebron"));
 
-        // منع حجز المواعيد المنتهية
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Hebron"));
-        if (endZ.isBefore(now)) {
-            throw new IllegalStateException("Cannot book this slot: it has already ended.");
-        }
+       
 
         // منع حجز أكثر من السعة
         if (slot.getBookedCount() + participants > slot.getMaxCapacity()) {
             throw new IllegalStateException("Cannot book this slot: not enough capacity.");
         }
-
+        if (startZ.isBefore(now)) {
+            System.out.println("❌ Cannot book a slot in the past!");
+            return false;
+        }if (endZ.isBefore(now)) {
+            System.out.println("❌ This slot already ended!");
+            return false;
+        }
         // حساب المدة بالدقائق
         long duration = Duration.between(startZ, endZ).toMinutes();
 
@@ -232,17 +269,85 @@ public class AppointmentRepository_y {
     }
     // CANCEL
     public boolean cancel(int userId, int appointmentId) throws SQLException {
-        String sql = "DELETE FROM appointments WHERE appointment_id = ? AND account_id = ?";
+
+        String getSlotSql =
+                "SELECT slot_id, participants FROM appointments WHERE appointment_id = ? AND account_id = ?";
+
+        String deleteSql =
+                "DELETE FROM appointments WHERE appointment_id = ? AND account_id = ?";
+
+        String updateSlotSql =
+                "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
+
+        try (Connection conn = database_connection.getConnection()) {
+
+            conn.setAutoCommit(false);
+
+            int slotId;
+            int participants;
+
+            // 1️⃣ جيب البيانات قبل الحذف
+            try (PreparedStatement ps = conn.prepareStatement(getSlotSql)) {
+                ps.setInt(1, appointmentId);
+                ps.setInt(2, userId);
+
+                ResultSet rs = ps.executeQuery();
+
+                if (!rs.next()) {
+                    conn.rollback();
+                    return false;
+                }
+
+                slotId = rs.getInt("slot_id");
+                participants = rs.getInt("participants");
+            }
+
+            // 2️⃣ احذف الموعد
+            try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
+                ps.setInt(1, appointmentId);
+                ps.setInt(2, userId);
+
+                int rows = ps.executeUpdate();
+
+                if (rows == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            // 3️⃣ رجّع الكاباسيتي
+            try (PreparedStatement ps = conn.prepareStatement(updateSlotSql)) {
+                ps.setInt(1, participants);
+                ps.setInt(2, slotId);
+                ps.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public String getUserEmailByAppointment(int appointmentId) throws SQLException {
+        String sql = "SELECT email FROM accounts a " +
+                     "JOIN appointments ap ON a.account_id = ap.account_id " +
+                     "WHERE ap.appointment_id = ?";
+
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, appointmentId);
-            ps.setInt(2, userId);
-            int rows = ps.executeUpdate();
-            return rows > 0;
-        }
-    }
+            ResultSet rs = ps.executeQuery();
 
+            if (rs.next()) {
+                return rs.getString("email");
+            }
+        }
+
+        return null;
+    }
     // UPDATE
     public boolean update(int userId, int appointmentId, int participants) throws SQLException {
         String sql = "UPDATE appointments SET participants = ? WHERE appointment_id = ? AND account_id = ?";

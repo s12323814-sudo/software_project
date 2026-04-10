@@ -15,25 +15,29 @@ public class SlotService_y {
     private NotificationService_y notificationService;
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
-
+    private EmailService_y emailService;
     // private static Scanner sc = new Scanner(System.in);
 
     // Dependency Injection
     public SlotService_y(AppointmentRepository_y appointmentRepo,
-                         SlotRepository_y slotRepo,
-                         NotificationService_y notificationService) {
+            SlotRepository_y slotRepo,
+            NotificationService_y notificationService,
+            EmailService_y emailService) {
 
-        this.appointmentRepo = appointmentRepo;
-        this.slotRepo = slotRepo;
-        this.notificationService = notificationService;
-    }
+this.appointmentRepo = appointmentRepo;
+this.slotRepo = slotRepo;
+this.notificationService = notificationService;
+this.emailService = emailService; // ✅ الآن صح
+}
 
     /////////////////////////////
     // GET AVAILABLE SLOTS
     public List<AppointmentSlot_y> getAvailableSlots() {
         return slotRepo.findAvailableSlots();
     }
-
+    public List<Appointment> getAllAppointments() throws SQLException {
+        return appointmentRepo.getAllAppointments();
+    }
     /////////////////////////////
     // BOOK APPOINTMENT
     public boolean bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
@@ -109,73 +113,6 @@ public class SlotService_y {
 
     /////////////////////////////
     // ADMIN: CANCEL WITH TRANSACTION (IMPORTANT)
-    public boolean adminCancelAppointment(int appointmentId) throws SQLException {
-        try (Connection conn = database_connection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            Appointment appointment = appointmentRepo.findById(appointmentId, conn);
-            if (appointment == null) {
-                conn.rollback();
-                return false;
-            }
-
-            int userId = appointment.getUserId();
-            int slotId = appointment.getSlotId();
-            int participants = appointment.getParticipants();
-
-            // 🔹 جيب معلومات السلووت
-            AppointmentSlot_y originalSlot = slotRepo.findById(slotId);
-
-            // 🔹 حذف الموعد
-            appointmentRepo.delete(appointmentId, conn);
-
-            // 🔹 تحديث الكاباسيتي
-            slotRepo.decreaseBookedCount(slotId, participants, conn);
-
-            conn.commit();
-
-            // 🔹 إشعار الإلغاء
-            notificationService.sendNotification(
-                userId,
-                "⚠️ Your appointment was cancelled by admin."
-            );
-
-            // 🔥 اقتراح بدائل
-            if (originalSlot != null) {
-
-                List<AppointmentSlot_y> alternatives =
-                    slotRepo.findAvailableSlotsByDate(originalSlot.getDate());
-
-                // نحذف نفس السلووت
-                alternatives.removeIf(s -> s.getId() == slotId);
-
-                if (!alternatives.isEmpty()) {
-
-                    String msg = "📅 Available alternatives:\n";
-
-                    for (AppointmentSlot_y s : alternatives) {
-                        msg += "ID: " + s.getId() +
-                               " | " + s.getStartTime() +
-                               " - " + s.getEndTime() + "\n";
-                    }
-
-                    notificationService.sendNotification(userId, msg);
-
-                } else {
-                    notificationService.sendNotification(
-                        userId,
-                        "❗ No alternative slots available."
-                    );
-                }
-            }
-
-            return true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
     // ---------------- Cancel Entire Slot ----------------
     public boolean adminCancelSlot(int slotId) {
@@ -237,4 +174,72 @@ public class SlotService_y {
             return false;
         }
     }
-}
+    public boolean adminCancelAppointment(int appointmentId) {
+
+        String sql = """
+            SELECT a.account_id, u.email
+            FROM appointments a
+            JOIN accounts u ON a.account_id = u.account_id
+            WHERE a.appointment_id = ?
+        """;
+
+        String deleteSql = "DELETE FROM appointments WHERE appointment_id = ?";
+
+        try (Connection conn = database_connection.getConnection()) {
+
+            conn.setAutoCommit(false);
+
+            int userId = -1;
+            String email = null;
+
+            // 1️⃣ جلب البيانات (user + email)
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, appointmentId);
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    userId = rs.getInt("account_id");
+                    email = rs.getString("email");
+                } else {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            // 2️⃣ حذف الموعد
+            try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
+                ps.setInt(1, appointmentId);
+
+                int deleted = ps.executeUpdate();
+                if (deleted == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            // 3️⃣ تأكيد العملية
+            conn.commit();
+
+            // 4️⃣ إشعار داخل النظام
+            notificationService.sendNotification(
+                userId,
+                "⚠️ Your appointment was cancelled by admin."
+            );
+
+            // 5️⃣ إرسال الإيميل الحقيقي
+            if (email != null && !email.isEmpty()) {
+                emailService.sendEmail(
+                    email,
+                    "Appointment Cancelled",
+                    "Dear user,\n\nYour appointment has been cancelled by admin.\n\nRegards."
+                );
+            }
+
+            System.out.println("✅ Appointment cancelled + Email sent!");
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }}

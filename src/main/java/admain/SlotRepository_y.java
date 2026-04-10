@@ -105,14 +105,14 @@ throw new RuntimeException(e);
 }
 }
     /////////////////////////////
-    public void decreaseBookedCount(int slotId, int participants, Connection conn) throws SQLException {
+    public int decreaseBookedCount(int slotId, int participants, Connection conn) throws SQLException {
 
         String sql = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, participants);
             ps.setInt(2, slotId);
-            ps.executeUpdate();
+            return ps.executeUpdate(); // 🔥
         }
     }
 

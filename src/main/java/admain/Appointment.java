@@ -9,8 +9,14 @@ public class Appointment {
     private int participants;
     private AppointmentStatus_y status;
     private AppointmentType_y type;
+    private String username;
+    public String getUsername() {
+        return username;
+    }
 
-    //////////////////////////////////////
+    public void setUsername(String username) {
+        this.username = username;
+    }   //////////////////////////////////////
    
     public Appointment(int appointmentId, int userId, int slotId,
                        TimeSlot timeSlot, int participants,

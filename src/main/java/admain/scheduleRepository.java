@@ -42,7 +42,27 @@ public class scheduleRepository {
                     : AppointmentStatus_y.WAITLIST;
         }
     }
+    public String getUserEmailByAppointment(int appointmentId) throws SQLException {
 
+        String sql =
+            "SELECT a.email " +
+            "FROM accounts a " +
+            "JOIN appointments ap ON a.account_id = ap.account_id " +
+            "WHERE ap.appointment_id = ?";
+
+        try (Connection conn = database_connection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, appointmentId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("email");
+            }
+        }
+
+        return null;
+    }
     // حساب الحالة مع DB
     public AppointmentStatus_y determineStatus(Connection conn, int slotId, int participants, ZonedDateTime startZ, ZonedDateTime endZ) throws SQLException {
         String sql = "SELECT max_capacity, booked_count FROM appointment_slot WHERE slot_id = ?";
