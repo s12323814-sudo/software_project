@@ -321,6 +321,7 @@ public class Main {
                         break;
 
                     case 5:
+                    	
                         System.out.print("Enter Slot ID to cancel: ");
                         int slotId = Integer.parseInt(sc.nextLine());
                         if (!slotService.adminCancelSlot(slotId)) {
@@ -515,9 +516,10 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }private static void viewAllAppointments() {
+    }
+    private static void viewAllAppointments() {
         try {
-            List<Appointment> list = slotService.getAllAppointments();
+            List<Appointment> list = slotService.getAllAppointments(user.getAccountId());
 
             if (list.isEmpty()) {
                 System.out.println("No appointments found.");
@@ -540,7 +542,6 @@ public class Main {
         } catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
         }
-    
     }
     private static void updateAppointment() {
         while (true) {
@@ -570,29 +571,57 @@ public class Main {
    
 
     private static void addSlot() {
-        while (true) {
-            try {
-                System.out.print("Enter date (YYYY-MM-DD): ");
-                LocalDate date = LocalDate.parse(sc.nextLine());
+    	while (true) {
+    	    try {
+    	        System.out.print("Enter date (YYYY-MM-DD): ");
+    	        LocalDate date = LocalDate.parse(sc.nextLine());
 
-                System.out.print("Enter start time (HH:MM): ");
-                LocalTime start = LocalTime.parse(sc.nextLine());
+    	        if (date.isBefore(LocalDate.now())) {
+    	            System.out.println("Error: Date cannot be in the past!");
+    	            continue;
+    	        }
 
-                System.out.print("Enter end time (HH:MM): ");
-                LocalTime end = LocalTime.parse(sc.nextLine());
+    	        System.out.print("Enter start time (HH:MM): ");
+    	        LocalTime start = LocalTime.parse(sc.nextLine());
 
-                System.out.print("Enter max capacity: ");
-                int capacity = Integer.parseInt(sc.nextLine());
+    	        System.out.print("Enter end time (HH:MM): ");
+    	        LocalTime end = LocalTime.parse(sc.nextLine());
 
-                slotService.addSlot(date, start, end, capacity, user.getAccountId());
-                System.out.println("Slot added successfully!");
-                break;
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number input! Try again.");
-            } catch (Exception e) {
-                System.out.println("Error adding slot: " + e.getMessage());
-            }
-        }
-    }
+    	        if (date.isEqual(LocalDate.now())) {
+    	            if (start.isBefore(LocalTime.now())) {
+    	                System.out.println("Error: Start time cannot be in the past!");
+    	                continue;
+    	            }
+    	        }
 
+    	        if (end.isBefore(start) || end.equals(start)) {
+    	            System.out.println("Error: End time must be after start time!");
+    	            continue;
+    	        }
+
+    	        System.out.print("Enter max capacity: ");
+    	        String capInput = sc.nextLine();
+
+    	        int capacity;
+    	        try {
+    	            capacity = Integer.parseInt(capInput);
+    	            if (capacity <= 0) {
+    	                System.out.println("Error: Capacity must be greater than 0!");
+    	                continue;
+    	            }
+    	        } catch (NumberFormatException e) {
+    	            System.out.println("Error: Capacity must be a valid number!");
+    	            continue;
+    	        }
+
+    	        slotService.addSlot(date, start, end, capacity, user.getAccountId());
+    	        System.out.println("Slot added successfully!");
+    	        break;
+
+    	    } catch (java.time.format.DateTimeParseException e) {
+    	        System.out.println("Error: Invalid date/time format!");
+    	    } catch (Exception e) {
+    	        System.out.println("Error adding slot: " + e.getMessage());
+    	    }
+    	}}
 }

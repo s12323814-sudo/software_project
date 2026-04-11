@@ -17,7 +17,9 @@ public class Appointment {
     public void setUsername(String username) {
         this.username = username;
     }   //////////////////////////////////////
-   
+    public Appointment() {
+    	
+    }
     public Appointment(int appointmentId, int userId, int slotId,
                        TimeSlot timeSlot, int participants,
                        AppointmentStatus_y status,

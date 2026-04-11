@@ -20,38 +20,46 @@ public class AppointmentRepository_y {
     public AppointmentRepository_y() {
         this.slotRepo = new SlotRepository_y();
     }
-    public List<Appointment> getAllAppointments() throws SQLException {
+    public List<Appointment> getAllAppointments(int adminId) throws SQLException {
+
         List<Appointment> list = new ArrayList<>();
+
         String sql = """
-        	    SELECT 
-        	        a.appointment_id,
-        	        a.account_id,
-        	        u.username,
-        	        a.slot_id,
-        	        a.participants,
-        	        a.status,
-        	        a.type
-        	    FROM appointments a
-        	    JOIN accounts u ON a.account_id = u.account_id
-        	""";
+            SELECT 
+                a.appointment_id,
+                a.account_id,
+                u.username,
+                a.slot_id,
+                a.participants,
+                a.status,
+                a.type
+            FROM appointments a
+            JOIN accounts u ON a.account_id = u.account_id
+            JOIN appointment_slot s ON a.slot_id = s.slot_id
+            WHERE s.account_id = ?
+        """;
 
         try (Connection conn = database_connection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
+            stmt.setInt(1, adminId);
 
-            	Appointment a = new Appointment(
-            	        rs.getInt("appointment_id"),
-            	        rs.getInt("account_id"),
-            	        rs.getInt("slot_id"),
-            	        rs.getInt("participants"),
-            	        AppointmentStatus_y.valueOf(rs.getString("status")),
-            	        AppointmentType_y.valueOf(rs.getString("type"))
-            	);
+            try (ResultSet rs = stmt.executeQuery()) {
 
-            	a.setUsername(rs.getString("username"));
-                list.add(a);
+                while (rs.next()) {
+
+                    Appointment a = new Appointment(
+                            rs.getInt("appointment_id"),
+                            rs.getInt("account_id"),
+                            rs.getInt("slot_id"),
+                            rs.getInt("participants"),
+                            AppointmentStatus_y.valueOf(rs.getString("status")),
+                            AppointmentType_y.valueOf(rs.getString("type"))
+                    );
+
+                    a.setUsername(rs.getString("username"));
+                    list.add(a);
+                }
             }
         }
 

@@ -35,8 +35,8 @@ this.emailService = emailService; // ✅ الآن صح
     public List<AppointmentSlot_y> getAvailableSlots() {
         return slotRepo.findAvailableSlots();
     }
-    public List<Appointment> getAllAppointments() throws SQLException {
-        return appointmentRepo.getAllAppointments();
+    public List<Appointment> getAllAppointments(int adminId) throws SQLException {
+        return appointmentRepo.getAllAppointments(adminId);
     }
     /////////////////////////////
     // BOOK APPOINTMENT
