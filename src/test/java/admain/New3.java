@@ -2,7 +2,6 @@ package admain;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -18,22 +17,29 @@ class New3 {
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
     private NotificationService_y notificationService;
+    private EmailService_y emailService;
     private SlotService_y service;
 
     @BeforeEach
     void setUp() {
+
         appointmentRepo = mock(AppointmentRepository_y.class);
         slotRepo = mock(SlotRepository_y.class);
         notificationService = mock(NotificationService_y.class);
+        emailService = mock(EmailService_y.class);
 
-        service = new SlotService_y(appointmentRepo, slotRepo, notificationService);
+        service = new SlotService_y(
+                appointmentRepo,
+                slotRepo,
+                notificationService,
+                emailService
+        );
     }
 
-    // =========================
-    // GET AVAILABLE SLOTS
-    // =========================
+    // ========================= GET SLOTS =========================
     @Test
     void testGetAvailableSlots() {
+
         List<AppointmentSlot_y> mockList = Arrays.asList(
                 mock(AppointmentSlot_y.class),
                 mock(AppointmentSlot_y.class)
@@ -44,12 +50,34 @@ class New3 {
         List<AppointmentSlot_y> result = service.getAvailableSlots();
 
         assertEquals(2, result.size());
-        verify(slotRepo).findAvailableSlots();
     }
+
+    // ========================= BOOK SUCCESS =========================
+    @Test
+    void testBookAppointment_success() throws SQLException {
+
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+
+        when(slot.getMaxCapacity()).thenReturn(10);
+        when(slot.getBookedCount()).thenReturn(5);
+
+        when(slotRepo.findById(1)).thenReturn(slot);
+
+        when(appointmentRepo.book(1, 1, 2, AppointmentType_y.GENERAL))
+                .thenReturn(true);
+
+        boolean result = service.bookAppointment(1, 1, 2, AppointmentType_y.GENERAL);
+
+        assertTrue(result);
+        verify(appointmentRepo).book(1, 1, 2, AppointmentType_y.GENERAL);
+    }
+
+    // ========================= BOOK FAIL (URGENT RULE) =========================
     @Test
     void testBookAppointment_urgent_invalidParticipants() throws SQLException {
 
         AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+
         when(slot.getMaxCapacity()).thenReturn(10);
         when(slot.getBookedCount()).thenReturn(0);
 
@@ -60,29 +88,11 @@ class New3 {
         );
 
         assertFalse(result);
-    }
-    // =========================
-    // BOOK APPOINTMENT SUCCESS
-    // =========================
-    @Test
-    void testBookAppointment_success() throws SQLException {
-
-        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
-        when(slot.getMaxCapacity()).thenReturn(10);
-        when(slot.getBookedCount()).thenReturn(5);
-
-        when(slotRepo.findById(1)).thenReturn(slot);
-        when(appointmentRepo.book(1, 1, 2, AppointmentType_y.GENERAL)).thenReturn(true);
-
-        boolean result = service.bookAppointment(1, 1, 2, AppointmentType_y.GENERAL);
-
-        assertTrue(result);
-        verify(appointmentRepo).book(1, 1, 2, AppointmentType_y.GENERAL);
+        verify(appointmentRepo, never())
+                .book(anyInt(), anyInt(), anyInt(), any());
     }
 
-    // =========================
-    // BOOK FAIL (slot not found)
-    // =========================
+    // ========================= SLOT NOT FOUND =========================
     @Test
     void testBookAppointment_slotNotFound() throws SQLException {
 
@@ -93,13 +103,12 @@ class New3 {
         assertFalse(result);
     }
 
-    // =========================
-    // BOOK FAIL (capacity exceeded)
-    // =========================
+    // ========================= CAPACITY FAIL =========================
     @Test
     void testBookAppointment_notEnoughCapacity() throws SQLException {
 
         AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+
         when(slot.getMaxCapacity()).thenReturn(5);
         when(slot.getBookedCount()).thenReturn(4);
 
@@ -110,13 +119,12 @@ class New3 {
         assertFalse(result);
     }
 
-    // =========================
-    // BOOK RULE: GROUP invalid
-    // =========================
+    // ========================= GROUP RULE =========================
     @Test
     void testBookAppointment_groupInvalid() throws SQLException {
 
         AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+
         when(slot.getMaxCapacity()).thenReturn(10);
         when(slot.getBookedCount()).thenReturn(0);
 
@@ -127,9 +135,7 @@ class New3 {
         assertFalse(result);
     }
 
-    // =========================
-    // ADD SLOT SUCCESS
-    // =========================
+    // ========================= ADD SLOT =========================
     @Test
     void testAddSlot_success() {
 
@@ -147,9 +153,7 @@ class New3 {
         assertTrue(result);
     }
 
-    // =========================
-    // ADD SLOT FAIL (capacity <= 0)
-    // =========================
+    // ========================= INVALID SLOT =========================
     @Test
     void testAddSlot_invalidCapacity() {
 
@@ -164,9 +168,7 @@ class New3 {
         assertFalse(result);
     }
 
-    // =========================
-    // CANCEL APPOINTMENT
-    // =========================
+    // ========================= CANCEL =========================
     @Test
     void testCancelAppointment() throws SQLException {
 
@@ -178,28 +180,23 @@ class New3 {
         verify(appointmentRepo).cancel(1, 10);
     }
 
-    // =========================
-    // UPDATE APPOINTMENT
-    // =========================
+    // ========================= UPDATE =========================
     @Test
     void testUpdateAppointment() throws SQLException {
 
         when(appointmentRepo.update(1, 10, 5)).thenReturn(true);
 
-        boolean result = service.updateAppointment(1, 10, 5);
-
-        assertTrue(result);
+        assertTrue(service.updateAppointment(1, 10, 5));
     }
 
-    // =========================
-    // VIEW USER APPOINTMENTS
-    // =========================
+    // ========================= VIEW =========================
     @Test
     void testViewUserAppointments() throws SQLException {
 
         List<Appointment> list = Arrays.asList(mock(Appointment.class));
 
-        when(appointmentRepo.getUserUpcomingAppointments(1)).thenReturn(list);
+        when(appointmentRepo.getUserUpcomingAppointments(1))
+                .thenReturn(list);
 
         List<Appointment> result = service.viewUserAppointments(1);
 

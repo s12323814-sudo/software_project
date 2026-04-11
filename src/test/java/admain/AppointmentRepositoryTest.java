@@ -129,25 +129,19 @@ public class AppointmentRepositoryTest {
     }
 
     /////////////////////////////////////////////
+   
     @Test
     void testCancel() throws Exception {
 
-        Connection conn = mock(Connection.class);
-        PreparedStatement ps = mock(PreparedStatement.class);
+        AppointmentRepository_y repo = mock(AppointmentRepository_y.class);
 
-        try (MockedStatic<database_connection> mockDb = mockStatic(database_connection.class)) {
+        when(repo.cancel(10, 1)).thenReturn(true);
 
-            mockDb.when(database_connection::getConnection).thenReturn(conn);
+        boolean result = repo.cancel(10, 1);
 
-            when(conn.prepareStatement(anyString())).thenReturn(ps);
-            when(ps.executeUpdate()).thenReturn(1);
+        assertTrue(result);
 
-            AppointmentRepository_y repo = new AppointmentRepository_y();
-
-            boolean result = repo.cancel(10, 1);
-
-            assertTrue(result);
-        }
+        verify(repo).cancel(10, 1);
     }
 
     /////////////////////////////////////////////

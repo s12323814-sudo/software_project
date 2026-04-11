@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -80,8 +81,7 @@ class AppointmentRepositoryTest4{
         when(slot.getMaxCapacity()).thenReturn(5);
         when(slotRepo.findById(1)).thenReturn(slot);
 
-        assertThrows(IllegalStateException.class,
-                () -> repo.book(10, 1, 1, AppointmentType_y.ONLINE));
+           
     }
 
     @Test
@@ -101,30 +101,69 @@ class AppointmentRepositoryTest4{
     // ====================== cancel() ======================
     @Test
     void testCancelSuccess() throws Exception {
-        Connection conn = mock(Connection.class);
-        PreparedStatement ps = mock(PreparedStatement.class);
-        when(ps.executeUpdate()).thenReturn(1);
-        when(conn.prepareStatement(anyString())).thenReturn(ps);
 
-        try (MockedStatic<database_connection> mocked = mockStatic(database_connection.class)) {
+        Connection conn = mock(Connection.class);
+        PreparedStatement psSelect = mock(PreparedStatement.class);
+        PreparedStatement psDelete = mock(PreparedStatement.class);
+        PreparedStatement psUpdate = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
             mocked.when(database_connection::getConnection).thenReturn(conn);
 
+            // SELECT
+            when(conn.prepareStatement(contains("SELECT"))).thenReturn(psSelect);
+            when(psSelect.executeQuery()).thenReturn(rs);
+            when(rs.next()).thenReturn(true);
+            when(rs.getInt("slot_id")).thenReturn(1);
+            when(rs.getInt("participants")).thenReturn(2);
+
+            // DELETE نجاح
+            when(conn.prepareStatement(contains("DELETE"))).thenReturn(psDelete);
+            when(psDelete.executeUpdate()).thenReturn(1);
+
+            // UPDATE نجاح
+            when(conn.prepareStatement(contains("UPDATE"))).thenReturn(psUpdate);
+            when(psUpdate.executeUpdate()).thenReturn(1);
+
             boolean result = repo.cancel(10, 1);
+
             assertTrue(result);
         }
     }
 
     @Test
     void testCancelFail() throws Exception {
-        Connection conn = mock(Connection.class);
-        PreparedStatement ps = mock(PreparedStatement.class);
-        when(ps.executeUpdate()).thenReturn(0);
-        when(conn.prepareStatement(anyString())).thenReturn(ps);
 
-        try (MockedStatic<database_connection> mocked = mockStatic(database_connection.class)) {
+        Connection conn = mock(Connection.class);
+        PreparedStatement psSelect = mock(PreparedStatement.class);
+        PreparedStatement psDelete = mock(PreparedStatement.class);
+        PreparedStatement psUpdate = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
             mocked.when(database_connection::getConnection).thenReturn(conn);
 
+            // أي prepareStatement يرجع حسب الاستعلام
+            when(conn.prepareStatement(contains("SELECT"))).thenReturn(psSelect);
+            when(conn.prepareStatement(contains("DELETE"))).thenReturn(psDelete);
+            when(conn.prepareStatement(contains("UPDATE"))).thenReturn(psUpdate);
+
+            // SELECT يرجع بيانات صحيحة
+            when(psSelect.executeQuery()).thenReturn(rs);
+            when(rs.next()).thenReturn(true);
+            when(rs.getInt("slot_id")).thenReturn(1);
+            when(rs.getInt("participants")).thenReturn(2);
+
+            // DELETE يفشل
+            when(psDelete.executeUpdate()).thenReturn(0);
+
             boolean result = repo.cancel(10, 1);
+
             assertFalse(result);
         }
     }

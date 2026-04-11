@@ -104,22 +104,30 @@ public class AppointmentRepository_yTestFixed {
         }
     }
     // ================= cancel =================
+   
+ 
     @Test
-    public void testCancel() throws Exception {
-        // Mock Connection و PreparedStatement
-        Connection conn = mock(Connection.class);
-        PreparedStatement ps = mock(PreparedStatement.class);
+    void testCancelAppointment_success() throws Exception {
 
-        when(ps.executeUpdate()).thenReturn(1);
-        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
 
-        // Mock static داخل try-with-resources
-        try (MockedStatic<database_connection> mocked = mockStatic(database_connection.class)) {
-            mocked.when(database_connection::getConnection).thenReturn(conn);
+        SlotService_y service = new SlotService_y(
+                appointmentRepo,
+                slotRepo,
+                notificationService,
+                emailService
+        );
 
-            boolean result = repo.cancel(10, 1);
-            assertTrue(result); // تحقق من نجاح الحذف
-        }
+        when(appointmentRepo.cancel(10, 1)).thenReturn(true);
+
+        boolean result = service.cancelAppointment(10, 1);
+
+        assertTrue(result);
+
+        verify(appointmentRepo).cancel(10, 1);
     }
 
     // ================= update =================

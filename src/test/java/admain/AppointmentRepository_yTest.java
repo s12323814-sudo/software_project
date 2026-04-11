@@ -6,6 +6,7 @@ import org.mockito.MockedStatic;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -88,18 +89,65 @@ public class AppointmentRepository_yTest {
     }
 
     // ================= cancel() =================
+
     @Test
-    public void testCancel() throws Exception {
+    void testAdminCancelAppointment_success() throws Exception {
+
+        // Mock dependencies
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
+
+        SlotService_y service = new SlotService_y(
+                appointmentRepo,
+                slotRepo,
+                notificationService,
+                emailService
+        );
+
+        // Mock DB objects
         Connection conn = mock(Connection.class);
-        PreparedStatement ps = mock(PreparedStatement.class);
-        when(ps.executeUpdate()).thenReturn(1);
-        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        PreparedStatement psSelect = mock(PreparedStatement.class);
+        PreparedStatement psDelete = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-        try (MockedStatic<database_connection> mocked = mockStatic(database_connection.class)) {
-            mocked.when(database_connection::getConnection).thenReturn(conn);
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
 
-            boolean result = repo.cancel(10, 1);
+            mocked.when(database_connection::getConnection)
+                  .thenReturn(conn);
+
+            // SELECT query
+            when(conn.prepareStatement(contains("SELECT"))).thenReturn(psSelect);
+            when(psSelect.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(true);
+            when(rs.getInt("account_id")).thenReturn(10);
+            when(rs.getString("email")).thenReturn("test@gmail.com");
+
+            // DELETE query
+            when(conn.prepareStatement(contains("DELETE"))).thenReturn(psDelete);
+            when(psDelete.executeUpdate()).thenReturn(1);
+
+            // Services mock behavior
+            doNothing().when(notificationService)
+                    .sendNotification(anyInt(), anyString());
+
+            doNothing().when(emailService)
+                    .sendEmail(anyString(), anyString(), anyString());
+
+            // execute
+            boolean result = service.adminCancelAppointment(1);
+
+            // assert
             assertTrue(result);
+
+            verify(notificationService)
+                    .sendNotification(eq(10), anyString());
+
+            verify(emailService)
+                    .sendEmail(eq("test@gmail.com"), anyString(), anyString());
         }
     }
 

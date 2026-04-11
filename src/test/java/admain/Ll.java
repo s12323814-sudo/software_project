@@ -1,122 +1,155 @@
 package admain;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.sql.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 class Ll {
 
+    // ================= adminCancelAppointment SUCCESS =================
     @Test
     void testAdminCancelAppointment_success() throws Exception {
 
-        // Mock repositories
         AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
         SlotRepository_y slotRepo = mock(SlotRepository_y.class);
         NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
 
-        SlotService_y service = new SlotService_y(appointmentRepo, slotRepo, notificationService);
+        SlotService_y service = new SlotService_y(
+                appointmentRepo,
+                slotRepo,
+                notificationService,
+                emailService
+        );
 
-        // Mock DB
         Connection conn = mock(Connection.class);
-        PreparedStatement ps = mock(PreparedStatement.class);
+        PreparedStatement psSelect = mock(PreparedStatement.class);
+        PreparedStatement psDelete = mock(PreparedStatement.class);
         ResultSet rs = mock(ResultSet.class);
 
-        try (MockedStatic<database_connection> mockedStatic =
+        try (MockedStatic<database_connection> mocked =
                      mockStatic(database_connection.class)) {
 
-            mockedStatic.when(database_connection::getConnection).thenReturn(conn);
+            mocked.when(database_connection::getConnection).thenReturn(conn);
 
-            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(conn.prepareStatement(anyString()))
+                    .thenReturn(psSelect)
+                    .thenReturn(psDelete);
 
-            // Mock appointmentRepo
-            Appointment appointment = mock(Appointment.class);
-            when(appointment.getUserId()).thenReturn(1);
-            when(appointment.getSlotId()).thenReturn(10);
-            when(appointment.getParticipants()).thenReturn(2);
+            when(psSelect.executeQuery()).thenReturn(rs);
+            when(rs.next()).thenReturn(true);
+            when(rs.getInt("account_id")).thenReturn(1);
+            when(rs.getString("email")).thenReturn("test@test.com");
 
-            when(appointmentRepo.findById(eq(1), eq(conn))).thenReturn(appointment);
+            when(psDelete.executeUpdate()).thenReturn(1);
 
-            // Mock slotRepo
-            AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
-            when(slotRepo.findById(10)).thenReturn(slot);
-
-            when(slotRepo.findAvailableSlotsByDate(any()))
-                    .thenReturn(java.util.Collections.emptyList());
-
-            doNothing().when(notificationService)
-                    .sendNotification(anyInt(), anyString());
-
-            // Execute
             boolean result = service.adminCancelAppointment(1);
 
             assertTrue(result);
 
-            verify(notificationService, atLeastOnce())
-                    .sendNotification(anyInt(), anyString());
+            verify(notificationService)
+                    .sendNotification(eq(1), anyString());
+
+            verify(emailService)
+                    .sendEmail(eq("test@test.com"), anyString(), anyString());
         }
-        
     }
+
+    // ================= adminCancelAppointment NOT FOUND =================
     @Test
     void testAdminCancelAppointment_notFound() throws Exception {
 
         AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
         SlotRepository_y slotRepo = mock(SlotRepository_y.class);
         NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
 
-        SlotService_y service = new SlotService_y(appointmentRepo, slotRepo, notificationService);
+        SlotService_y service = new SlotService_y(
+                appointmentRepo,
+                slotRepo,
+                notificationService,
+                emailService
+        );
 
         Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-        try (MockedStatic<database_connection> mockedStatic =
+        try (MockedStatic<database_connection> mocked =
                      mockStatic(database_connection.class)) {
 
-            mockedStatic.when(database_connection::getConnection).thenReturn(conn);
+            mocked.when(database_connection::getConnection).thenReturn(conn);
 
-            when(appointmentRepo.findById(eq(1), eq(conn))).thenReturn(null);
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(false);
 
             boolean result = service.adminCancelAppointment(1);
 
             assertFalse(result);
             verify(conn).rollback();
         }
-    }@Test
+    }
+
+    // ================= adminCancelSlot SUCCESS =================
+    @Test
     void testAdminCancelSlot_success() throws Exception {
 
         AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
         SlotRepository_y slotRepo = mock(SlotRepository_y.class);
         NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
 
-        SlotService_y service = new SlotService_y(appointmentRepo, slotRepo, notificationService);
+        SlotService_y service = new SlotService_y(
+                appointmentRepo,
+                slotRepo,
+                notificationService,
+                emailService
+        );
 
         Connection conn = mock(Connection.class);
         PreparedStatement psUsers = mock(PreparedStatement.class);
-        PreparedStatement psDelete = mock(PreparedStatement.class);
+        PreparedStatement psDeleteAppt = mock(PreparedStatement.class);
+        PreparedStatement psDeleteSlot = mock(PreparedStatement.class);
         ResultSet rs = mock(ResultSet.class);
 
-        try (MockedStatic<database_connection> mockedStatic =
+        try (MockedStatic<database_connection> mocked =
                      mockStatic(database_connection.class)) {
 
-            mockedStatic.when(database_connection::getConnection).thenReturn(conn);
+            mocked.when(database_connection::getConnection).thenReturn(conn);
 
-            // Users query
-            when(conn.prepareStatement(contains("SELECT"))).thenReturn(psUsers);
+            when(conn.prepareStatement(anyString()))
+                    .thenReturn(psUsers)
+                    .thenReturn(psDeleteAppt)
+                    .thenReturn(psDeleteSlot);
+
             when(psUsers.executeQuery()).thenReturn(rs);
             when(rs.next()).thenReturn(true, false);
             when(rs.getInt("account_id")).thenReturn(1);
 
-            // Delete queries
-            when(conn.prepareStatement(contains("DELETE"))).thenReturn(psDelete);
-            when(psDelete.executeUpdate()).thenReturn(1);
+            when(psDeleteAppt.executeUpdate()).thenReturn(1);
+            when(psDeleteSlot.executeUpdate()).thenReturn(1);
 
             boolean result = service.adminCancelSlot(10);
 
             assertTrue(result);
 
-            verify(notificationService).sendNotification(eq(1), anyString());
+            verify(notificationService)
+                    .sendNotification(eq(1), anyString());
+
             verify(conn).commit();
         }
     }
