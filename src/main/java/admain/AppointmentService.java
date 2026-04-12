@@ -10,7 +10,20 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 import java.util.List;
-
+/**
+ * كلاس يمثل طبقة الـ Service الخاصة بالمواعيد (Appointments).
+ *
+ * <p>يحتوي على منطق العمل (Business Logic) للتعامل مع المواعيد،
+ * مثل الحجز، التحقق من السعة، والتحقق من صحة الوقت.</p>
+ *
+ * <p>يعمل هذا الكلاس كوسيط بين:</p>
+ * <ul>
+ *   <li>طبقة الـ Repository (قاعدة البيانات)</li>
+ *   <li>وباقي أجزاء النظام مثل SlotService</li>
+ * </ul>
+ *
+ * <p>كما يدعم استخدام Connection مخصص لأغراض الاختبار (Testing).</p>
+ */
 public class AppointmentService {
 	public static final String slotService_y = null;
 	private AppointmentRepository_y appointmentRepo;

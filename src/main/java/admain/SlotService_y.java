@@ -40,10 +40,13 @@ this.emailService = emailService; // ✅ الآن صح
     }
     /////////////////////////////
     // BOOK APPOINTMENT
-    public boolean bookAppointment(int userId, int slotId, int participants, AppointmentType_y type) throws SQLException {
+    public boolean bookAppointment(int userId, int slotId, int participants, AppointmentType_y type)
+            throws SQLException {
 
         AppointmentSlot_y slot = slotRepo.findById(slotId);
-        if (slot == null) return false;
+        if (slot == null) {
+            throw new IllegalArgumentException("Slot not found");
+        }
 
         int remaining = slot.getMaxCapacity() - slot.getBookedCount();
 
@@ -53,36 +56,42 @@ this.emailService = emailService; // ✅ الآن صح
             case URGENT:
             case INDIVIDUAL:
                 if (participants != 1) {
-                    System.out.println("This type allows only 1 participant.");
-                    return false;
+                    throw new IllegalArgumentException("This type allows only 1 participant");
                 }
                 break;
 
             case GROUP:
                 if (participants < 2) {
-                    System.out.println("Group must have at least 2 participants.");
-                    return false;
+                    throw new IllegalArgumentException("Group must have at least 2 participants");
                 }
                 break;
 
             case VIRTUAL:
-                // مثال: ما نهتم بالcapacity
+                // Virtual: ignore physical capacity
                 remaining = Integer.MAX_VALUE;
                 break;
 
-            default:
-                // GENERAL, FOLLOW_UP, ASSESSMENT
+            case IN_PERSON:
+                // لازم يلتزم بالسعة
                 break;
+
+            case FOLLOW_UP:
+            case ASSESSMENT:
+            case GENERAL:
+                // لا شروط إضافية حالياً
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unknown appointment type");
         }
 
-        if (participants > remaining) {
-            System.out.println("Not enough capacity.");
-            return false;
+        // 🔥 تحقق السعة (ما عدا virtual)
+        if (type != AppointmentType_y.VIRTUAL && participants > remaining) {
+            throw new IllegalArgumentException("Not enough capacity for this slot");
         }
 
         return appointmentRepo.book(userId, slotId, participants, type);
     }
-
     /////////////////////////////
     // CANCEL (USER)
     public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {

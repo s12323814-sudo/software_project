@@ -85,12 +85,10 @@ class SlotServiceTest {
         when(slot.getMaxCapacity()).thenReturn(5);
         when(slot.getBookedCount()).thenReturn(4);
         when(slotRepo.findById(1)).thenReturn(slot);
-
-        boolean result = service.bookAppointment(
-                10, 1, 2, AppointmentType_y.GENERAL
-        );
-
-        assertFalse(result);
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 999, AppointmentType_y.GENERAL);
+        });
+       
         verify(appointmentRepo, never())
                 .book(anyInt(), anyInt(), anyInt(), any());
     }
@@ -184,11 +182,9 @@ class SlotServiceTest {
         when(slot.getMaxCapacity()).thenReturn(10);
         when(slot.getBookedCount()).thenReturn(2);
 
-        boolean result = service.bookAppointment(
-                1, 1, 2, AppointmentType_y.INDIVIDUAL
-        );
-
-        assertFalse(result);
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 2, AppointmentType_y.INDIVIDUAL);
+        });
 
         verify(appointmentRepo, never())
                 .book(anyInt(), anyInt(), anyInt(), any());
@@ -203,12 +199,10 @@ class SlotServiceTest {
         when(slot.getMaxCapacity()).thenReturn(5);
         when(slot.getBookedCount()).thenReturn(5);
 
-        boolean result = service.bookAppointment(
-                1, 1, 1, AppointmentType_y.GROUP
-        );
-
-        assertFalse(result);
-
+      
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 1, AppointmentType_y.GROUP);
+        });
         verify(appointmentRepo, never())
                 .book(anyInt(), anyInt(), anyInt(), any());
     }
@@ -543,10 +537,11 @@ class SlotServiceTest {
 
         when(slotRepo.findById(1)).thenReturn(null);
 
-        boolean result = service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
-
-        assertFalse(result);
-    }@Test
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+        });
+    }
+    @Test
     void testBookAppointment_urgent_invalid() throws Exception {
 
         SlotRepository_y slotRepo = mock(SlotRepository_y.class);
@@ -562,10 +557,12 @@ class SlotServiceTest {
                 appointmentRepo, slotRepo, mock(NotificationService_y.class), mock(EmailService_y.class)
         );
 
-        boolean result = service.bookAppointment(1, 1, 2, AppointmentType_y.URGENT);
-
-        assertFalse(result);
-    }@Test
+     
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 2, AppointmentType_y.URGENT);
+        });
+    }
+    @Test
     void testCancelAppointment11() throws Exception {
 
         AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
@@ -731,11 +728,10 @@ class SlotServiceTest {
 
         when(slotRepo.findById(1)).thenReturn(slot);
 
-        boolean result = service.bookAppointment(
-                1, 1, 2, AppointmentType_y.URGENT
-        );
-
-        assertFalse(result);
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 2, AppointmentType_y.URGENT);
+        });
+        
         verify(appointmentRepo, never())
                 .book(anyInt(), anyInt(), anyInt(), any());
     }
@@ -745,10 +741,9 @@ class SlotServiceTest {
     void testBookAppointment_slotNotFound() throws SQLException {
 
         when(slotRepo.findById(1)).thenReturn(null);
-
-        boolean result = service.bookAppointment(1, 1, 2, AppointmentType_y.GENERAL);
-
-        assertFalse(result);
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+        });
     }
 
     // ========================= CAPACITY FAIL =========================
@@ -761,13 +756,13 @@ class SlotServiceTest {
         when(slot.getBookedCount()).thenReturn(4);
 
         when(slotRepo.findById(1)).thenReturn(slot);
-
-        boolean result = service.bookAppointment(1, 1, 5, AppointmentType_y.GENERAL);
-
-        assertFalse(result);
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 100, AppointmentType_y.GENERAL);
+        });
     }
 
     // ========================= GROUP RULE =========================
+    
     @Test
     void testBookAppointment_groupInvalid() throws SQLException {
 
@@ -778,9 +773,9 @@ class SlotServiceTest {
 
         when(slotRepo.findById(1)).thenReturn(slot);
 
-        boolean result = service.bookAppointment(1, 1, 1, AppointmentType_y.GROUP);
-
-        assertFalse(result);
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.bookAppointment(1, 1, 1, AppointmentType_y.GROUP);
+        });
     }
 
     // ========================= ADD SLOT =========================

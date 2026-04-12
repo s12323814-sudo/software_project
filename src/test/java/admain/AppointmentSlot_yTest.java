@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 class AppointmentSlot_yTest {
 
+   
     @Test
     public void testConstructorAndGetters1() {
 

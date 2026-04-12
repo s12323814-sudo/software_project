@@ -13,13 +13,41 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * كلاس مسؤول عن إدارة المواعيد (Appointments) داخل قاعدة البيانات.
+ *
+ * <p>يوفر هذا الكلاس جميع العمليات المتعلقة بالحجوزات مثل:</p>
+ * <ul>
+ *   <li>عرض المواعيد (للأدمن أو للمستخدم)</li>
+ *   <li>حجز موعد جديد</li>
+ *   <li>إلغاء موعد</li>
+ *   <li>تحديث عدد المشاركين</li>
+ *   <li>حذف موعد</li>
+ * </ul>
+ *
+ * <p>يعتمد على JDBC للتعامل مع قاعدة البيانات، ويستخدم SlotRepository
+ * لجلب معلومات الـ TimeSlot.</p>
+ *
+ * <p>يتم التعامل مع الوقت باستخدام المنطقة الزمنية Asia/Hebron.</p>
+ */
 public class AppointmentRepository_y {
 	Connection conn = database_connection.getConnection();
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
     private SlotRepository_y slotRepo ;
+    /**
+     * Constructor افتراضي يقوم بإنشاء SlotRepository داخلي.
+     */
     public AppointmentRepository_y() {
         this.slotRepo = new SlotRepository_y();
     }
+    /**
+     * جلب جميع المواعيد الخاصة بأدمن معين.
+     *
+     * @param adminId رقم الأدمن
+     * @return قائمة بالمواعيد
+     * @throws SQLException في حال حدوث خطأ في قاعدة البيانات
+     */
+    
     public List<Appointment> getAllAppointments(int adminId) throws SQLException {
 
         List<Appointment> list = new ArrayList<>();
@@ -65,10 +93,22 @@ public class AppointmentRepository_y {
 
         return list;
     }
-    
+    /**
+     * Constructor مع حقن SlotRepository (مفيد للاختبار).
+     *
+     * @param slotRepo كائن SlotRepository
+     */
     public AppointmentRepository_y(SlotRepository_y slotRepo) {
         this.slotRepo = slotRepo;
     }
+    
+    /**
+     * جلب جميع المواعيد القادمة (غير المنتهية).
+     *
+     * @return قائمة بالمواعيد القادمة
+     * @throws SQLException في حال حدوث خطأ
+     */
+    
     public List<Appointment> getUpcomingAppointments() throws SQLException {
         List<Appointment> appointments = new ArrayList<>();
 
@@ -108,6 +148,14 @@ public class AppointmentRepository_y {
         return appointments;
     }
 
+    /**
+     * جلب المواعيد القادمة لمستخدم معين.
+     *
+     * @param userId رقم المستخدم
+     * @return قائمة بالمواعيد القادمة الخاصة بالمستخدم
+     * @throws SQLException في حال حدوث خطأ
+     */
+    
     public List<Appointment> getUserUpcomingAppointments(int userId) throws SQLException {
         List<Appointment> appointments = new ArrayList<>();
         String sql =
@@ -146,6 +194,11 @@ public class AppointmentRepository_y {
         return appointments;
     }
 
+    /**
+     * عرض المواعيد في الكونسول بشكل منسق.
+     *
+     * @param appointments قائمة المواعيد
+     */ 
     // دالة مساعدة للعرض
     public static void displayAppointments(List<Appointment> appointments) {
         if (appointments.isEmpty()) {

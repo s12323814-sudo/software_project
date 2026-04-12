@@ -31,6 +31,7 @@ public class AppointmentRepository_yTestFixed {
     }
 
     // ================= displayAppointments =================
+    
     @Test
     public void testDisplayAppointmentsEmpty() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
