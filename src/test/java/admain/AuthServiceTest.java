@@ -2,7 +2,8 @@
     package admain;
 
     import org.junit.jupiter.api.*;
-    import org.mockito.*;
+import org.mindrot.jbcrypt.BCrypt;
+import org.mockito.*;
 
     import static org.junit.jupiter.api.Assertions.*;
     import static org.mockito.Mockito.*;
@@ -19,9 +20,94 @@
         void setup() {
             MockitoAnnotations.openMocks(this);
         }
+        @Test
+        void testLogin_wrongPassword() {
+            AccountRepository_y repo = mock(AccountRepository_y.class);
+            authService_y service = new authService_y(repo);
 
+            String hashed = BCrypt.hashpw("123456", BCrypt.gensalt());
+            Account_y acc = new Account_y(1, "user", hashed, "a@test.com", Role_y.USER);
+
+            when(repo.findByUsernameOrEmail("user")).thenReturn(acc);
+
+            session_y result = service.login("user", "wrong");
+
+            assertNull(result);
+        }@Test
+        void testLogin_userNotFound() {
+            AccountRepository_y repo = mock(AccountRepository_y.class);
+            authService_y service = new authService_y(repo);
+
+            when(repo.findByUsernameOrEmail("x")).thenReturn(null);
+
+            session_y result = service.login("x", "123");
+
+            assertNull(result);
+        }@Test
+        void testLogin_nullInput() {
+            authService_y service = new authService_y(mock(AccountRepository_y.class));
+
+            assertNull(service.login(null, "123"));
+            assertNull(service.login("user", null));
+        }@Test
+        void testLogin_nullHash() {
+            AccountRepository_y repo = mock(AccountRepository_y.class);
+            authService_y service = new authService_y(repo);
+
+            Account_y acc = mock(Account_y.class);
+            when(acc.getPasswordHash()).thenReturn(null);
+
+            when(repo.findByUsernameOrEmail("user")).thenReturn(acc);
+
+            assertThrows(RuntimeException.class,
+                    () -> service.login("user", "123"));
+        }@Test
+        void testRegister_success() {
+            AccountRepository_y repo = mock(AccountRepository_y.class);
+            authService_y service = new authService_y(repo);
+
+            when(repo.usernameExists("user")).thenReturn(false);
+            when(repo.emailExists("a@test.com")).thenReturn(false);
+
+            Account_y saved = new Account_y(1, "user", "hash", "a@test.com", Role_y.USER);
+            when(repo.save(anyString(), anyString(), anyString(), any())).thenReturn(saved);
+
+            Account_y result = service.register("user", "123456", "a@test.com", Role_y.USER);
+
+            assertNotNull(result);
+        }@Test
+        void testRegister_usernameExists() {
+            AccountRepository_y repo = mock(AccountRepository_y.class);
+            authService_y service = new authService_y(repo);
+
+            when(repo.usernameExists("user")).thenReturn(true);
+
+            Account_y result = service.register("user", "123456", "a@test.com", Role_y.USER);
+
+            assertNull(result);
+        }@Test
+        void testRegister_weakPassword() {
+            authService_y service = new authService_y(mock(AccountRepository_y.class));
+
+            Account_y result = service.register("user", "123", "a@test.com", Role_y.USER);
+
+            assertNull(result);
+        }
         // ================= LOGIN =================
+        @Test
+        void testLogin_success() {
+            AccountRepository_y repo = mock(AccountRepository_y.class);
+            authService_y service = new authService_y(repo);
 
+            String hashed = BCrypt.hashpw("123456", BCrypt.gensalt());
+            Account_y acc = new Account_y(1, "user", hashed, "a@test.com", Role_y.USER);
+
+            when(repo.findByUsernameOrEmail("user")).thenReturn(acc);
+
+            session_y result = service.login("user", "123456");
+
+            assertNotNull(result);
+        }
         @Test
         void shouldLoginSuccessfully() {
             String password = "123456";

@@ -89,68 +89,128 @@ public class AppointmentRepository_yTest {
     }
 
     // ================= cancel() =================
-
     @Test
-    void testAdminCancelAppointment_success() throws Exception {
+    void testCancel_success() throws Exception {
 
-        // Mock dependencies
-        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
-        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
-        NotificationService_y notificationService = mock(NotificationService_y.class);
-        EmailService_y emailService = mock(EmailService_y.class);
-
-        SlotService_y service = new SlotService_y(
-                appointmentRepo,
-                slotRepo,
-                notificationService,
-                emailService
-        );
-
-        // Mock DB objects
         Connection conn = mock(Connection.class);
         PreparedStatement psSelect = mock(PreparedStatement.class);
         PreparedStatement psDelete = mock(PreparedStatement.class);
+        PreparedStatement psUpdate = mock(PreparedStatement.class);
         ResultSet rs = mock(ResultSet.class);
 
         try (MockedStatic<database_connection> mocked =
                      mockStatic(database_connection.class)) {
 
-            mocked.when(database_connection::getConnection)
-                  .thenReturn(conn);
+            mocked.when(database_connection::getConnection).thenReturn(conn);
 
-            // SELECT query
-            when(conn.prepareStatement(contains("SELECT"))).thenReturn(psSelect);
+            when(conn.prepareStatement(anyString()))
+                    .thenReturn(psSelect)
+                    .thenReturn(psDelete)
+                    .thenReturn(psUpdate);
+
+            // select
             when(psSelect.executeQuery()).thenReturn(rs);
-
             when(rs.next()).thenReturn(true);
-            when(rs.getInt("account_id")).thenReturn(10);
-            when(rs.getString("email")).thenReturn("test@gmail.com");
+            when(rs.getInt("slot_id")).thenReturn(5);
+            when(rs.getInt("participants")).thenReturn(2);
 
-            // DELETE query
-            when(conn.prepareStatement(contains("DELETE"))).thenReturn(psDelete);
+            // delete
             when(psDelete.executeUpdate()).thenReturn(1);
 
-            // Services mock behavior
-            doNothing().when(notificationService)
-                    .sendNotification(anyInt(), anyString());
+            AppointmentRepository_y repo = new AppointmentRepository_y();
 
-            doNothing().when(emailService)
-                    .sendEmail(anyString(), anyString(), anyString());
+            boolean result = repo.cancel(1, 10);
 
-            // execute
-            boolean result = service.adminCancelAppointment(1,0);
-
-            // assert
             assertTrue(result);
+            verify(conn).commit(); // ✅ تأكد انه عمل commit
+        }
+    
+    }
+ 
+    @Test
+    void testAdminCancelAppointment_unauthorized() throws Exception {
 
-            verify(notificationService)
-                    .sendNotification(eq(10), anyString());
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-            verify(emailService)
-                    .sendEmail(eq("test@gmail.com"), anyString(), anyString());
+        SlotService_y service = new SlotService_y(null, null, mock(NotificationService_y.class), mock(EmailService_y.class));
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
+            mocked.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(true);
+            when(rs.getInt("account_id")).thenReturn(1);
+            when(rs.getString("email")).thenReturn("test@test.com");
+            when(rs.getInt("slot_admin")).thenReturn(50); // ❌ مش نفس الأدمن
+
+            boolean result = service.adminCancelAppointment(10, 99);
+
+            assertFalse(result);
+            verify(conn).rollback(); // 🔥 أهم تحقق
+        }
+    }@Test
+    void testAdminCancelAppointment_notFound() throws Exception {
+
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        SlotService_y service = new SlotService_y(null, null, mock(NotificationService_y.class), mock(EmailService_y.class));
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
+            mocked.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(false);
+
+            boolean result = service.adminCancelAppointment(10, 99);
+
+            assertFalse(result);
+            verify(conn).rollback();
+        }
+    }@Test
+    void testAdminCancelAppointment_deleteFails() throws Exception {
+
+        Connection conn = mock(Connection.class);
+        PreparedStatement psSelect = mock(PreparedStatement.class);
+        PreparedStatement psDelete = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        SlotService_y service = new SlotService_y(null, null, mock(NotificationService_y.class), mock(EmailService_y.class));
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
+            mocked.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString()))
+                    .thenReturn(psSelect)
+                    .thenReturn(psDelete);
+
+            when(psSelect.executeQuery()).thenReturn(rs);
+            when(rs.next()).thenReturn(true);
+            when(rs.getInt("account_id")).thenReturn(1);
+            when(rs.getString("email")).thenReturn("test@test.com");
+            when(rs.getInt("slot_admin")).thenReturn(99);
+
+            when(psDelete.executeUpdate()).thenReturn(0); // ❌ فشل الحذف
+
+            boolean result = service.adminCancelAppointment(10, 99);
+
+            assertFalse(result);
+            verify(conn).rollback();
         }
     }
-
     // ================= update() =================
     @Test
     public void testUpdate() throws Exception {

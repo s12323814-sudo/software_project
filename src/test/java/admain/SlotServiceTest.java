@@ -336,16 +336,37 @@ class SlotServiceTest {
         assertTrue(slot.isFull());
     }
     @Test
+    void testCancel_notFound() throws Exception {
+
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
+            mocked.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+            when(rs.next()).thenReturn(false);
+
+            AppointmentRepository_y repo = new AppointmentRepository_y();
+
+            boolean result = repo.cancel(1, 10);
+
+            assertFalse(result);
+            verify(conn).rollback(); // ✅ مهم
+        }
+    }@Test
     void testAdminCancelAppointment_success() throws Exception {
 
-        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
-        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
         NotificationService_y notificationService = mock(NotificationService_y.class);
         EmailService_y emailService = mock(EmailService_y.class);
 
         SlotService_y service = new SlotService_y(
-                appointmentRepo,
-                slotRepo,
+                null,
+                null,
                 notificationService,
                 emailService
         );
@@ -360,20 +381,31 @@ class SlotServiceTest {
 
             mocked.when(database_connection::getConnection).thenReturn(conn);
 
+            // مهم جداً ترتيبهم
             when(conn.prepareStatement(anyString()))
-                    .thenReturn(psSelect)
-                    .thenReturn(psDelete);
+                    .thenReturn(psSelect)   // أول query
+                    .thenReturn(psDelete);  // delete
 
+            // SELECT
             when(psSelect.executeQuery()).thenReturn(rs);
             when(rs.next()).thenReturn(true);
+
             when(rs.getInt("account_id")).thenReturn(1);
             when(rs.getString("email")).thenReturn("test@test.com");
 
+            // 🔥 أهم سطر (سبب مشكلتك)
+            when(rs.getInt("slot_admin")).thenReturn(10);
+
+            // DELETE
             when(psDelete.executeUpdate()).thenReturn(1);
 
-            boolean result = service.adminCancelAppointment(1,0);
+            // 🟢 استدعاء الميثود
+            boolean result = service.adminCancelAppointment(10, 99);
 
+            // 🟢 تحقق
             assertTrue(result);
+
+            verify(conn).commit();
 
             verify(notificationService)
                     .sendNotification(eq(1), anyString());
@@ -381,6 +413,276 @@ class SlotServiceTest {
             verify(emailService)
                     .sendEmail(eq("test@test.com"), anyString(), anyString());
         }
+    }@Test
+    void testSlotAvailable_returnsTrue() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        // 🔥 مهم جداً
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        boolean result = service.isSlotAvailableForResource(1, 10);
+
+        assertTrue(result);
+    }@Test
+    void testSlotAvailable_returnsFalse() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(3);
+
+        YourService service = new YourService(repo);
+
+        boolean result = service.isSlotAvailableForResource(1, 10);
+
+        assertFalse(result);
+    }
+    @Test
+    void testSlotAvailable_noResult() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        // ❌ ما في صف راجع من الداتابيس
+        when(rs.next()).thenReturn(false);
+
+        YourService service = new YourService(repo);
+
+        boolean result = service.isSlotAvailableForResource(1, 10);
+
+        assertFalse(result);
+    }@Test
+    void testSlotAvailable_sqlException() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+
+        when(ps.executeQuery()).thenThrow(new SQLException("DB crash"));
+
+        YourService service = new YourService(repo);
+
+        assertThrows(RuntimeException.class, () -> {
+            service.isSlotAvailableForResource(1, 10);
+        });
+    }@Test
+    void testSlotAvailable_nullCountFallback() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+
+        // إذا DB رجعت null أو 0 بشكل غير متوقع
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        assertTrue(service.isSlotAvailableForResource(1, 10));
+    }@Test
+    void testGetAvailableSlots_null() {
+
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+        NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
+
+        SlotService_y service = new SlotService_y(
+                appointmentRepo, slotRepo, notificationService, emailService
+        );
+
+        when(slotRepo.findAvailableSlots()).thenReturn(null);
+
+        List<AppointmentSlot_y> result = service.getAvailableSlots();
+
+        assertNull(result);
+    }@Test
+    void testBookAppointment_slotNull() throws Exception {
+
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+        NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
+
+        SlotService_y service = new SlotService_y(
+                appointmentRepo, slotRepo, notificationService, emailService
+        );
+
+        when(slotRepo.findById(1)).thenReturn(null);
+
+        boolean result = service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+
+        assertFalse(result);
+    }@Test
+    void testBookAppointment_urgent_invalid() throws Exception {
+
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+
+        when(slotRepo.findById(1)).thenReturn(slot);
+        when(slot.getMaxCapacity()).thenReturn(10);
+        when(slot.getBookedCount()).thenReturn(0);
+
+        SlotService_y service = new SlotService_y(
+                appointmentRepo, slotRepo, mock(NotificationService_y.class), mock(EmailService_y.class)
+        );
+
+        boolean result = service.bookAppointment(1, 1, 2, AppointmentType_y.URGENT);
+
+        assertFalse(result);
+    }@Test
+    void testCancelAppointment11() throws Exception {
+
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+
+        when(appointmentRepo.cancel(1, 10)).thenReturn(true);
+
+        SlotService_y service = new SlotService_y(
+                appointmentRepo,
+                mock(SlotRepository_y.class),
+                mock(NotificationService_y.class),
+                mock(EmailService_y.class)
+        );
+
+        assertTrue(service.cancelAppointment(1, 10));
+    }
+    @Test
+    void testAddSlot_success11() {
+
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+
+        when(slotRepo.addSlot(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(true);
+
+        SlotService_y service = new SlotService_y(
+                mock(AppointmentRepository_y.class),
+                slotRepo,
+                mock(NotificationService_y.class),
+                mock(EmailService_y.class)
+        );
+
+        boolean result = service.addSlot(
+                LocalDate.now(),
+                LocalTime.now(),
+                LocalTime.now().plusHours(1),
+                5,
+                1
+        );
+
+        assertTrue(result);
+    }@Test
+    void testAddSlot_invalidCapacity1() {
+
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+
+        SlotService_y service = new SlotService_y(
+                mock(AppointmentRepository_y.class),
+                slotRepo,
+                mock(NotificationService_y.class),
+                mock(EmailService_y.class)
+        );
+
+        boolean result = service.addSlot(
+                LocalDate.now(),
+                LocalTime.now(),
+                LocalTime.now().plusHours(1),
+                0,
+                1
+        );
+
+        assertFalse(result);
+    }
+    @Test
+    void testGetAvailableSlots11() {
+
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+        NotificationService_y notificationService = mock(NotificationService_y.class);
+        EmailService_y emailService = mock(EmailService_y.class);
+
+        SlotService_y service = new SlotService_y(
+                appointmentRepo, slotRepo, notificationService, emailService
+        );
+
+        List<AppointmentSlot_y> mockList = List.of(mock(AppointmentSlot_y.class));
+
+        when(slotRepo.findAvailableSlots()).thenReturn(mockList);
+
+        List<AppointmentSlot_y> result = service.getAvailableSlots();
+
+        assertEquals(1, result.size());
+    }@Test
+    void testSlotAvailable_verifyQueryExecuted() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        service.isSlotAvailableForResource(1, 10);
+
+        verify(conn).prepareStatement(anyString());
+        verify(ps).setInt(1, 1);
+        verify(ps).setInt(2, 10);
+    }@Test
+    void testSlotAvailable_throwsException() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString()))
+                .thenThrow(new SQLException("DB error"));
+
+        YourService service = new YourService(repo);
+
+        assertThrows(RuntimeException.class, () -> {
+            service.isSlotAvailableForResource(1, 10);
+        });
     }
     // ========================= GET SLOTS =========================
     @Test

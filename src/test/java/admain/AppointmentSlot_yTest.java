@@ -2,10 +2,15 @@ package admain;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AppointmentSlot_yTest {
 
@@ -289,6 +294,82 @@ class AppointmentSlot_yTest {
         assertTrue(result.contains("7"));
         assertTrue(result.contains("2026-05-05"));
         assertTrue(result.contains("10:00"));
+        assertTrue(result.contains("4/10"));
+    }
+    @Test
+    void testIsFull_edgeCases() {
+        AppointmentSlot_y slot1 = new AppointmentSlot_y(
+                1, LocalDate.now(), LocalTime.now(),
+                LocalTime.now().plusHours(1), 5, 5
+        );
+
+        AppointmentSlot_y slot2 = new AppointmentSlot_y(
+                2, LocalDate.now(), LocalTime.now(),
+                LocalTime.now().plusHours(1), 5, 4
+        );
+
+        assertTrue(slot1.isFull());
+        assertFalse(slot2.isFull());
+    }@Test
+    void testDateTimeConsistency() {
+        LocalDate date = LocalDate.of(2026, 1, 1);
+        LocalTime start = LocalTime.of(10, 0);
+        LocalTime end = LocalTime.of(11, 0);
+
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1, date, start, end, 5, 2
+        );
+
+        assertEquals(date, slot.getStartDateTime().toLocalDate());
+        assertEquals(start, slot.getStartDateTime().toLocalTime());
+
+        assertEquals(date, slot.getEndDateTime().toLocalDate());
+        assertEquals(end, slot.getEndDateTime().toLocalTime());
+    }@Test
+    void test_isSlotAvailableForResource_truePath() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1,
+                LocalDate.now(),
+                LocalTime.now(),
+                LocalTime.now().plusHours(1),
+                5,
+                0
+        );
+
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(toString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        // 🔥 هذا أهم سطرين
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+
+     
+    }
+    @Test
+    void testToString_fullCheck1() {
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                10,
+                LocalDate.of(2026, 3, 3),
+                LocalTime.of(8, 0),
+                LocalTime.of(9, 0),
+                10,
+                4
+        );
+
+        String result = slot.toString();
+
+        assertTrue(result.contains("ID: 10"));
+        assertTrue(result.contains("2026-03-03"));
+        assertTrue(result.contains("08:00"));
+        assertTrue(result.contains("09:00"));
         assertTrue(result.contains("4/10"));
     }@Test
     void testToString_notNull1() {

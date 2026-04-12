@@ -44,7 +44,69 @@ public class ScheduleRepositoryModifyTest {
         // mock isSlotAvailable ليكون true دائمًا
         doReturn(true).when(repo).isSlotAvailable(any(Connection.class), anyInt(), anyInt());
     }
+    @Test
+    void testSlotAvailable_noGetIntWhenNoRow() throws Exception {
 
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(false);
+
+        YourService service = new YourService(repo);
+
+        service.isSlotAvailableForResource(1, 10);
+
+        verify(rs, never()).getInt(1); // 🔥 مهم جداً
+    }@Test
+    void testSlotAvailable_resourcesUsed() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        service.isSlotAvailableForResource(1, 10);
+
+        verify(conn).prepareStatement(anyString());
+        verify(ps).executeQuery();
+        verify(ps).close(); // try-with-resources
+    }@Test
+    void testSlotAvailable_verifyParameters() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        service.isSlotAvailableForResource(5, 99);
+
+        verify(ps).setInt(1, 5);
+        verify(ps).setInt(2, 99);
+    }
     @Test
     public void testModifyAppointment() throws Exception {
         repo.modifyAppointment(10, 2, 3);
@@ -77,6 +139,99 @@ public class ScheduleRepositoryModifyTest {
         verify(mockConn, atLeastOnce()).prepareStatement(contains("INSERT INTO appointments"));
         verify(mockConn, atLeastOnce()).prepareStatement(contains("UPDATE appointment_slot"));
     }@Test
+    void testSlotAvailable_nullConnection() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+
+        when(repo.getConnection()).thenReturn(null);
+
+        YourService service = new YourService(repo);
+
+        assertThrows(NullPointerException.class, () -> {
+            service.isSlotAvailableForResource(1, 10);
+        });
+    }@Test
+    void testSlotAvailable_nullPreparedStatement() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(null);
+
+        YourService service = new YourService(repo);
+
+        assertThrows(NullPointerException.class, () -> {
+            service.isSlotAvailableForResource(1, 10);
+        });
+    }@Test
+    void testSlotAvailable_sqlStringUsed() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        service.isSlotAvailableForResource(1, 10);
+
+        verify(conn).prepareStatement(contains("SELECT COUNT"));
+    }@Test
+    void testSlotAvailable_multipleCalls() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        boolean r1 = service.isSlotAvailableForResource(1, 10);
+        boolean r2 = service.isSlotAvailableForResource(1, 10);
+
+        assertTrue(r1);
+        assertTrue(r2);
+
+        verify(ps, times(2)).executeQuery();
+    }@Test
+    void testSlotAvailable_safeParameters() throws Exception {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        YourService service = new YourService(repo);
+
+        service.isSlotAvailableForResource(100, 200);
+
+        verify(ps).setInt(1, 100);
+        verify(ps).setInt(2, 200);
+    }
+    @Test
     void testAddAndModifyAppointments_AllCases() throws SQLException {
         scheduleRepository repo = spy(new scheduleRepository());
         Connection mockConn = mock(Connection.class);
