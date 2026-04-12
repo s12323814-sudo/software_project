@@ -2,12 +2,23 @@ package admain;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 class AccountTest {
-
+	@Test
+	void shouldAllowValidAccount() {
+	    Account_y acc = new Account_y(1, "validUser", "hash", "test@test.com", Role_y.USER);
+	    assertNotNull(acc);
+	}@Test
+	void shouldAcceptValidEmailFormats() {
+	    Account_y acc = new Account_y(1, "user123", "hash", "user@mail.com", Role_y.USER);
+	    assertEquals("user@mail.com", acc.getEmail());
+	}
     @Test
     void shouldThrowIfUsernameNull() {
         assertThrows(IllegalArgumentException.class, () -> new Account_y(1, null, "hash", "a@test.com", Role_y.USER));
@@ -97,7 +108,107 @@ class AccountTest {
         assertTrue(str.contains("a@test.com"));
         assertTrue(str.contains("USER"));
     }
+    @Test
+    void shouldCreateValidAccount() {
+        Account_y acc = new Account_y(1, "user123", "hash", "test@mail.com", Role_y.USER);
 
+        assertNotNull(acc);
+        assertEquals(1, acc.getAccountId());
+    }@Test
+    void shouldHandleNullRole() {
+        Account_y acc = new Account_y(1, "user123", "hash", "test@mail.com", null);
+
+        assertFalse(acc.isAdmin());
+        assertFalse(acc.isUser());
+    }@Test
+    void shouldRejectEmailWithoutAt() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Account_y(1, "user123", "hash", "invalidemail", Role_y.USER));
+    }@Test
+    void shouldUpdateValuesUsingSetters() {
+        Account_y acc = new Account_y(1, "user123", "hash", "test@mail.com", Role_y.USER);
+
+        acc.setUsername("newuser");
+        acc.setEmail("new@mail.com");
+
+        assertEquals("newuser", acc.getUsername());
+        assertEquals("new@mail.com", acc.getEmail());
+    }
+    @Test
+    void testGetFutureSlots_exception() {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+
+        when(repo.findAvailableSlots())
+                .thenThrow(new RuntimeException("DB error"));
+
+        BookingSmartService service = new BookingSmartService(repo);
+
+        AppointmentSlot_y result = service.getBestSlot();
+
+        assertNull(result);
+    }@Test
+    void testBookSlot_nullSlot() {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+
+        when(repo.findById(1)).thenReturn(null);
+
+        AppointmentRepository_y service = new AppointmentRepository_y(repo);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.book(1, 1, 2, AppointmentType_y.GENERAL));
+    }@Test
+    void testSlotAvailable_exception() {
+
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1,
+                java.time.LocalDate.now(),
+                java.time.LocalTime.now(),
+                java.time.LocalTime.now().plusHours(1),
+                5,
+                0
+        );
+
+        assertThrows(RuntimeException.class, () -> {
+            slot.isSlotAvailableForResource(1, 1);
+        });
+    }@Test
+    void testEmailReturnsNull() throws Exception {
+
+        AppointmentRepository_y repo = new AppointmentRepository_y();
+
+        String result = repo.getUserEmailByAppointment(999999);
+
+        assertNull(result);
+    }@Test
+    void testDisplayAppointments_empty1() {
+        AppointmentRepository_y.displayAppointments(java.util.List.of());
+    }@Test
+    void testGetUserUpcomingAppointments_filtersPast() throws Exception {
+
+        AppointmentRepository_y repo = new AppointmentRepository_y();
+
+        // غالباً يحتاج mock DB setup (أو ignore branch)
+        List<Appointment> result = repo.getUserUpcomingAppointments(1);
+
+        assertNotNull(result);
+    }@Test
+    void testDisplayAppointments_empty() {
+        AppointmentRepository_y.displayAppointments(List.of());
+    }@Test
+    void testGetFutureSlots_handlesNullList() {
+
+        SlotRepository_y repo = mock(SlotRepository_y.class);
+
+        when(repo.findAvailableSlots()).thenReturn(null);
+
+        BookingSmartService service = new BookingSmartService(repo);
+
+        AppointmentSlot_y result = service.getNearestAvailableSlot();
+
+        assertNull(result);
+    }
     @Test
     void setterMethodsUpdateValues() {
         Account_y acc = new Account_y(1, "user", "hash", "a@test.com", Role_y.USER);

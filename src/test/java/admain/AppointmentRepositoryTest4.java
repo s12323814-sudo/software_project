@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -183,7 +184,43 @@ class AppointmentRepositoryTest4{
             assertTrue(result);
         }
     }
+    @Test
+    void testBookSuccessFull() throws Exception {
 
+        int slotId = 1;
+
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+        when(slot.getDate()).thenReturn(LocalDate.now().plusDays(1));
+        when(slot.getStartTime()).thenReturn(LocalTime.of(10, 0));
+        when(slot.getEndTime()).thenReturn(LocalTime.of(11, 0));
+        when(slot.getBookedCount()).thenReturn(0);
+        when(slot.getMaxCapacity()).thenReturn(5);
+
+        when(slotRepo.findById(slotId)).thenReturn(slot);
+
+        Connection conn = mock(Connection.class);
+        PreparedStatement psInsert = mock(PreparedStatement.class);
+        PreparedStatement psUpdate = mock(PreparedStatement.class);
+
+        when(conn.prepareStatement(anyString()))
+                .thenReturn(psInsert)
+                .thenReturn(psUpdate);
+
+        when(psInsert.executeUpdate()).thenReturn(1);
+        when(psUpdate.executeUpdate()).thenReturn(1);
+
+        try (MockedStatic<database_connection> mocked =
+                     mockStatic(database_connection.class)) {
+
+            mocked.when(database_connection::getConnection).thenReturn(conn);
+
+            AppointmentRepository_y repo = new AppointmentRepository_y(slotRepo);
+
+            boolean result = repo.book(10, 1, 2, AppointmentType_y.ONLINE);
+
+            assertTrue(result);
+        }
+    }
     @Test
     void testUpdateFail() throws Exception {
         Connection conn = mock(Connection.class);
