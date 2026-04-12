@@ -174,12 +174,13 @@ this.emailService = emailService; // ✅ الآن صح
             return false;
         }
     }
-    public boolean adminCancelAppointment(int appointmentId) {
+    public boolean adminCancelAppointment(int adminAccountId, int appointmentId) {
 
         String sql = """
-            SELECT a.account_id, u.email
+            SELECT a.account_id, u.email, s.account_id AS slot_admin
             FROM appointments a
             JOIN accounts u ON a.account_id = u.account_id
+            JOIN appointment_slot s ON a.slot_id = s.slot_id
             WHERE a.appointment_id = ?
         """;
 
@@ -191,8 +192,9 @@ this.emailService = emailService; // ✅ الآن صح
 
             int userId = -1;
             String email = null;
+            int slotAdminId = -1;
 
-            // 1️⃣ جلب البيانات (user + email)
+            // 1️⃣ جلب البيانات
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, appointmentId);
                 ResultSet rs = ps.executeQuery();
@@ -200,13 +202,21 @@ this.emailService = emailService; // ✅ الآن صح
                 if (rs.next()) {
                     userId = rs.getInt("account_id");
                     email = rs.getString("email");
+                    slotAdminId = rs.getInt("slot_admin");
                 } else {
                     conn.rollback();
                     return false;
                 }
             }
 
-            // 2️⃣ حذف الموعد
+            // ❌ 2️⃣ تحقق الصلاحية (الأهم)
+            if (slotAdminId != adminAccountId) {
+                conn.rollback();
+                System.out.println("❌ Unauthorized: This admin cannot cancel this appointment");
+                return false;
+            }
+
+            // 3️⃣ حذف الموعد
             try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
                 ps.setInt(1, appointmentId);
 
@@ -217,16 +227,15 @@ this.emailService = emailService; // ✅ الآن صح
                 }
             }
 
-            // 3️⃣ تأكيد العملية
+            // 4️⃣ تأكيد العملية
             conn.commit();
 
-            // 4️⃣ إشعار داخل النظام
+            // 5️⃣ إشعارات
             notificationService.sendNotification(
                 userId,
                 "⚠️ Your appointment was cancelled by admin."
             );
 
-            // 5️⃣ إرسال الإيميل الحقيقي
             if (email != null && !email.isEmpty()) {
                 emailService.sendEmail(
                     email,

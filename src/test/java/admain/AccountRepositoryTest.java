@@ -109,7 +109,7 @@ class AccountRepositoryTest {
         when(mockRs.next()).thenReturn(true);
         when(mockRs.getInt("account_id")).thenReturn(10);
 
-        Account_y acc = repo.save("newuser", "newhash", "new@test.com", "USER");
+        Account_y acc = repo.save("newuser", "newhash", "new@test.com",  Role_y.USER);
         assertNotNull(acc);
         assertEquals(10, acc.getAccountId());
         assertEquals("newuser", acc.getUsername());

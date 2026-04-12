@@ -71,7 +71,7 @@
             when(repo.save(any(), any(), any(), any()))
                     .thenReturn(new Account_y(1, "user", "hash", "test@test.com", Role_y.USER));
 
-            Account_y result = authService.register("user", "123456", "test@test.com", "USER");
+            Account_y result = authService.register("user", "123456", "test@test.com",  Role_y.USER);
 
             assertNotNull(result);
         }
@@ -80,7 +80,7 @@
         void shouldFailRegister_WhenUsernameExists() {
             when(repo.usernameExists("user")).thenReturn(true);
 
-            assertNull(authService.register("user", "123456", "test@test.com", "USER"));
+            assertNull(authService.register("user", "123456", "test@test.com",  Role_y.USER));
         }
 
         @Test
@@ -88,17 +88,17 @@
             when(repo.usernameExists("user")).thenReturn(false);
             when(repo.emailExists("test@test.com")).thenReturn(true);
 
-            assertNull(authService.register("user", "123456", "test@test.com", "USER"));
+            assertNull(authService.register("user", "123456", "test@test.com",  Role_y.USER));
         }
 
         @Test
         void shouldFailRegister_WhenWeakPassword() {
-            assertNull(authService.register("user", "123", "test@test.com", "USER"));
+            assertNull(authService.register("user", "123", "test@test.com", Role_y.USER));
         }
 
         @Test
         void shouldFailRegister_WhenInvalidEmail() {
-            assertNull(authService.register("user", "123456", "wrong", "USER"));
+            assertNull(authService.register("user", "123456", "wrong",  Role_y.USER));
         }
 
         // ================= PASSWORD =================

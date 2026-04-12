@@ -358,7 +358,14 @@ public class AppointmentRepository_y {
     }
     // UPDATE
     public boolean update(int userId, int appointmentId, int participants) throws SQLException {
-        String sql = "UPDATE appointments SET participants = ? WHERE appointment_id = ? AND account_id = ?";
+    	String sql =
+    			"UPDATE appointments a " +
+    			"JOIN appointment_slot s ON a.slot_id = s.slot_id " +
+    			"SET a.participants = ? " +
+    			"WHERE a.appointment_id = ? " +
+    			"AND a.account_id = ? " +
+    			"AND (s.slot_date > CURRENT_DATE " +
+    			"OR (s.slot_date = CURRENT_DATE AND s.slot_start_time > CURRENT_TIME))";
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 

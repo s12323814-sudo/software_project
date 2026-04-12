@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
 	
+	private static final Account_y Account_y = null;
+
 	static Scanner sc = new Scanner(System.in);
 
 	private static AppointmentRepository_y appointmentRepo = new AppointmentRepository_y();
@@ -105,7 +107,7 @@ public class Main {
 
         if (session.isAdmin())
 			try {
-				adminSession();
+				adminSession(Account_y);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -115,17 +117,30 @@ public class Main {
     private static void registerMenu() {
         System.out.print("Username: ");
         String username = sc.nextLine();
+
         System.out.print("Password: ");
         String password = sc.nextLine();
+
         System.out.print("Email: ");
         String email = sc.nextLine();
-        System.out.print("Role (USER/ADMIN): ");
-        String role = sc.nextLine().trim().toUpperCase();
-        Account_y acc = authService.register(username, password, email, role);
-        if (acc != null) System.out.println("Account created successfully!");
-        else System.out.println("Registration failed!");
-    }
 
+        System.out.print("Role (USER/ADMIN): ");
+        String roleInput = sc.nextLine().trim();
+
+        try {
+            Role_y role = Role_y.fromString(roleInput); 
+
+            Account_y acc = authService.register(username, password, email, role);
+
+            if (acc != null)
+                System.out.println("Account created successfully!");
+            else
+                System.out.println("Registration failed!");
+
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+        }
+    }
     private static void forgotPasswordMenu() {
 
         System.out.print("Enter your email: ");
@@ -261,7 +276,7 @@ public class Main {
         }
     }
     // -------------------- Admin Menu --------------------
-    private static void adminSession() throws SQLException {
+    private static void adminSession(Account_y currentUser) throws SQLException {
         SlotRepository_y slotRepo = new SlotRepository_y();
         BookingSmartService smart = new BookingSmartService(slotRepo);
 
@@ -332,11 +347,15 @@ public class Main {
                         viewAllAppointments();
                         break;
                     case 7:
-                        System.out.print("Enter Appointment ID to cancel: ");
-                        int appointmentId = Integer.parseInt(sc.nextLine());
-                        if (!slotService.adminCancelAppointment(appointmentId)) {
-                            System.out.println("❌ Appointment ID not found or could not be cancelled.");
-                        }
+                    	System.out.print("Enter Appointment ID to cancel: ");
+                    	int appointmentId = Integer.parseInt(sc.nextLine());
+					int adminId = currentUser.getAccountId(); 
+
+                    	if (!slotService.adminCancelAppointment(adminId, appointmentId)) {
+                    	    System.out.println("❌ Appointment ID not found or not allowed to cancel.");
+                    	} else {
+                    	    System.out.println("✅ Appointment cancelled successfully.");
+                    	}
                         break;               
 
                     case 8: 

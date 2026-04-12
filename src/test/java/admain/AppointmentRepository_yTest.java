@@ -138,7 +138,7 @@ public class AppointmentRepository_yTest {
                     .sendEmail(anyString(), anyString(), anyString());
 
             // execute
-            boolean result = service.adminCancelAppointment(1);
+            boolean result = service.adminCancelAppointment(1,0);
 
             // assert
             assertTrue(result);

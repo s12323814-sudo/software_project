@@ -371,7 +371,7 @@ class SlotServiceTest {
 
             when(psDelete.executeUpdate()).thenReturn(1);
 
-            boolean result = service.adminCancelAppointment(1);
+            boolean result = service.adminCancelAppointment(1,0);
 
             assertTrue(result);
 
@@ -579,7 +579,7 @@ class SlotServiceTest {
 
             when(rs.next()).thenReturn(false);
 
-            boolean result = service.adminCancelAppointment(1);
+            boolean result = service.adminCancelAppointment(1,0);
 
             assertFalse(result);
             verify(conn).rollback();

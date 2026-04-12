@@ -48,7 +48,7 @@ public class authService_y {
         return new session_y(acc);
     }
     // ================= REGISTER =================
-    public Account_y register(String username, String password, String email, String role) {
+    public Account_y register(String username, String password, String email, Role_y role) {
 
         // Validation
         if (username == null || username.length() < 3) {

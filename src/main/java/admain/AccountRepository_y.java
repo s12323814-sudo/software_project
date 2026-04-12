@@ -95,7 +95,7 @@ public class AccountRepository_y {
     }
 
     // ================= SAVE ACCOUNT =================
-    public Account_y save(String username, String passwordHash, String email, String role) {
+    public Account_y save(String username, String passwordHash, String email, Role_y role) {
 
         String sql = "INSERT INTO accounts (username, password_hash, email, role) " +
                      "VALUES (?, ?, ?, ?) RETURNING account_id";
@@ -106,7 +106,7 @@ public class AccountRepository_y {
             stmt.setString(1, username);
             stmt.setString(2, passwordHash);
             stmt.setString(3, email);
-            stmt.setString(4, role);
+            stmt.setString(4, role.name());
 
             ResultSet rs = stmt.executeQuery();
 
@@ -118,7 +118,7 @@ public class AccountRepository_y {
                         username,
                         passwordHash,
                         email,
-                        Role_y.fromString(role)
+                       role
                 );
             }
 
