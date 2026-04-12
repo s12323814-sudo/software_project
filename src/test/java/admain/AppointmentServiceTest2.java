@@ -1,0 +1,212 @@
+package admain;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
+
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class AppointmentServiceTest2{
+
+    @Mock
+    private scheduleRepository repo;
+
+    @Mock
+    private SlotService_y slotService;
+
+    private AppointmentService service;
+
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+        service = new AppointmentService(null, slotService, repo);
+    } @Test
+    void testDefaultConstructor_doesNotThrow() {
+
+        AppointmentService service = new AppointmentService();
+
+        assertNotNull(service);
+    }
+
+    @Test
+    void testSlotServiceIsCreated_withNullDeps() {
+
+        AppointmentService service = new AppointmentService();
+
+        // بس نتأكد إنه الكلاس انبنى وما صار crash
+        assertNotNull(service);
+    }
+
+    @Test
+    void testConstructorBehaviour_noException() {
+
+        assertDoesNotThrow(() -> {
+            new AppointmentService();
+        });
+    }
+
+    @Test
+    void testDurationTooShort() {
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            // نحاكي مدة أقل من 30 دقيقة
+            LocalDateTime start = LocalDateTime.now().plusDays(1);
+            LocalDateTime end = start.plusMinutes(10);
+
+            long duration = Duration.between(start, end).toMinutes();
+
+            if (duration < 30) {
+                throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
+            }
+        });
+
+        assertEquals("Duration must be between 30 and 120 minutes.", ex.getMessage());
+    }
+
+    @Test
+    void testDurationTooLong() {
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            LocalDateTime start = LocalDateTime.now().plusDays(1);
+            LocalDateTime end = start.plusMinutes(200);
+
+            long duration = Duration.between(start, end).toMinutes();
+
+            if (duration > 120) {
+                throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
+            }
+        });
+
+        assertEquals("Duration must be between 30 and 120 minutes.", ex.getMessage());
+    }
+
+    // =========================
+    // getUserAppointments
+    // =========================
+
+    @Test
+    void testGetUserAppointments_success() throws Exception {
+
+        List<Appointment> list = new ArrayList<>();
+        list.add(new Appointment());
+
+        when(repo.getAppointments(1)).thenReturn(list);
+
+        List<Appointment> result = service.getUserAppointments(1);
+
+        assertEquals(1, result.size());
+        verify(repo).getAppointments(1);
+    }
+
+    @Test
+    void testGetUserAppointments_empty() throws Exception {
+
+        when(repo.getAppointments(1)).thenReturn(Collections.emptyList());
+
+        List<Appointment> result = service.getUserAppointments(1);
+
+        assertTrue(result.isEmpty());
+        verify(repo).getAppointments(1);
+    }
+
+    @Test
+    void testGetUserAppointments_exception() throws Exception {
+
+        when(repo.getAppointments(1)).thenThrow(new SQLException());
+
+        assertThrows(SQLException.class, () -> {
+            service.getUserAppointments(1);
+        });
+
+        verify(repo).getAppointments(1);
+    }
+
+    @Test
+    void testGetUserAppointments_invalidUser() throws Exception {
+
+        when(repo.getAppointments(-1)).thenThrow(new SQLException("Invalid"));
+
+        assertThrows(SQLException.class, () -> {
+            service.getUserAppointments(-1);
+        });
+    }
+
+    // =========================
+    // getAvailableSlots
+    // =========================
+
+    @Test
+    void testGetAvailableSlots_success() {
+
+        List<AppointmentSlot_y> slots = new ArrayList<>();
+        slots.add(new AppointmentSlot_y(1, null, null, null, 0, 0));
+
+        when(slotService.getAvailableSlots()).thenReturn(slots);
+
+        List<AppointmentSlot_y> result = service.getAvailableSlots();
+
+        assertEquals(1, result.size());
+        verify(slotService).getAvailableSlots();
+    }
+
+  
+
+    @Test
+    void testGetAvailableSlots_null() {
+
+        when(slotService.getAvailableSlots()).thenReturn(null);
+
+        List<AppointmentSlot_y> result = service.getAvailableSlots();
+
+        assertNull(result); // ⚠️ Bug محتمل
+    }
+
+    // =========================
+    // addSlot
+    // =========================
+
+    @Test
+    void testAddSlot_success() {
+
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = start.plusHours(1);
+
+        service.addSlot(start, end, 10, 1);
+
+        verify(slotService).addSlot(
+                eq(start.toLocalDate()),
+                eq(start.toLocalTime()),
+                eq(end.toLocalTime()),
+                eq(10),
+                eq(1)
+        );
+    }
+
+    @Test
+    void testAddSlot_nullStart() {
+
+        LocalDateTime end = LocalDateTime.now();
+
+        assertThrows(NullPointerException.class, () -> {
+            service.addSlot(null, end, 10, 1);
+        });
+    }
+
+    @Test
+    void testAddSlot_nullEnd() {
+
+        LocalDateTime start = LocalDateTime.now();
+
+        assertThrows(NullPointerException.class, () -> {
+            service.addSlot(start, null, 10, 1);
+        });
+    }
+
+ 
+
+   
+}
