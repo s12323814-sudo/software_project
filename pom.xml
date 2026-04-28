@@ -6,11 +6,11 @@
   <groupId>yasmeen</groupId>
   <artifactId>Scheduling</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-
-  <dependencies>
 <properties>
   <sonar.organization>bookingysystem</sonar.organization>
 </properties>
+  <dependencies>
+
     <!-- PostgreSQL -->
     <dependency>
         <groupId>org.postgresql</groupId>
