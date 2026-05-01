@@ -177,15 +177,15 @@ public class AppointmentRepository_y {
                 AppointmentStatus_y status = AppointmentStatus_y.valueOf(rs.getString("status"));
                 AppointmentType_y type = AppointmentType_y.valueOf(rs.getString("type"));
                 ZonedDateTime start = rs.getTimestamp("start_time").toInstant()
-                                        .atZone(ZoneId.of("Asia/Hebron"));
+                                        .atZone(ZoneId.of(ZONE));
                 ZonedDateTime end = rs.getTimestamp("end_time").toInstant()
-                                      .atZone(ZoneId.of("Asia/Hebron"));
+                                      .atZone(ZoneId.of(ZONE));
 
                 TimeSlot timeSlot = new TimeSlot(slotId, start, end);
                 Appointment appt = new Appointment(appointmentId, userId, slotId, timeSlot, participants, status, type);
 
                 // فلترة المواعيد المنتهية تلقائياً
-                if (end.isAfter(ZonedDateTime.now(ZoneId.of("Asia/Hebron")))) {
+                if (end.isAfter(ZonedDateTime.now(ZoneId.of(ZONE)))) {
                     appointments.add(appt);
                 }
             }
@@ -234,8 +234,8 @@ public class AppointmentRepository_y {
 
                 TimeSlot slot = new TimeSlot(
                     rs.getInt("slot_id"),
-                    rs.getTimestamp("start_time").toInstant().atZone(ZoneId.of("Asia/Hebron")),
-                    rs.getTimestamp("end_time").toInstant().atZone(ZoneId.of("Asia/Hebron"))
+                    rs.getTimestamp("start_time").toInstant().atZone(ZoneId.of(ZONE)),
+                    rs.getTimestamp("end_time").toInstant().atZone(ZoneId.of(ZONE))
                 );
 
                 return new Appointment(
@@ -276,10 +276,10 @@ public class AppointmentRepository_y {
         }
 
         // تحويل الوقت إلى ZonedDateTime
-        ZonedDateTime startZ = ZonedDateTime.of(slot.getDate(), slot.getStartTime(), ZoneId.of("Asia/Hebron"));
-        ZonedDateTime endZ = ZonedDateTime.of(slot.getDate(), slot.getEndTime(), ZoneId.of("Asia/Hebron"));
+        ZonedDateTime startZ = ZonedDateTime.of(slot.getDate(), slot.getStartTime(), ZoneId.of(ZONE));
+        ZonedDateTime endZ = ZonedDateTime.of(slot.getDate(), slot.getEndTime(), ZoneId.of(ZONE));
 
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Hebron"));
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of(ZONE));
        
 
         // منع حجز أكثر من السعة
