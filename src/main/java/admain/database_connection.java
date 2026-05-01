@@ -22,7 +22,7 @@ public class database_connection {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+           logger.error("An error occurred", e);
         }
 
         return connection;
