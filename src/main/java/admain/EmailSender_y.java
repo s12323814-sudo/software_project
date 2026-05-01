@@ -3,11 +3,13 @@ package admain;
 import java.util.Properties;
 import javax.mail.*;
 import javax.mail.internet.*;
-
+import io.github.cdimascio.dotenv.Dotenv;
 public class EmailSender_y implements EmailService_y {
 
-    private final String fromEmail = "yasmeenalqaduomi@gmail.com";
-    private final String password = "nlng knkr juiv znqb";
+  Dotenv dotenv = Dotenv.load();
+
+private final String fromEmail = dotenv.get("EMAIL_USER");
+private final String password = dotenv.get("EMAIL_PASS");
 
 
     @Override
