@@ -30,7 +30,7 @@ this.notificationService = notificationService;
 this.emailService = emailService; // ✅ الآن صح
 }
 
-    /////////////////////////////
+   
     // GET AVAILABLE SLOTS
     public List<AppointmentSlot_y> getAvailableSlots() {
         return slotRepo.findAvailableSlots();
@@ -38,7 +38,7 @@ this.emailService = emailService; // ✅ الآن صح
     public List<Appointment> getAllAppointments(int adminId) throws SQLException {
         return appointmentRepo.getAllAppointments(adminId);
     }
-    /////////////////////////////
+
     // BOOK APPOINTMENT
     public boolean bookAppointment(int userId, int slotId, int participants, AppointmentType_y type)
             throws SQLException {
@@ -92,25 +92,25 @@ this.emailService = emailService; // ✅ الآن صح
 
         return appointmentRepo.book(userId, slotId, participants, type);
     }
-    /////////////////////////////
+  
     // CANCEL (USER)
     public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {
         return appointmentRepo.cancel(userId, appointmentId);
     }
 
-    /////////////////////////////
+  
     // UPDATE
     public boolean updateAppointment(int userId, int appointmentId, int participants) throws SQLException {
         return appointmentRepo.update(userId, appointmentId, participants);
     }
 
-    /////////////////////////////
+
     // VIEW USER APPOINTMENTS
     public List<Appointment> viewUserAppointments(int userId) throws SQLException {
         return appointmentRepo.getUserUpcomingAppointments(userId);
     }
 
-    /////////////////////////////
+ 
     // ADMIN: ADD SLOT
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
                            int capacity, int adminId) {
@@ -120,7 +120,6 @@ this.emailService = emailService; // ✅ الآن صح
         return slotRepo.addSlot(date, start, end, capacity, adminId);
     }
 
-    /////////////////////////////
     // ADMIN: CANCEL WITH TRANSACTION (IMPORTANT)
 
     // ---------------- Cancel Entire Slot ----------------
