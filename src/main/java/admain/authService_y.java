@@ -1,6 +1,6 @@
 package admain;
 
-//////////////////////////////////////////
+
 import org.mindrot.jbcrypt.BCrypt;
 
 
