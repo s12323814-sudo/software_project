@@ -30,7 +30,7 @@ public class BookingSmartService {
         return slots.stream()
                 .filter(s -> s.getDate() != null && s.getStartTime() != null)
                 .filter(s -> !LocalDateTime.of(s.getDate(), s.getStartTime()).isBefore(now))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public AppointmentSlot_y getNearestAvailableSlot() {
@@ -67,6 +67,6 @@ public class BookingSmartService {
 
         return slots.stream()
                 .sorted(Comparator.comparingInt(s -> s.getMaxCapacity() - s.getBookedCount()))
-                .collect(Collectors.toList());
+                .toList();
     }
 }
