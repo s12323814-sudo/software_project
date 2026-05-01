@@ -1,12 +1,12 @@
 package admain;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class OTPGenerator_y {
-  private static final Random rand = new Random();
+
+    private static final SecureRandom rand = new SecureRandom();
 
     public static String generateOTP() {
-    
         int otp = 100000 + rand.nextInt(900000);
         return String.valueOf(otp);
     }
