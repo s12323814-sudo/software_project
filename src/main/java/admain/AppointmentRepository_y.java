@@ -255,7 +255,7 @@ public class AppointmentRepository_y {
     protected Connection getConnection() throws SQLException {
         return database_connection.getConnection();
     }
-    /////////////////////////////////
+  
 
     public int delete(int id, Connection conn) throws SQLException {
         String sql = "DELETE FROM appointments WHERE appointment_id = ?";
