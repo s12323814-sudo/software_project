@@ -10,7 +10,7 @@ public class SlotRepository_y {
 	 protected Connection getConnection() throws SQLException {
 	        return database_connection.getConnection();
 	    }
-    /////////////////////////////
+ 
     public List<AppointmentSlot_y> findAvailableSlots() {
 
         List<AppointmentSlot_y> list = new ArrayList<>();
@@ -37,7 +37,7 @@ public class SlotRepository_y {
         return list;
     }
 
-    /////////////////////////////
+   
     public AppointmentSlot_y findById(int id) {
 
         String sql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
@@ -81,7 +81,7 @@ public class SlotRepository_y {
 
         return list;
     }
-    /////////////////////////////
+ 
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
             int capacity, int accountId) {
 
@@ -104,7 +104,7 @@ return ps.executeUpdate() > 0;
 throw new RuntimeException(e);
 }
 }
-    /////////////////////////////
+
     public int decreaseBookedCount(int slotId, int participants, Connection conn) throws SQLException {
 
         String sql = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
@@ -116,7 +116,7 @@ throw new RuntimeException(e);
         }
     }
 
-    /////////////////////////////
+
     private AppointmentSlot_y map(ResultSet rs) throws SQLException {
         return new AppointmentSlot_y(
                 rs.getInt("slot_id"),
