@@ -31,6 +31,7 @@ import java.util.List;
  * <p>يتم التعامل مع الوقت باستخدام المنطقة الزمنية Asia/Hebron.</p>
  */
 public class AppointmentRepository_y {
+	private static final String COL_APPOINTMENT_ID = "appointment_id";
 	Connection conn = database_connection.getConnection();
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
     private SlotRepository_y slotRepo ;
@@ -124,7 +125,7 @@ public class AppointmentRepository_y {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-            	 int appointmentId = rs.getInt("appointment_id");
+            	 int appointmentId = rs.getInt(COL_APPOINTMENT_ID );
                 int userId = rs.getInt("account_id");
                 int slotId = rs.getInt("slot_id");
                 int participants = rs.getInt("participants");
@@ -172,7 +173,7 @@ public class AppointmentRepository_y {
 
             while (rs.next()) {
                 int slotId = rs.getInt("slot_id");
-                int appointmentId = rs.getInt("appointment_id");
+                int appointmentId = rs.getInt(COL_APPOINTMENT_ID );
                 int participants = rs.getInt("participants");
                 AppointmentStatus_y status = AppointmentStatus_y.valueOf(rs.getString("status"));
                 AppointmentType_y type = AppointmentType_y.valueOf(rs.getString("type"));
@@ -239,7 +240,7 @@ public class AppointmentRepository_y {
                 );
 
                 return new Appointment(
-                    rs.getInt("appointment_id"),
+                    rs.getInt(COL_APPOINTMENT_ID ),
                     rs.getInt("account_id"),
                     rs.getInt("slot_id"),
                     slot,
