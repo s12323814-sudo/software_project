@@ -14,12 +14,10 @@ public enum Role_y {
 	    String normalized = value.trim().toUpperCase();
 
 	    switch (normalized) {
-	        case "USER":
-	        case "U":
+	       case "USER", "U":
 	            return USER;
 
-	        case "ADMIN":
-	        case "A":
+	        case "ADMIN","A":
 	            return ADMIN;
 
 	        default:
