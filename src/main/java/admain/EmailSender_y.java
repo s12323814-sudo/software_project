@@ -47,7 +47,7 @@ private final String password = dotenv.get("EMAIL_PASS");
             System.out.println("Email sent to: " + toEmail);
 
         } catch (MessagingException e) {
-            e.printStackTrace();
+ logger.error("Error fetching account from database", e);
         }
     }
 
