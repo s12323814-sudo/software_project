@@ -40,7 +40,7 @@ public class AccountRepository_y {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+     logger.error("Error fetching account from database", e);
         }
 
         return null;
@@ -68,7 +68,7 @@ public class AccountRepository_y {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+         logger.error("Error fetching account from database", e);
         }
 
         return null;
