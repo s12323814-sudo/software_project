@@ -187,7 +187,7 @@ public class AccountRepository_y {
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+      LOGGER.log("context", e);
         }
 
         return false;
