@@ -52,7 +52,7 @@ public class ReminderManager_y {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+        logger.error("Error fetching account from database", e);
         }
     }
 
