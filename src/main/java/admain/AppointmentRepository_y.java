@@ -388,7 +388,7 @@ public class AppointmentRepository_y {
             return true;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+        logger.error("Error fetching account from database", e);
             return false;
         }
     }
