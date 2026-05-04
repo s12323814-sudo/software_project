@@ -256,7 +256,7 @@ this.emailService = emailService; // ✅ الآن صح
             return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error fetching account from database", e);
             return false;
         }
     }}
