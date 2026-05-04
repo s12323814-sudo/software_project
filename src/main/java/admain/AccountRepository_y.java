@@ -187,7 +187,7 @@ public class AccountRepository_y {
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-      LOGGER.log("context", e);
+    logger.error("Database error while fetching account", e); 
         }
 
         return false;
