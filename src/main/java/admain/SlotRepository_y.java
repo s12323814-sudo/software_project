@@ -76,7 +76,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+    logger.error("Error fetching account from database", e);
         }
 
         return list;
