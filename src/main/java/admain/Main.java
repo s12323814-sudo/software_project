@@ -419,7 +419,7 @@ public class Main {
 
         } catch (Exception e) {
             System.out.println("Unexpected error: " + e.getMessage());
-            e.printStackTrace();
+logger.error("Error fetching account from database", e);
         }
     }
     private static void viewUserAppointments() {
@@ -431,7 +431,7 @@ public class Main {
                 list.forEach(System.out::println);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+          logger.error("Error fetching account from database", e);
         }
     }
    
@@ -533,7 +533,7 @@ public class Main {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+         logger.error("Error fetching account from database", e);
         }
     }
     private static void viewAllAppointments() {
