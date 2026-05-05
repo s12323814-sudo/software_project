@@ -1,22 +1,25 @@
 package admain;
 
 import java.util.Properties;
-import javax.mail.*;
-import javax.mail.internet.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 import io.github.cdimascio.dotenv.Dotenv;
+import java.util.logging.Logger;
+
 public class EmailSender_y implements EmailService_y {
 
-  Dotenv dotenv = Dotenv.load();
+    private static final Logger logger =
+            Logger.getLogger(EmailSender_y.class.getName());
 
-private final String fromEmail = dotenv.get("EMAIL_USER");
-private final String password = dotenv.get("EMAIL_PASS");
+    private static final Dotenv dotenv = Dotenv.load();
 
+    private final String fromEmail = dotenv.get("EMAIL_USER");
+    private final String password = dotenv.get("EMAIL_PASS");
 
     @Override
     public void sendOTP(String toEmail, String otp) {
         sendEmail(toEmail, "Password Reset Code", "Your OTP code is: " + otp);
     }
-
 
     @Override
     public void sendEmail(String toEmail, String subject, String messageText) {
@@ -27,6 +30,7 @@ private final String password = dotenv.get("EMAIL_PASS");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
         props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+
         Session session = Session.getInstance(props,
             new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
@@ -47,7 +51,7 @@ private final String password = dotenv.get("EMAIL_PASS");
             System.out.println("Email sent to: " + toEmail);
 
         } catch (MessagingException e) {
- logger.error("Error fetching account from database", e);
+            logger.severe("Error sending email: " + e.getMessage());
         }
     }
 
