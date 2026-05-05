@@ -1,28 +1,13 @@
 package admain;
 
 import java.sql.*;
+import java.util.logging.Logger;
 
-/**
- * كلاس مسؤول عن التعامل مع قاعدة البيانات الخاصة بالحسابات (accounts).
- *
- * <p>يوفر هذا الكلاس عمليات CRUD الأساسية مثل:</p>
- * <ul>
- *   <li>البحث عن حساب باستخدام اسم المستخدم أو الإيميل</li>
- *   <li>التحقق من وجود اسم مستخدم أو إيميل</li>
- *   <li>إضافة حساب جديد</li>
- *   <li>تحديث كلمة المرور</li>
- * </ul>
- *
- * <p>يستخدم JDBC للاتصال بقاعدة البيانات من خلال database_connection.</p>
- */
 public class AccountRepository_y {
 
-    /**
-     * البحث عن حساب باستخدام اسم المستخدم أو البريد الإلكتروني.
-     *
-     * @param input اسم المستخدم أو الإيميل
-     * @return كائن Account_y إذا وُجد، أو null إذا لم يوجد
-     */
+    private static final Logger logger =
+            Logger.getLogger(AccountRepository_y.class.getName());
+
     public Account_y findByUsernameOrEmail(String input) {
 
         String sql = "SELECT * FROM accounts WHERE username = ? OR email = ?";
@@ -40,18 +25,12 @@ public class AccountRepository_y {
             }
 
         } catch (SQLException e) {
-     logger.error("Error fetching account from database", e);
+            logger.severe("Error fetching account from database: " + e.getMessage());
         }
 
         return null;
     }
 
-    /**
-     * البحث عن حساب باستخدام البريد الإلكتروني فقط.
-     *
-     * @param email البريد الإلكتروني
-     * @return كائن Account_y إذا وُجد، أو null إذا لم يوجد
-     */
     public Account_y findByEmail(String email) {
 
         String sql = "SELECT * FROM accounts WHERE email = ?";
@@ -68,18 +47,12 @@ public class AccountRepository_y {
             }
 
         } catch (SQLException e) {
-         logger.error("Error fetching account from database", e);
+            logger.severe("Error fetching account from database: " + e.getMessage());
         }
 
         return null;
     }
 
-    /**
-     * التحقق إذا كان اسم المستخدم موجود مسبقًا.
-     *
-     * @param username اسم المستخدم
-     * @return true إذا كان موجود، false إذا غير موجود
-     */
     public boolean usernameExists(String username) {
 
         String sql = "SELECT 1 FROM accounts WHERE username = ?";
@@ -93,18 +66,12 @@ public class AccountRepository_y {
             return rs.next();
 
         } catch (SQLException e) {
-            logger.error("Error fetching account from database", e);
+            logger.severe("Error checking username: " + e.getMessage());
         }
 
         return false;
     }
 
-    /**
-     * التحقق إذا كان البريد الإلكتروني موجود مسبقًا.
-     *
-     * @param email البريد الإلكتروني
-     * @return true إذا كان موجود، false إذا غير موجود
-     */
     public boolean emailExists(String email) {
 
         String sql = "SELECT 1 FROM accounts WHERE email = ?";
@@ -118,21 +85,12 @@ public class AccountRepository_y {
             return rs.next();
 
         } catch (SQLException e) {
-            logger.error("Error fetching account from database", e);
+            logger.severe("Error checking email: " + e.getMessage());
         }
 
         return false;
     }
 
-    /**
-     * حفظ حساب جديد في قاعدة البيانات.
-     *
-     * @param username اسم المستخدم
-     * @param passwordHash كلمة المرور المشفرة
-     * @param email البريد الإلكتروني
-     * @param role دور المستخدم
-     * @return كائن Account_y الجديد إذا تم الحفظ، أو null عند الفشل
-     */
     public Account_y save(String username, String passwordHash, String email, Role_y role) {
 
         String sql = "INSERT INTO accounts (username, password_hash, email, role) " +
@@ -161,19 +119,12 @@ public class AccountRepository_y {
             }
 
         } catch (SQLException e) {
-        logger.error("Error fetching account from database", e);
+            logger.severe("Error saving account: " + e.getMessage());
         }
 
         return null;
     }
 
-    /**
-     * تحديث كلمة المرور لحساب معين باستخدام الإيميل.
-     *
-     * @param email البريد الإلكتروني
-     * @param passwordHash كلمة المرور الجديدة (مشفر)
-     * @return true إذا تم التحديث بنجاح، false إذا فشل
-     */
     public boolean updatePassword(String email, String passwordHash) {
 
         String sql = "UPDATE accounts SET password_hash = ? WHERE email = ?";
@@ -187,19 +138,12 @@ public class AccountRepository_y {
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-    logger.error("Database error while fetching account", e); 
+            logger.severe("Error updating password: " + e.getMessage());
         }
 
         return false;
     }
 
-    /**
-     * تحويل نتيجة الاستعلام (ResultSet) إلى كائن Account_y.
-     *
-     * @param rs نتيجة الاستعلام
-     * @return كائن Account_y
-     * @throws SQLException في حال حدوث خطأ أثناء القراءة
-     */
     private Account_y mapResultSetToAccount(ResultSet rs) throws SQLException {
 
         return new Account_y(
