@@ -4,12 +4,13 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>yasmeen</groupId>
   <artifactId>Scheduling</artifactId>
   <version>0.0.1-SNAPSHOT</version>
 
+  <!-- ================== PROPERTIES ================== -->
   <properties>
-   
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -17,8 +18,14 @@
     <!-- SonarCloud -->
     <sonar.organization>bookingysystem</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+
+    <!-- ⭐ مهم جداً للـ Coverage -->
+    <sonar.coverage.jacoco.xmlReportPaths>
+      target/site/jacoco/jacoco.xml
+    </sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
+  <!-- ================== DEPENDENCIES ================== -->
   <dependencies>
 
     <!-- PostgreSQL -->
@@ -28,13 +35,7 @@
       <version>42.7.3</version>
     </dependency>
 
-    <!-- Email -->
-    <dependency>
-      <groupId>com.sun.mail</groupId>
-      <artifactId>javax.mail</artifactId>
-      <version>1.6.2</version>
-    </dependency>
-
+    <!-- Email (استخدم واحد فقط) -->
     <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>jakarta.mail</artifactId>
@@ -56,11 +57,7 @@
       <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
-<dependency>
-    <groupId>io.github.cdimascio</groupId>
-    <artifactId>java-dotenv</artifactId>
-    <version>5.2.2</version>
-</dependency>
+
     <!-- Mockito -->
     <dependency>
       <groupId>org.mockito</groupId>
@@ -76,12 +73,18 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Mockito Inline -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-inline</artifactId>
       <version>5.2.0</version>
       <scope>test</scope>
+    </dependency>
+
+    <!-- dotenv -->
+    <dependency>
+      <groupId>io.github.cdimascio</groupId>
+      <artifactId>java-dotenv</artifactId>
+      <version>5.2.2</version>
     </dependency>
 
     <!-- Password hashing -->
@@ -93,28 +96,25 @@
 
   </dependencies>
 
+  <!-- ================== BUILD ================== -->
   <build>
     <plugins>
 
-      <!-- Compiler Plugin - Java 17 -->
+      <!-- Compiler Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
-        <configuration>
-          <source>17</source>
-          <target>17</target>
-        </configuration>
       </plugin>
 
-      <!-- Surefire - تشغيل التيستات -->
+      <!-- Surefire (تشغيل التيستات) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
       </plugin>
 
-      <!-- JaCoCo - Code Coverage -->
+      <!-- JaCoCo (Coverage) -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -125,6 +125,7 @@
               <goal>prepare-agent</goal>
             </goals>
           </execution>
+
           <execution>
             <id>report</id>
             <phase>verify</phase>
