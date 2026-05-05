@@ -7,10 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SlotRepository_y {
-	 protected Connection getConnection() throws SQLException {
-	        return database_connection.getConnection();
-	    }
- 
+
+    protected Connection getConnection() throws SQLException {
+        return database_connection.getConnection();
+    }
+
     public List<AppointmentSlot_y> findAvailableSlots() {
 
         List<AppointmentSlot_y> list = new ArrayList<>();
@@ -31,13 +32,13 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error in findAvailableSlots: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return list;
     }
 
-   
     public AppointmentSlot_y findById(int id) {
 
         String sql = "SELECT * FROM appointment_slot WHERE slot_id = ?";
@@ -54,11 +55,13 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error in findById: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return null;
     }
+
     public List<AppointmentSlot_y> findAvailableSlotsByDate(LocalDate date) {
 
         List<AppointmentSlot_y> list = new ArrayList<>();
@@ -69,6 +72,7 @@ public class SlotRepository_y {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setDate(1, Date.valueOf(date));
+
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -76,34 +80,38 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-    logger.error("Error fetching account from database", e);
+            System.err.println("Error in findAvailableSlotsByDate: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return list;
     }
- 
+
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
-            int capacity, int accountId) {
+                           int capacity, int accountId) {
 
-String sql = "INSERT INTO appointment_slot " +
-      "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, account_id) " +
-      "VALUES (?, ?, ?, ?, 0, ?)";
+        String sql = "INSERT INTO appointment_slot " +
+                "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, account_id) " +
+                "VALUES (?, ?, ?, ?, 0, ?)";
 
-try (Connection conn = getConnection();
-PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-ps.setDate(1, Date.valueOf(date));
-ps.setTime(2, Time.valueOf(start));
-ps.setTime(3, Time.valueOf(end));
-ps.setInt(4, capacity);
-ps.setInt(5, accountId);
+            ps.setDate(1, Date.valueOf(date));
+            ps.setTime(2, Time.valueOf(start));
+            ps.setTime(3, Time.valueOf(end));
+            ps.setInt(4, capacity);
+            ps.setInt(5, accountId);
 
-return ps.executeUpdate() > 0;
+            return ps.executeUpdate() > 0;
 
-} catch (SQLException e) {
-throw new RuntimeException(e);
-}
-}
+        } catch (SQLException e) {
+            System.err.println("Error in addSlot: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
+    }
 
     public int decreaseBookedCount(int slotId, int participants, Connection conn) throws SQLException {
 
@@ -112,12 +120,12 @@ throw new RuntimeException(e);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, participants);
             ps.setInt(2, slotId);
-            return ps.executeUpdate(); // 🔥
+            return ps.executeUpdate();
         }
     }
 
-
     private AppointmentSlot_y map(ResultSet rs) throws SQLException {
+
         return new AppointmentSlot_y(
                 rs.getInt("slot_id"),
                 rs.getDate("slot_date").toLocalDate(),
@@ -125,7 +133,6 @@ throw new RuntimeException(e);
                 rs.getTime("slot_end_time").toLocalTime(),
                 rs.getInt("max_capacity"),
                 rs.getInt("booked_count")
-
         );
     }
 }
