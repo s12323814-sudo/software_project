@@ -6,7 +6,7 @@ import jakarta.mail.internet.*;
 import io.github.cdimascio.dotenv.Dotenv;
 import java.util.logging.Logger;
 
-public class EmailSender_y implements EmailService_y {
+public class EmailSender_y implements EmailServicey {
 
     private static final Logger logger =
             Logger.getLogger(EmailSender_y.class.getName());
