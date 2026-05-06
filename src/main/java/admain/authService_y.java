@@ -4,7 +4,7 @@ package admain;
 import org.mindrot.jbcrypt.BCrypt;
 
 
-public class authServicey {
+public class AuthServicey {
 
     private AccountRepository_y repo ;
    
