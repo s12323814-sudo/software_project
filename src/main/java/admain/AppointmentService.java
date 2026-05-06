@@ -32,8 +32,8 @@ public class AppointmentService {
 	private  EmailService_y emailService;
     private  SlotService_y slotService = new SlotService_y(appointmentRepo,slotRepo, notificationService,emailService);
     private scheduleRepository repo = new scheduleRepository();
-    private final int MIN_DURATION = 30;
-    private final int MAX_DURATION = 120;
+   private static final int minDuration = 30;
+    private static  final int MAX_DURATION = 120;
 
     private Connection testConnection = null;
 
