@@ -23,7 +23,7 @@ import java.time.ZonedDateTime;
  *
  * <p>يُستخدم هذا الكلاس لتحديد توفر المواعيد وإدارة السعة.</p>
  */
-public class AppointmentSlot_y {
+public class AppointmentSloty {
 
     private int id;
     private LocalDate date;
