@@ -17,7 +17,7 @@ import java.util.Objects;
  *
  * <p>رقم الحساب (accountId) ثابت ولا يمكن تغييره، ويُستخدم لتمييز كل حساب بشكل فريد.</p>
  */
-public class Account_y {
+public class Accounty {
 
     private final int accountId;
     private String username;
