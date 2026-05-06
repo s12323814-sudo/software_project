@@ -3,9 +3,13 @@ package admain;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import io.github.cdimascio.dotenv.Dotenv;
 
-public class database_connection {
+public class DatabaseConnection {
+
+    private static final Logger logger = Logger.getLogger(DatabaseConnection.class.getName());
 
     private static final Dotenv dotenv = Dotenv.load();
 
@@ -21,12 +25,11 @@ public class database_connection {
 
             if (connection == null || connection.isClosed()) {
                 connection = DriverManager.getConnection(URL, USER, PASSWORD);
-                System.out.println("Connected to DB successfully!");
+                logger.info("Connected to DB successfully!");
             }
 
         } catch (SQLException e) {
-            System.err.println("Database connection error: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Database connection error: " + e.getMessage(), e);
         }
 
         return connection;
