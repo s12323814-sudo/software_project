@@ -7,7 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SlotRepository_y {
-
+private static final String ACTION_1 = "action1
+    public void run() {
+    prepare(ACTION_1);
+    execute(ACTION_1);
+    release(ACTION_1);
+}
     protected Connection getConnection() throws SQLException {
         return database_connection.getConnection();
     }
