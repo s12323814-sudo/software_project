@@ -93,9 +93,9 @@ public class AccountRepository_y {
 
     public Account_y save(String username, String passwordHash, String email, Role_y role) {
 
-       String sql =
-    "SELECT id, account_id, start_time, end_time, status " +
-    "FROM appointments WHERE account_id = ? ORDER BY start_time ASC";
+  SELECT Customers.name, Orders.id, Orders.price
+FROM Orders 
+JOIN Customers ON Orders.customerId = Customers.id
         try (Connection conn = database_connection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
