@@ -8,13 +8,13 @@ import java.util.logging.Level;
 import io.github.cdimascio.dotenv.Dotenv;
 
 public class Databaseconnection {
- private DatabaseConnection() {
-        // prevent instantiation
+
+    private Databaseconnection() {
+        /* Utility class should not be instantiated */
     }
 
-    public static void connect() {
-        // logic here
-    }
+    // rest of the class...
+}
     private static final Logger logger = Logger.getLogger(Databaseconnection.class.getName());
 
     private static final Dotenv dotenv = Dotenv.load();
