@@ -93,9 +93,9 @@ public class AccountRepository_y {
 
     public Account_y save(String username, String passwordHash, String email, Role_y role) {
 
-        String sql = "INSERT INTO accounts (username, password_hash, email, role) " +
-                     "VALUES (?, ?, ?, ?) RETURNING account_id";
-
+       String sql =
+    "SELECT id, account_id, start_time, end_time, status " +
+    "FROM appointments WHERE account_id = ? ORDER BY start_time ASC";
         try (Connection conn = database_connection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
