@@ -8,8 +8,8 @@ public class session_y {
 
     private Account_y account;
 
-    public static Account_y currentUser = null;
-    public static Account_y currentAdmin = null;
+    public static final Account_y currentUser = null;
+public static final Account_y currentAdmin = null;
 
     public static void logoutUser() {
         if (currentUser != null) {
