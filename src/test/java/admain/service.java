@@ -12,7 +12,7 @@ import java.time.LocalTime;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class service {
+public class Service {
 
     @Mock
     private Connection conn;
