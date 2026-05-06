@@ -2,7 +2,7 @@ package admain;
 
 
 
-public class EmailNotificationAdapter implements NotificationService_y {
+public class EmailNotificationAdapter implements NotificationServicey {
 
     private EmailService_y emailService;
 
