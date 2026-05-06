@@ -76,7 +76,7 @@ public class AccountRepository_y {
 
         String sql = "SELECT 1 FROM accounts WHERE email = ?";
 
-        try (Connection conn = database_connection.getConnection();
+        try (Connection conn = database_connection.getConnection(;
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, email);
@@ -90,12 +90,12 @@ public class AccountRepository_y {
 
         return false;
     }
-
-    public Account_y save(String username, String passwordHash, String email, Role_y role) {
-
-  SELECT Customers.name, Orders.id, Orders.price
+SELECT * 
 FROM Orders 
 JOIN Customers ON Orders.customerId = Customers.id
+    public Account_y save(String username, String passwordHash, String email, Role_y role) {
+
+
         try (Connection conn = database_connection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
