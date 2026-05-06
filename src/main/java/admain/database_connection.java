@@ -29,7 +29,7 @@ public class DatabaseConnection {
             }
 
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Database connection error: " + e.getMessage(), e);
+          logger.log(Level.SEVERE, () -> "Database connection error: " + e.getMessage(), e);
         }
 
         return connection;
