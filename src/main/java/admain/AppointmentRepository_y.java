@@ -55,12 +55,12 @@ public class AppointmentRepository {
                 while (rs.next()) {
 
                     Appointment a = new Appointment(
-                            rs.getInt("appointment_id"),
-                            rs.getInt("account_id"),
-                            rs.getInt("slot_id"),
-                            rs.getInt("participants"),
-                            AppointmentStatus_y.valueOf(rs.getString("status")),
-                            AppointmentType_y.valueOf(rs.getString("type"))
+                          rs.getInt(COL_APPOINTMENT_ID),
+                          rs.getInt(COL_ACCOUNT_ID),
+                          rs.getInt(COL_SLOT_ID),
+                         rs.getInt(COL_PARTICIPANTS),
+AppointmentStatus_y.valueOf(rs.getString(COL_STATUS)),
+AppointmentType_y.valueOf(rs.getString(COL_TYPE))
                     );
 
                     a.setUsername(rs.getString("username"));
