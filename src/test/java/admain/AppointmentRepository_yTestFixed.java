@@ -61,7 +61,6 @@ public class AppointmentRepository_yTestFixed {
     @Test
     public void testBookSuccess11() throws Exception {
 
-        int userId = 1;
         int slotId = 1;
 
         // ================= Mock Slot =================
