@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 public class AppointmentRepository {
 
     private static final Logger logger =
-            Logger.getLogger(AppointmentRepository_y.class.getName());
+            Logger.getLogger(AppointmentRepository.class.getName());
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
 
