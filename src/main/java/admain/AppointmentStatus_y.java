@@ -20,7 +20,7 @@ package admain;
  *
  
  */
-public enum AppointmentStatus_y {
+public enum AppointmentStatusy {
     COMPLETED,
     STANDARD,
     PREMIUM,
