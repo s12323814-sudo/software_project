@@ -6,10 +6,10 @@ import jakarta.mail.internet.*;
 import io.github.cdimascio.dotenv.Dotenv;
 import java.util.logging.Logger;
 
-public class EmailSender_y implements EmailServicey {
+public class EmailSendery implements EmailServicey {
 
     private static final Logger logger =
-            Logger.getLogger(EmailSender_y.class.getName());
+            Logger.getLogger(EmailSendery.class.getName());
 
     private static final Dotenv dotenv = Dotenv.load();
 
