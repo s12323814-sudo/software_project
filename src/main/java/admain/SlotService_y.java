@@ -10,7 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
-public class SlotService_y {
+public class SlotServicey {
 
     private NotificationService_y notificationService;
     private AppointmentRepository_y appointmentRepo;
