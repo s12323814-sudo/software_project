@@ -6,7 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MockNotificationService_yTest {
+class MockNotificationServiceyTest {
 
     @Test
     void testSendReminder_addsMessage() {
