@@ -36,7 +36,7 @@ class AppointmentRepositoryTest4{
     // ====================== book() happy path ======================
     @Test
     void testBookSuccess() throws Exception {
-        int slotId = 1;
+       int slotId = 1;
         int userId = 10;
 
         // Mock slot
