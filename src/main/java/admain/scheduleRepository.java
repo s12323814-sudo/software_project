@@ -147,7 +147,8 @@ public class ScheduleRepository {
         try (Connection conn =getConnection()) {
             conn.setAutoCommit(false);
             try {
-                int oldSlotId, oldParticipants;
+              int oldSlotId;
+int oldParticipants;
 
                 String oldSql = "SELECT slot_id, participants FROM appointments WHERE appointment_id = ? FOR UPDATE";
                 try (PreparedStatement ps = conn.prepareStatement(oldSql)) {
