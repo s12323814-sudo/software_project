@@ -298,7 +298,7 @@ public class AppointmentRepositoryTest {
 
         assertTrue(ex.getMessage().contains("does not exist"));
     }
-    /////////////////////////////////////////////
+ // --------------------------------
     @Test
     void testGetUserUpcomingAppointments() throws Exception {
 
