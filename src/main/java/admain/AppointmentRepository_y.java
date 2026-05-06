@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class AppointmentRepository_y {
+public class AppointmentRepository {
 
     private static final Logger logger =
             Logger.getLogger(AppointmentRepository_y.class.getName());
