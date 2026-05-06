@@ -17,11 +17,11 @@ public class AppointmentRepository {
 
     private SlotRepository_y slotRepo;
 
-    public AppointmentRepository_y() {
+    public AppointmentRepository() {
         this.slotRepo = new SlotRepository_y();
     }
 
-    public AppointmentRepository_y(SlotRepository_y slotRepo) {
+    public AppointmentRepository(SlotRepository_y slotRepo) {
         this.slotRepo = slotRepo;
     }
 
