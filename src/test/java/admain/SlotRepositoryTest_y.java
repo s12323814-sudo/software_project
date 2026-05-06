@@ -47,7 +47,7 @@ public class SlotRepositoryTest_y {
         }
     }
 
-    /////////////////////////////////////
+// --------------------------------
 
     @Test
     void testFindById() throws Exception {
@@ -81,7 +81,7 @@ public class SlotRepositoryTest_y {
         }
     }
 
-    /////////////////////////////////////
+    // --------------------------------
 
     @Test
     void testAddSlot() throws Exception {
@@ -110,8 +110,7 @@ public class SlotRepositoryTest_y {
         }
     }
 
-    /////////////////////////////////////
-
+  // --------------------------------
     @Test
     void testFindAvailableSlotsByDate() throws Exception {
 
