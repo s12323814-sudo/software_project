@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ReminderManager_y {
+public class ReminderManagery {
 
     private AppointmentRepository_y appointmentRepository;
     private NotificationService_y notificationService;
