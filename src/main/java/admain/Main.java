@@ -562,31 +562,30 @@ logger.error("Error fetching account from database", e);
             System.out.println("Error: " + e.getMessage());
         }
     }
-    private static void updateAppointment() {
-		    boolean validInput = false;
-        while (!validInput) {
-            try {
-                System.out.print("Enter appointment ID to update: ");
-                int appointmentId = Integer.parseInt(sc.nextLine());
-
-                System.out.print("Enter new number of participants: ");
-                int participants = Integer.parseInt(sc.nextLine());
-
-                boolean success = slotService.updateAppointment(user.getAccountId(), appointmentId, participants);
-                if (success) {
-                    System.out.println("Appointment updated successfully!");
-                } else {
-                    System.out.println("Update failed! Check appointment ID or participants.");
-                }
-                break; // نخرج من اللوب بعد المحاولة
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter numbers only.");
-            } catch (SQLException e) {
-                System.out.println("Database error: " + e.getMessage());
-                break;
+  private static void updateAppointment() {
+    boolean validInput = false;
+    while (!validInput) {
+        try {
+            System.out.print("Enter appointment ID to update: ");
+            int appointmentId = Integer.parseInt(sc.nextLine());
+            System.out.print("Enter new number of participants: ");
+            int participants = Integer.parseInt(sc.nextLine());
+            boolean success = slotService.updateAppointment(user.getAccountId(), appointmentId, participants);
+            if (success) {
+                System.out.println("Appointment updated successfully!");
+            } else {
+                System.out.println("Update failed! Check appointment ID or participants.");
             }
+            validInput = true; // exit after successful attempt
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input! Please enter numbers only.");
+            // loop continues naturally, prompting again
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+            validInput = true; // exit on database error
         }
     }
+}
 
    
 
