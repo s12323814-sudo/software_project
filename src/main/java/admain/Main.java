@@ -563,7 +563,7 @@ logger.error("Error fetching account from database", e);
         }
     }
     private static void updateAppointment() {
-		  boolean validInput = false;
+		    boolean validInput = false;
         while (!validInput) {
             try {
                 System.out.print("Enter appointment ID to update: ");
