@@ -2,7 +2,7 @@ package admain;
 
 import java.util.logging.Logger;
 
-public class session_y {
+public class SessionY {
 
     private static final Logger logger = Logger.getLogger(session_y.class.getName());
 
