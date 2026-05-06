@@ -4,7 +4,7 @@ import java.util.logging.Logger;
 
 public class SessionY {
 
-    private static final Logger logger = Logger.getLogger(session_y.class.getName());
+    private static final Logger logger = Logger.getLogger(SessionY .class.getName());
 
     private Account_y account;
 
