@@ -4,7 +4,7 @@ package admain;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MockNotificationService_y implements NotificationService_y {
+public class MockNotificationService_y implements NotificationServicey {
 
     private List<String> sentMessages = new ArrayList<>();
 
