@@ -32,7 +32,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error in findAvailableSlots: " + e.getMessage());
+             logger.severe("Error in addSlot: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -55,7 +55,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error in findById: " + e.getMessage());
+               logger.severe("Error in addSlot: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -80,7 +80,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error in findAvailableSlotsByDate: " + e.getMessage());
+                logger.severe("Error in addSlot: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -106,7 +106,7 @@ public class SlotRepository_y {
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            System.err.println("Error in addSlot: " + e.getMessage());
+               logger.severe("Error in addSlot: " + e.getMessage());
             e.printStackTrace();
         }
 
