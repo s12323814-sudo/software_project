@@ -589,58 +589,46 @@ logger.error("Error fetching account from database", e);
 
    
 
-    private static void addSlot() {
-    	while (true) {
-    	    try {
-    	        System.out.print("Enter date (YYYY-MM-DD): ");
-    	        LocalDate date = LocalDate.parse(sc.nextLine());
+   private static void addSlot() {
+    boolean validInput = false;
+    while (!validInput) {
+        try {
+            System.out.print("Enter date (YYYY-MM-DD): ");
+            LocalDate date = LocalDate.parse(sc.nextLine());
 
-    	        if (date.isBefore(LocalDate.now())) {
-    	            System.out.println("Error: Date cannot be in the past!");
-    	            continue;
-    	        }
+            if (date.isBefore(LocalDate.now())) {
+                System.out.println("Error: Date cannot be in the past!");
+            } else {
+                System.out.print("Enter start time (HH:MM): ");
+                LocalTime start = LocalTime.parse(sc.nextLine());
+                System.out.print("Enter end time (HH:MM): ");
+                LocalTime end = LocalTime.parse(sc.nextLine());
 
-    	        System.out.print("Enter start time (HH:MM): ");
-    	        LocalTime start = LocalTime.parse(sc.nextLine());
-
-    	        System.out.print("Enter end time (HH:MM): ");
-    	        LocalTime end = LocalTime.parse(sc.nextLine());
-
-    	        if (date.isEqual(LocalDate.now())) {
-    	            if (start.isBefore(LocalTime.now())) {
-    	                System.out.println("Error: Start time cannot be in the past!");
-    	                continue;
-    	            }
-    	        }
-
-    	        if (end.isBefore(start) || end.equals(start)) {
-    	            System.out.println("Error: End time must be after start time!");
-    	            continue;
-    	        }
-
-    	        System.out.print("Enter max capacity: ");
-    	        String capInput = sc.nextLine();
-
-    	        int capacity;
-    	        try {
-    	            capacity = Integer.parseInt(capInput);
-    	            if (capacity <= 0) {
-    	                System.out.println("Error: Capacity must be greater than 0!");
-    	                continue;
-    	            }
-    	        } catch (NumberFormatException e) {
-    	            System.out.println("Error: Capacity must be a valid number!");
-    	            continue;
-    	        }
-
-    	        slotService.addSlot(date, start, end, capacity, user.getAccountId());
-    	        System.out.println("Slot added successfully!");
-    	        break;
-
-    	    } catch (java.time.format.DateTimeParseException e) {
-    	        System.out.println("Error: Invalid date/time format!");
-    	    } catch (Exception e) {
-    	        System.out.println("Error adding slot: " + e.getMessage());
-    	    }
-    	}}
+                if (date.isEqual(LocalDate.now()) && start.isBefore(LocalTime.now())) {
+                    System.out.println("Error: Start time cannot be in the past!");
+                } else if (end.isBefore(start) || end.equals(start)) {
+                    System.out.println("Error: End time must be after start time!");
+                } else {
+                    System.out.print("Enter max capacity: ");
+                    String capInput = sc.nextLine();
+                    try {
+                        int capacity = Integer.parseInt(capInput);
+                        if (capacity <= 0) {
+                            System.out.println("Error: Capacity must be greater than 0!");
+                        } else {
+                            slotService.addSlot(date, start, end, capacity, user.getAccountId());
+                            System.out.println("Slot added successfully!");
+                            validInput = true; // only exit point
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Error: Capacity must be a valid number!");
+                    }
+                }
+            }
+        } catch (java.time.format.DateTimeParseException e) {
+            System.out.println("Error: Invalid date/time format!");
+        } catch (Exception e) {
+            System.out.println("Error adding slot: " + e.getMessage());
+        }
+    }
 }
