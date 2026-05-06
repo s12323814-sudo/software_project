@@ -1,7 +1,7 @@
 package admain;
 
 
-public enum AppointmentType_y {
+public enum AppointmentTypey {
     URGENT,
     FOLLOW_UP,
     ASSESSMENT,
