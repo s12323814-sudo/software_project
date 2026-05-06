@@ -20,7 +20,10 @@ public class EmailSender_y implements EmailService_y {
     public void sendOTP(String toEmail, String otp) {
         sendEmail(toEmail, "Password Reset Code", "Your OTP code is: " + otp);
     }
-
+class FirstChildClass extends ParentClass {
+    @Override
+    public boolean doSomething(){/*...*/}
+}
     @Override
     public void sendEmail(String toEmail, String subject, String messageText) {
 
