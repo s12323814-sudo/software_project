@@ -37,7 +37,7 @@ class AppointmentRepositoryTest4{
     @Test
     void testBookSuccess() throws Exception {
        int slotId = 1;
-        int userId = 10;
+      
 
         // Mock slot
         AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
