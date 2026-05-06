@@ -8,7 +8,9 @@ import java.util.logging.Level;
 import io.github.cdimascio.dotenv.Dotenv;
 
 public class Databaseconnection {
-
+private Databaseconnection() {
+        // prevent instantiation
+    }
     private static final Logger logger = Logger.getLogger(Databaseconnection.class.getName());
 
     private static final Dotenv dotenv = Dotenv.load();
