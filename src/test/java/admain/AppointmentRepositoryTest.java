@@ -12,7 +12,7 @@ import org.mockito.MockedStatic;
 
 public class AppointmentRepositoryTest {
 
-    /////////////////////////////////////////////
+  // --------------------------------
     @Test
     void testGetUpcomingAppointments() throws Exception {
 
@@ -336,7 +336,7 @@ public class AppointmentRepositoryTest {
         }
     }
 
-    /////////////////////////////////////////////
+// --------------------------------
     @Test
     void testBookConfirmed() throws Exception {
 
@@ -375,8 +375,7 @@ public class AppointmentRepositoryTest {
             assertTrue(result);
         }
     }
-
-    /////////////////////////////////////////////
+// --------------------------------
    
     @Test
     void testCancel() throws Exception {
@@ -391,8 +390,7 @@ public class AppointmentRepositoryTest {
 
         verify(repo).cancel(10, 1);
     }
-
-    /////////////////////////////////////////////
+// --------------------------------
     @Test
     void testUpdate() throws Exception {
 
