@@ -7,7 +7,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class scheduleRepository {
+public class ScheduleRepository {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
     protected Connection getConnection() throws SQLException {
