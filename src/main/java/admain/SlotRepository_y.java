@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SlotRepository {
-private static final String ACTION_1 = "action1
+private static final String ACTION_1 = "action1";
     public void run() {
     prepare(ACTION_1);
     execute(ACTION_1);
