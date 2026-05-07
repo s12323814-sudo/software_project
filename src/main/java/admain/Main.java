@@ -632,3 +632,4 @@ logger.error("Error fetching account from database", e);
         }
     }
 }
+}
