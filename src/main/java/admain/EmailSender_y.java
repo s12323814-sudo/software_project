@@ -6,12 +6,14 @@ import jakarta.mail.internet.*;
 import io.github.cdimascio.dotenv.Dotenv;
 import java.util.logging.Logger;
 
-public class EmailSendery implements EmailServicey {
+public class EmailSender_y implements EmailService_y {
 
     private static final Logger logger =
-            Logger.getLogger(EmailSendery.class.getName());
+            Logger.getLogger(EmailSender_y.class.getName());
 
-    private static final Dotenv dotenv = Dotenv.load();
+    private static final Dotenv dotenv = Dotenv.configure()
+            .ignoreIfMissing()
+            .load();
 
     private final String fromEmail = dotenv.get("EMAIL_USER");
     private final String password = dotenv.get("EMAIL_PASS");
@@ -20,10 +22,7 @@ public class EmailSendery implements EmailServicey {
     public void sendOTP(String toEmail, String otp) {
         sendEmail(toEmail, "Password Reset Code", "Your OTP code is: " + otp);
     }
-class FirstChildClass extends ParentClass {
-    @Override
-    public boolean doSomething(){/*...*/}
-}
+
     @Override
     public void sendEmail(String toEmail, String subject, String messageText) {
 

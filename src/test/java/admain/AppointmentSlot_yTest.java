@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -555,9 +556,30 @@ class AppointmentSlot_yTest {
                 0
         );
 
-        // بما أنه DB مش موجود غالباً → رح يرمي Exception
-        assertThrows(RuntimeException.class, () -> {
+         assertThrows(RuntimeException.class, () -> {
             slot.isSlotAvailableForResource(1, 1);
         });
+    }
+
+    @Test
+    void testSlotAvailableForResource_returnsTrue() throws Exception {
+
+          SlotRepository_y repo = mock(SlotRepository_y.class);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        when(repo.getConnection()).thenReturn(conn);
+  when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+         when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+          YourService service = new YourService(repo);
+
+        boolean result = service.isSlotAvailableForResource(1, 1);
+
+        assertTrue(result);
     }
 }

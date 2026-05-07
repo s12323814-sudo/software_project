@@ -5,21 +5,20 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
 public class SlotService_y {
-
+	private static final Logger logger =
+	        Logger.getLogger(SlotService_y.class.getName());
     private NotificationService_y notificationService;
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
     private EmailService_y emailService;
-    // private static Scanner sc = new Scanner(System.in);
-
-    // Dependency Injection
-    public SlotService_y(AppointmentRepository_y appointmentRepo,
+     public SlotService_y(AppointmentRepository_y appointmentRepo,
             SlotRepository_y slotRepo,
             NotificationService_y notificationService,
             EmailService_y emailService) {
@@ -30,16 +29,13 @@ this.notificationService = notificationService;
 this.emailService = emailService; // ✅ الآن صح
 }
 
-   
-    // GET AVAILABLE SLOTS
-    public List<AppointmentSlot_y> getAvailableSlots() {
+   public List<AppointmentSlot_y> getAvailableSlots() {
         return slotRepo.findAvailableSlots();
     }
     public List<Appointment> getAllAppointments(int adminId) throws SQLException {
         return appointmentRepo.getAllAppointments(adminId);
     }
 
-    // BOOK APPOINTMENT
     public boolean bookAppointment(int userId, int slotId, int participants, AppointmentType_y type)
             throws SQLException {
 
@@ -49,9 +45,7 @@ this.emailService = emailService; // ✅ الآن صح
         }
 
         int remaining = slot.getMaxCapacity() - slot.getBookedCount();
-
-        // 🔥 RULES حسب النوع
-        switch (type) {
+     switch (type) {
 
             case URGENT:
             case INDIVIDUAL:
@@ -72,47 +66,37 @@ this.emailService = emailService; // ✅ الآن صح
                 break;
 
             case IN_PERSON:
-                // لازم يلتزم بالسعة
-                break;
+            break;
 
             case FOLLOW_UP:
             case ASSESSMENT:
             case GENERAL:
-                // لا شروط إضافية حالياً
-                break;
+               break;
 
             default:
                 throw new IllegalArgumentException("Unknown appointment type");
         }
 
-        // 🔥 تحقق السعة (ما عدا virtual)
-        if (type != AppointmentType_y.VIRTUAL && participants > remaining) {
+         if (type != AppointmentType_y.VIRTUAL && participants > remaining) {
             throw new IllegalArgumentException("Not enough capacity for this slot");
         }
 
         return appointmentRepo.book(userId, slotId, participants, type);
     }
   
-    // CANCEL (USER)
-    public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {
+     public boolean cancelAppointment(int userId, int appointmentId) throws SQLException {
         return appointmentRepo.cancel(userId, appointmentId);
     }
 
-  
-    // UPDATE
     public boolean updateAppointment(int userId, int appointmentId, int participants) throws SQLException {
         return appointmentRepo.update(userId, appointmentId, participants);
     }
 
-
-    // VIEW USER APPOINTMENTS
-    public List<Appointment> viewUserAppointments(int userId) throws SQLException {
+  public List<Appointment> viewUserAppointments(int userId) throws SQLException {
         return appointmentRepo.getUserUpcomingAppointments(userId);
     }
 
- 
-    // ADMIN: ADD SLOT
-    public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
+  public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
                            int capacity, int adminId) {
 
         if (capacity <= 0) return false;
@@ -120,9 +104,6 @@ this.emailService = emailService; // ✅ الآن صح
         return slotRepo.addSlot(date, start, end, capacity, adminId);
     }
 
-    // ADMIN: CANCEL WITH TRANSACTION (IMPORTANT)
-
-    // ---------------- Cancel Entire Slot ----------------
     public boolean adminCancelSlot(int slotId) {
 
         String getUsers = "SELECT account_id FROM appointments WHERE slot_id = ?";
@@ -134,7 +115,7 @@ this.emailService = emailService; // ✅ الآن صح
         try (Connection conn = database_connection.getConnection()) {
             conn.setAutoCommit(false);
 
-            // جمع جميع المستخدمين
+         
             try (PreparedStatement psUsers = conn.prepareStatement(getUsers)) {
                 psUsers.setInt(1, slotId);
                 ResultSet rs = psUsers.executeQuery();
@@ -143,14 +124,13 @@ this.emailService = emailService; // ✅ الآن صح
                 }
             }
 
-            // حذف المواعيد المرتبطة
+          
             try (PreparedStatement psDelAppt = conn.prepareStatement(deleteAppointments)) {
                 psDelAppt.setInt(1, slotId);
                 int apptsDeleted = psDelAppt.executeUpdate();
                 System.out.println("Appointments deleted: " + apptsDeleted);
             }
 
-            // حذف الـ Slot نفسه
             int slotDeleted = 0;
             try (PreparedStatement psDelSlot = conn.prepareStatement(deleteSlot)) {
                 psDelSlot.setInt(1, slotId);
@@ -160,7 +140,6 @@ this.emailService = emailService; // ✅ الآن صح
             if (slotDeleted > 0) {
                 conn.commit();
 
-                // إشعار جميع المستخدمين
                 for (Integer userId : userIds) {
                     notificationService.sendNotification(
                         userId,
@@ -177,8 +156,8 @@ this.emailService = emailService; // ✅ الآن صح
                 return false;
             }
 
-        } catch (SQLException e) {
-         logger.error("Error fetching account from database", e);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error fetching account from database", e);
             return false;
         }
     }
@@ -202,7 +181,6 @@ this.emailService = emailService; // ✅ الآن صح
             String email = null;
             int slotAdminId = -1;
 
-            // 1️⃣ جلب البيانات
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, appointmentId);
                 ResultSet rs = ps.executeQuery();
@@ -217,14 +195,12 @@ this.emailService = emailService; // ✅ الآن صح
                 }
             }
 
-            // ❌ 2️⃣ تحقق الصلاحية (الأهم)
             if (slotAdminId != adminAccountId) {
                 conn.rollback();
                 System.out.println("❌ Unauthorized: This admin cannot cancel this appointment");
                 return false;
             }
 
-            // 3️⃣ حذف الموعد
             try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
                 ps.setInt(1, appointmentId);
 
@@ -235,10 +211,8 @@ this.emailService = emailService; // ✅ الآن صح
                 }
             }
 
-            // 4️⃣ تأكيد العملية
             conn.commit();
 
-            // 5️⃣ إشعارات
             notificationService.sendNotification(
                 userId,
                 "⚠️ Your appointment was cancelled by admin."
@@ -256,7 +230,7 @@ this.emailService = emailService; // ✅ الآن صح
             return true;
 
         } catch (Exception e) {
-            logger.error("Error fetching account from database", e);
+            logger.log(Level.SEVERE, "Error fetching account from database", e);
             return false;
         }
     }}

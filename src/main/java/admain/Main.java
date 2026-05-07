@@ -1,6 +1,7 @@
 package admain;
 
 import java.sql.*;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -10,12 +11,14 @@ import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 
 public class Main {
-	
-	private static final Account_y Account_y = null;
+	private static final Logger logger =
+	        Logger.getLogger(Main.class.getName());
 
 	static Scanner sc = new Scanner(System.in);
 
@@ -107,9 +110,9 @@ public class Main {
 
         if (session.isAdmin())
 			try {
-				adminSession(Account_y);
+				adminSession(user);
 			} catch (SQLException e) {
-			 logger.error("Error fetching account from database", e);
+				logger.log(Level.SEVERE, "Error fetching account from database", e);
 			}
 		else userSession();
     }
@@ -418,8 +421,7 @@ public class Main {
             }
 
         } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
-logger.error("Error fetching account from database", e);
+        	logger.log(Level.SEVERE, "Error fetching account from database", e);
         }
     }
     private static void viewUserAppointments() {
@@ -431,7 +433,7 @@ logger.error("Error fetching account from database", e);
                 list.forEach(System.out::println);
             }
         } catch (SQLException e) {
-          logger.error("Error fetching account from database", e);
+        	logger.log(Level.SEVERE, "Error fetching account from database", e);
         }
     }
    
@@ -533,7 +535,7 @@ logger.error("Error fetching account from database", e);
             }
 
         } catch (Exception e) {
-         logger.error("Error fetching account from database", e);
+        	logger.log(Level.SEVERE, "Error message", e);
         }
     }
     private static void viewAllAppointments() {

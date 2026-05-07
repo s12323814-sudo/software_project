@@ -1,6 +1,6 @@
 package admain;
 
-public enum Roley {
+public enum Role_y {
     USER,
  
     ADMIN;

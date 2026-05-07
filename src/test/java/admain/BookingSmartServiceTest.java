@@ -56,13 +56,15 @@ class BookingSmartServiceTest {
 
     @Test
     void testSortByTime() {
+
+      
         List<AppointmentSlot_y> sorted = smartService.sortByTime();
+
         assertEquals(3, sorted.size());
         assertEquals(slot1.getId(), sorted.get(0).getId());
         assertEquals(slot2.getId(), sorted.get(1).getId());
         assertEquals(slot3.getId(), sorted.get(2).getId());
     }
-
     @Test
     void testSortByAvailability() {
         List<AppointmentSlot_y> sorted = smartService.sortByAvailability();

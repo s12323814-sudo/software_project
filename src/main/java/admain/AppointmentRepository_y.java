@@ -8,20 +8,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class AppointmentRepository {
+public class AppointmentRepository_y {
 
     private static final Logger logger =
-            Logger.getLogger(AppointmentRepository.class.getName());
+            Logger.getLogger(AppointmentRepository_y.class.getName());
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Hebron");
 
     private SlotRepository_y slotRepo;
 
-    public AppointmentRepository() {
+    public AppointmentRepository_y() {
         this.slotRepo = new SlotRepository_y();
     }
 
-    public AppointmentRepository(SlotRepository_y slotRepo) {
+    public AppointmentRepository_y(SlotRepository_y slotRepo) {
         this.slotRepo = slotRepo;
     }
 
@@ -54,15 +54,14 @@ public class AppointmentRepository {
 
                 while (rs.next()) {
 
-                    Appointment a = new Appointment(
-                          rs.getInt(COL_APPOINTMENT_ID),
-                          rs.getInt(COL_ACCOUNT_ID),
-                          rs.getInt(COL_SLOT_ID),
-                         rs.getInt(COL_PARTICIPANTS),
-AppointmentStatus_y.valueOf(rs.getString(COL_STATUS)),
-AppointmentType_y.valueOf(rs.getString(COL_TYPE))
-                    );
-
+                	Appointment a = new Appointment(
+                	        rs.getInt("appointment_id"),
+                	        rs.getInt("account_id"),
+                	        rs.getInt("slot_id"),
+                	        rs.getInt("participants"),
+                	        AppointmentStatus_y.valueOf(rs.getString("status")),
+                	        AppointmentType_y.valueOf(rs.getString("type"))
+                	);
                     a.setUsername(rs.getString("username"));
                     list.add(a);
                 }

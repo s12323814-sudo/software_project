@@ -7,13 +7,15 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ReminderManager_y {
-
+	private static final Logger logger =
+	        Logger.getLogger(ReminderManager_y.class.getName());
     private AppointmentRepository_y appointmentRepository;
     private NotificationService_y notificationService;
 
-    // لتخزين IDs التي تم إرسال التذكير لها
     private Set<Integer> remindedOneHour = new HashSet<>();
     private Set<Integer> remindedTenMinutes = new HashSet<>();
 
@@ -38,21 +40,19 @@ public class ReminderManager_y {
                 ZonedDateTime slotStart = appt.getTimeSlot().getStart();
                 long minutesUntilStart = java.time.Duration.between(now, slotStart).toMinutes();
 
-                // قبل ساعة
                 if (minutesUntilStart <= 60 && minutesUntilStart > 50 && !remindedOneHour.contains(appt.getAppointmentId())) {
                     sendReminder(appt, "Reminder: Appointment in 1 hour!");
                     remindedOneHour.add(appt.getAppointmentId());
                 }
 
-                // قبل 10 دقائق
-                else if (minutesUntilStart <= 10 && minutesUntilStart >0&& !remindedTenMinutes.contains(appt.getAppointmentId())) {
+                 else if (minutesUntilStart <= 10 && minutesUntilStart >0&& !remindedTenMinutes.contains(appt.getAppointmentId())) {
                     sendReminder(appt, "Reminder: Appointment in 10 minutes!");
                     remindedTenMinutes.add(appt.getAppointmentId());
                 }
             }
 
         } catch (Exception e) {
-        logger.error("Error fetching account from database", e);
+        	logger.log(Level.SEVERE, "Error fetching account from database", e);
         }
     }
 

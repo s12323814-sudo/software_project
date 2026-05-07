@@ -1,20 +1,23 @@
 package admain;
 
 import static org.mockito.Mockito.*;
-import javax.mail.Message;
+
+
 import org.junit.jupiter.api.Test;
 
-public class EmailSenderTest {
+class EmailSenderTest {
 
-    @Test
-    void testSendOTP() throws Exception {
+	@Test
+	void testSendOTP_callsSendEmailOnce() {
 
-        EmailSender_y sender = spy(new EmailSender_y());
+	    EmailSender_y sender = spy(new EmailSender_y());
 
-        doNothing().when(sender).send(any(Message.class));
+	    doNothing().when(sender)
+	            .sendEmail(anyString(), anyString(), anyString());
 
-        sender.sendOTP("test@email.com", "123456");
+	    sender.sendOTP("test@email.com", "123456");
 
-        verify(sender, times(1)).send(any(Message.class));
-    }
-}
+	    verify(sender, times(1))
+	            .sendEmail(eq("test@email.com"), anyString(), anyString());
+	}
+	}

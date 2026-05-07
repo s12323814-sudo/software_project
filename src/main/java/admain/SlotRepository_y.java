@@ -5,14 +5,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class SlotRepository {
-private static final String ACTION_1 = "action1";
-    public void run() {
-    prepare(ACTION_1);
-    execute(ACTION_1);
-    release(ACTION_1);
-}
+public class SlotRepository_y {
+
+    private static final Logger logger =
+            Logger.getLogger(SlotRepository_y.class.getName());
+
     protected Connection getConnection() throws SQLException {
         return database_connection.getConnection();
     }
@@ -37,8 +36,7 @@ private static final String ACTION_1 = "action1";
             }
 
         } catch (SQLException e) {
-             logger.severe("Error in addSlot: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error in addSlot: " + e.getMessage());
         }
 
         return list;
@@ -60,8 +58,7 @@ private static final String ACTION_1 = "action1";
             }
 
         } catch (SQLException e) {
-               logger.severe("Error in addSlot: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error in addSlot: " + e.getMessage());
         }
 
         return null;
@@ -71,7 +68,9 @@ private static final String ACTION_1 = "action1";
 
         List<AppointmentSlot_y> list = new ArrayList<>();
 
-        String sql = "SELECT * FROM appointment_slot WHERE slot_date = ? AND booked_count < max_capacity";
+        String sql =
+                "SELECT * FROM appointment_slot " +
+                "WHERE slot_date = ? AND booked_count < max_capacity";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -85,8 +84,7 @@ private static final String ACTION_1 = "action1";
             }
 
         } catch (SQLException e) {
-                logger.severe("Error in addSlot: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error in addSlot: " + e.getMessage());
         }
 
         return list;
@@ -95,7 +93,8 @@ private static final String ACTION_1 = "action1";
     public boolean addSlot(LocalDate date, LocalTime start, LocalTime end,
                            int capacity, int accountId) {
 
-        String sql = "INSERT INTO appointment_slot " +
+        String sql =
+                "INSERT INTO appointment_slot " +
                 "(slot_date, slot_start_time, slot_end_time, max_capacity, booked_count, account_id) " +
                 "VALUES (?, ?, ?, ?, 0, ?)";
 
@@ -111,16 +110,21 @@ private static final String ACTION_1 = "action1";
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-               logger.severe("Error in addSlot: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error in addSlot: " + e.getMessage());
         }
 
         return false;
     }
 
-    public int decreaseBookedCount(int slotId, int participants, Connection conn) throws SQLException {
+    public int decreaseBookedCount(int slotId,
+                                   int participants,
+                                   Connection conn)
+            throws SQLException {
 
-        String sql = "UPDATE appointment_slot SET booked_count = booked_count - ? WHERE slot_id = ?";
+        String sql =
+                "UPDATE appointment_slot " +
+                "SET booked_count = booked_count - ? " +
+                "WHERE slot_id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, participants);
@@ -129,7 +133,8 @@ private static final String ACTION_1 = "action1";
         }
     }
 
-    private AppointmentSlot_y map(ResultSet rs) throws SQLException {
+    private AppointmentSlot_y map(ResultSet rs)
+            throws SQLException {
 
         return new AppointmentSlot_y(
                 rs.getInt("slot_id"),

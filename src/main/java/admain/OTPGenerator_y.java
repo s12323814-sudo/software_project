@@ -2,7 +2,7 @@ package admain;
 
 import java.security.SecureRandom;
 
-public class OTPGeneratory {
+public class OTPGenerator_y {
 
     private static final SecureRandom rand = new SecureRandom();
 

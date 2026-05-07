@@ -53,14 +53,15 @@ public class BookingSmartService {
 
 
     public List<AppointmentSlot_y> sortByTime() {
-        List<AppointmentSlot_y> slots = getFutureSlotsFromDB();
+
+        List<AppointmentSlot_y> slots =
+                new ArrayList<>(getFutureSlotsFromDB()); // 👈 الحل
 
         slots.sort(Comparator.comparing(AppointmentSlot_y::getDate)
                 .thenComparing(AppointmentSlot_y::getStartTime));
 
         return slots;
     }
-
 
     public List<AppointmentSlot_y> sortByAvailability() {
         List<AppointmentSlot_y> slots = getFutureSlotsFromDB();

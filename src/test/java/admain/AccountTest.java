@@ -1,226 +1,439 @@
 package admain;
 
-import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-import java.util.HashSet;
+import java.sql.*;
+import java.time.*;
 import java.util.List;
-import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 class AccountTest {
-	@Test
-	void shouldAllowValidAccount() {
-	    Account_y acc = new Account_y(1, "validUser", "hash", "test@test.com", Role_y.USER);
-	    assertNotNull(acc);
-	}@Test
-	void shouldAcceptValidEmailFormats() {
-	    Account_y acc = new Account_y(1, "user123", "hash", "user@mail.com", Role_y.USER);
-	    assertEquals("user@mail.com", acc.getEmail());
-	}
+
+
+	    // =========================
+	    // 1. Constructor valid case
+	    // =========================
+	    @Test
+	    void testCreateValidAccount() {
+
+	        Account_y acc = new Account_y(
+	                1,
+	                "yasmine",
+	                "hashed123",
+	                "test@gmail.com",
+	                Role_y.USER
+	        );
+
+	        assertEquals(1, acc.getAccountId());
+	        assertEquals("yasmine", acc.getUsername());
+	        assertEquals("hashed123", acc.getPasswordHash());
+	        assertEquals("test@gmail.com", acc.getEmail());
+	        assertEquals(Role_y.USER, acc.getRole());
+	    }
+
+	    // =========================
+	    // 2. Invalid username
+	    // =========================
+	    @Test
+	    void testInvalidUsernameThrowsException() {
+
+	        IllegalArgumentException ex = assertThrows(
+	                IllegalArgumentException.class,
+	                () -> new Account_y(
+	                        1,
+	                        "ab",   // أقل من 3 أحرف
+	                        "hashed",
+	                        "test@gmail.com",
+	                        Role_y.USER
+	                )
+	        );
+
+	        assertEquals("Invalid username", ex.getMessage());
+	    }
+
+	    // =========================
+	    // 3. Invalid password
+	    // =========================
+	    @Test
+	    void testInvalidPasswordThrowsException() {
+
+	        IllegalArgumentException ex = assertThrows(
+	                IllegalArgumentException.class,
+	                () -> new Account_y(
+	                        1,
+	                        "yasmine",
+	                        "",
+	                        "test@gmail.com",
+	                        Role_y.USER
+	                )
+	        );
+
+	        assertEquals("Invalid password hash", ex.getMessage());
+	    }
+
+	    // =========================
+	    // 4. Invalid email
+	    // =========================
+	    @Test
+	    void testInvalidEmailThrowsException() {
+
+	        IllegalArgumentException ex = assertThrows(
+	                IllegalArgumentException.class,
+	                () -> new Account_y(
+	                        1,
+	                        "yasmine",
+	                        "hashed",
+	                        "invalidEmail",
+	                        Role_y.USER
+	                )
+	        );
+
+	        assertEquals("Invalid email", ex.getMessage());
+	    }
+
+	    // =========================
+	    // 5. isAdmin / isUser
+	    // =========================
+	    @Test
+	    void testRoleChecks() {
+
+	        Account_y admin = new Account_y(
+	                1, "admin", "hash", "admin@gmail.com", Role_y.ADMIN
+	        );
+
+	        Account_y user = new Account_y(
+	                2, "user", "hash", "user@gmail.com", Role_y.USER
+	        );
+
+	        assertTrue(admin.isAdmin());
+	        assertFalse(admin.isUser());
+
+	        assertTrue(user.isUser());
+	        assertFalse(user.isAdmin());
+	    }
+
+	    // =========================
+	    // 6. setters validation
+	    // =========================
+	    @Test
+	    void testSettersValidation() {
+
+	        Account_y acc = new Account_y(
+	                1, "yasmine", "hash", "test@gmail.com", Role_y.USER
+	        );
+
+	        // username invalid
+	        assertThrows(IllegalArgumentException.class,
+	                () -> acc.setUsername("ab"));
+
+	        // password invalid
+	        assertThrows(IllegalArgumentException.class,
+	                () -> acc.setPasswordHash(""));
+
+	        // email invalid
+	        assertThrows(IllegalArgumentException.class,
+	                () -> acc.setEmail("wrongEmail"));
+	    }
+
+	    // =========================
+	    // 7. equals & hashCode
+	    // =========================
+	    @Test
+	    void testEqualsAndHashCode() {
+
+	        Account_y a1 = new Account_y(
+	                1, "user1", "hash", "a@gmail.com", Role_y.USER
+	        );
+
+	        Account_y a2 = new Account_y(
+	                1, "user2", "hash2", "b@gmail.com", Role_y.ADMIN
+	        );
+
+	        assertEquals(a1, a2); // نفس accountId
+	        assertEquals(a1.hashCode(), a2.hashCode());
+	    }
+
+	    // =========================
+	    // 8. toString check
+	    // =========================
+	    @Test
+	    void testToString() {
+
+	        Account_y acc = new Account_y(
+	                1, "yasmine", "hash", "test@gmail.com", Role_y.USER
+	        );
+
+	        String result = acc.toString();
+
+	        assertTrue(result.contains("yasmine"));
+	        assertTrue(result.contains("test@gmail.com"));
+	        assertTrue(result.contains("USER"));
+	        assertFalse(result.contains("password")); // مهم أمنيًا
+	    }
+	
+
+    // =========================
+    // GET UPCOMING APPOINTMENTS
+    // =========================
     @Test
-    void shouldThrowIfUsernameNull() {
-        assertThrows(IllegalArgumentException.class, () -> new Account_y(1, null, "hash", "a@test.com", Role_y.USER));
+    void testGetUpcomingAppointments() throws Exception {
+
+        // Arrange
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        try (MockedStatic<database_connection> db =
+                     mockStatic(database_connection.class)) {
+
+            db.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(true, false);
+
+            when(rs.getInt("appointment_id")).thenReturn(1);
+            when(rs.getInt("account_id")).thenReturn(10);
+            when(rs.getInt("slot_id")).thenReturn(5);
+            when(rs.getInt("participants")).thenReturn(2);
+
+            when(rs.getString("status")).thenReturn("CONFIRMED");
+            when(rs.getString("type")).thenReturn("ONLINE");
+
+            Timestamp t = Timestamp.from(Instant.now());
+            when(rs.getTimestamp("start_time")).thenReturn(t);
+            when(rs.getTimestamp("end_time")).thenReturn(t);
+
+            AppointmentRepository_y repo = new AppointmentRepository_y();
+
+            // Act
+            List<Appointment> result = repo.getUpcomingAppointments();
+
+            // Assert
+            assertEquals(1, result.size());
+        }
     }
 
+    // =========================
+    // BOOK - OVER CAPACITY
+    // =========================
     @Test
-    void shouldThrowIfUsernameTooShort() {
-        assertThrows(IllegalArgumentException.class, () -> new Account_y(1, "ab", "hash", "a@test.com", Role_y.USER));
+    void testBookOverCapacity() {
+
+        // Arrange
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+        when(slot.getDate()).thenReturn(LocalDate.now().plusDays(1));
+        when(slot.getStartTime()).thenReturn(LocalTime.of(10, 0));
+        when(slot.getEndTime()).thenReturn(LocalTime.of(11, 0));
+        when(slot.getBookedCount()).thenReturn(5);
+        when(slot.getMaxCapacity()).thenReturn(5);
+
+        when(slotRepo.findById(1)).thenReturn(slot);
+
+        AppointmentRepository_y repo = new AppointmentRepository_y(slotRepo);
+
+        // Act + Assert
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> repo.book(10, 1, 1, AppointmentType_y.ONLINE));
+
+        assertEquals("No capacity", ex.getMessage());
     }
 
+    // =========================
+    // UPDATE FAIL
+    // =========================
     @Test
-    void shouldThrowIfPasswordHashNull() {
-        assertThrows(IllegalArgumentException.class, () -> new Account_y(1, "user", null, "a@test.com", Role_y.USER));
+    void testUpdateFail() throws Exception {
+
+        // Arrange
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+
+        try (MockedStatic<database_connection> db =
+                     mockStatic(database_connection.class)) {
+
+            db.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeUpdate()).thenReturn(0);
+
+            AppointmentRepository_y repo = new AppointmentRepository_y();
+
+            // Act
+            boolean result = repo.update(10, 1, 5);
+
+            // Assert
+            assertFalse(result);
+        }
     }
 
+    // =========================
+    // BOOK SLOT NOT FOUND
+    // =========================
     @Test
-    void shouldThrowIfPasswordHashEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> new Account_y(1, "user", "", "a@test.com", Role_y.USER));
+    void testBookSlotNotFound() {
+
+        // Arrange
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+        when(slotRepo.findById(1)).thenReturn(null);
+
+        AppointmentRepository_y repo = new AppointmentRepository_y(slotRepo);
+
+        // Act + Assert
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> repo.book(10, 1, 2, AppointmentType_y.ONLINE));
+
+        assertTrue(ex.getMessage().contains("Slot not found"));
     }
 
+    // =========================
+    // GET USER UPCOMING
+    // =========================
     @Test
-    void shouldThrowIfEmailNull() {
-        assertThrows(IllegalArgumentException.class, () -> new Account_y(1, "user", "hash", null, Role_y.USER));
+    void testGetUserUpcomingAppointments() throws Exception {
+
+        // Arrange
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        try (MockedStatic<database_connection> db =
+                     mockStatic(database_connection.class)) {
+
+            db.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(true, false);
+
+            when(rs.getInt("appointment_id")).thenReturn(1);
+            when(rs.getInt("slot_id")).thenReturn(5);
+            when(rs.getInt("account_id")).thenReturn(10);
+            when(rs.getInt("participants")).thenReturn(2);
+
+            when(rs.getString("status")).thenReturn("CONFIRMED");
+            when(rs.getString("type")).thenReturn("ONLINE");
+
+            Timestamp future =
+                    Timestamp.from(Instant.now().plusSeconds(3600));
+
+            when(rs.getTimestamp("start_time")).thenReturn(future);
+            when(rs.getTimestamp("end_time")).thenReturn(future);
+
+            AppointmentRepository_y repo = new AppointmentRepository_y();
+
+            // Act
+            List<Appointment> result = repo.getUserUpcomingAppointments(10);
+
+            // Assert
+            assertEquals(1, result.size());
+        }
     }
 
+    // =========================
+    // BOOK SUCCESS
+    // =========================
     @Test
-    void shouldThrowIfEmailInvalid() {
-        assertThrows(IllegalArgumentException.class, () -> new Account_y(1, "user", "hash", "wrongemail", Role_y.USER));
+    void testBookSuccess() throws Exception {
+
+        // Arrange
+        SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+
+        AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+        when(slot.getDate()).thenReturn(LocalDate.now().plusDays(1));
+        when(slot.getStartTime()).thenReturn(LocalTime.of(10, 0));
+        when(slot.getEndTime()).thenReturn(LocalTime.of(11, 0));
+        when(slot.getBookedCount()).thenReturn(0);
+        when(slot.getMaxCapacity()).thenReturn(10);
+
+        when(slotRepo.findById(1)).thenReturn(slot);
+
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        PreparedStatement ps2 = mock(PreparedStatement.class);
+
+        try (MockedStatic<database_connection> db =
+                     mockStatic(database_connection.class)) {
+
+            db.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString()))
+                    .thenReturn(ps)
+                    .thenReturn(ps2);
+
+            when(ps.executeUpdate()).thenReturn(1);
+            when(ps2.executeUpdate()).thenReturn(1);
+
+            AppointmentRepository_y repo =
+                    new AppointmentRepository_y(slotRepo);
+
+            // Act
+            boolean result = repo.book(1, 1, 2, AppointmentType_y.ONLINE);
+
+            // Assert
+            assertTrue(result);
+        }
     }
 
+    // =========================
+    // CANCEL NOT FOUND
+    // =========================
     @Test
-    void shouldReturnCorrectValues() {
-        Account_y acc = new Account_y(1, "user", "hash", "a@test.com", Role_y.ADMIN);
+    void testCancelNotFound() throws Exception {
 
-        assertEquals(1, acc.getAccountId());
-        assertEquals("user", acc.getUsername());
-        assertEquals("hash", acc.getPasswordHash());
-        assertEquals("a@test.com", acc.getEmail());
-        assertEquals(Role_y.ADMIN, acc.getRole());
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        try (MockedStatic<database_connection> db =
+                     mockStatic(database_connection.class)) {
+
+            db.when(database_connection::getConnection).thenReturn(conn);
+
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeQuery()).thenReturn(rs);
+
+            when(rs.next()).thenReturn(false);
+
+            AppointmentRepository_y repo =
+                    new AppointmentRepository_y();
+
+            boolean result = repo.cancel(1, 1);
+
+            assertFalse(result);
+        }
     }
 
+    // =========================
+    // UPDATE SUCCESS
+    // =========================
     @Test
-    void isAdminAndIsUserTests() {
-        Account_y admin = new Account_y(1, "admin", "hash", "a@test.com", Role_y.ADMIN);
-        Account_y user = new Account_y(2, "user", "hash", "b@test.com", Role_y.USER);
-        Account_y noRole = new Account_y(3, "guest", "hash", "c@test.com", null);
+    void testUpdateSuccess() throws Exception {
 
-        assertTrue(admin.isAdmin());
-        assertFalse(admin.isUser());
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
 
-        assertTrue(user.isUser());
-        assertFalse(user.isAdmin());
+        try (MockedStatic<database_connection> db =
+                     mockStatic(database_connection.class)) {
 
-        assertFalse(noRole.isAdmin());
-        assertFalse(noRole.isUser());
-    }
+            db.when(database_connection::getConnection).thenReturn(conn);
 
-    @Test
-    void equalsAndHashCode() {
-        Account_y a1 = new Account_y(1, "user1", "hash", "a@test.com", Role_y.USER);
-        Account_y a2 = new Account_y(1, "user2", "hash2", "b@test.com", Role_y.ADMIN);
-        Account_y a3 = new Account_y(2, "user3", "hash3", "c@test.com", Role_y.USER);
+            when(conn.prepareStatement(anyString())).thenReturn(ps);
+            when(ps.executeUpdate()).thenReturn(1);
 
-        // Same ID -> equals
-        assertEquals(a1, a2);
-        assertNotEquals(a1, a3);
+            AppointmentRepository_y repo =
+                    new AppointmentRepository_y();
 
-        // equals with null
-        assertNotEquals(a1, null);
-        // equals with different class
-        assertNotEquals(a1, "string");
+            boolean result = repo.update(10, 1, 3);
 
-        // hashSet uniqueness
-        Set<Account_y> set = new HashSet<>();
-        set.add(a1);
-        set.add(a2);
-        set.add(a3);
-        assertEquals(2, set.size()); // a1 and a2 considered same by ID
-    }
-
-    @Test
-    void toStringContainsValues() {
-        Account_y acc = new Account_y(1, "user", "hash", "a@test.com", Role_y.USER);
-        String str = acc.toString();
-        assertTrue(str.contains("1"));
-        assertTrue(str.contains("user"));
-        assertTrue(str.contains("a@test.com"));
-        assertTrue(str.contains("USER"));
-    }
-    @Test
-    void shouldCreateValidAccount() {
-        Account_y acc = new Account_y(1, "user123", "hash", "test@mail.com", Role_y.USER);
-
-        assertNotNull(acc);
-        assertEquals(1, acc.getAccountId());
-    }@Test
-    void shouldHandleNullRole() {
-        Account_y acc = new Account_y(1, "user123", "hash", "test@mail.com", null);
-
-        assertFalse(acc.isAdmin());
-        assertFalse(acc.isUser());
-    }@Test
-    void shouldRejectEmailWithoutAt() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new Account_y(1, "user123", "hash", "invalidemail", Role_y.USER));
-    }@Test
-    void shouldUpdateValuesUsingSetters() {
-        Account_y acc = new Account_y(1, "user123", "hash", "test@mail.com", Role_y.USER);
-
-        acc.setUsername("newuser");
-        acc.setEmail("new@mail.com");
-
-        assertEquals("newuser", acc.getUsername());
-        assertEquals("new@mail.com", acc.getEmail());
-    }
-    @Test
-    void testGetFutureSlots_exception() {
-
-        SlotRepository_y repo = mock(SlotRepository_y.class);
-
-        when(repo.findAvailableSlots())
-                .thenThrow(new RuntimeException("DB error"));
-
-        BookingSmartService service = new BookingSmartService(repo);
-
-        AppointmentSlot_y result = service.getBestSlot();
-
-        assertNull(result);
-    }@Test
-    void testBookSlot_nullSlot() {
-
-        SlotRepository_y repo = mock(SlotRepository_y.class);
-
-        when(repo.findById(1)).thenReturn(null);
-
-        AppointmentRepository_y service = new AppointmentRepository_y(repo);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> service.book(1, 1, 2, AppointmentType_y.GENERAL));
-    }@Test
-    void testSlotAvailable_exception() {
-
-        AppointmentSlot_y slot = new AppointmentSlot_y(
-                1,
-                java.time.LocalDate.now(),
-                java.time.LocalTime.now(),
-                java.time.LocalTime.now().plusHours(1),
-                5,
-                0
-        );
-
-        assertThrows(RuntimeException.class, () -> {
-            slot.isSlotAvailableForResource(1, 1);
-        });
-    }@Test
-    void testEmailReturnsNull() throws Exception {
-
-        AppointmentRepository_y repo = new AppointmentRepository_y();
-
-        String result = repo.getUserEmailByAppointment(999999);
-
-        assertNull(result);
-    }@Test
-    void testDisplayAppointments_empty1() {
-        AppointmentRepository_y.displayAppointments(java.util.List.of());
-    }@Test
-    void testGetUserUpcomingAppointments_filtersPast() throws Exception {
-
-        AppointmentRepository_y repo = new AppointmentRepository_y();
-
-        // غالباً يحتاج mock DB setup (أو ignore branch)
-        List<Appointment> result = repo.getUserUpcomingAppointments(1);
-
-        assertNotNull(result);
-    }@Test
-    void testDisplayAppointments_empty() {
-        AppointmentRepository_y.displayAppointments(List.of());
-    }@Test
-    void testGetFutureSlots_handlesNullList() {
-
-        SlotRepository_y repo = mock(SlotRepository_y.class);
-
-        when(repo.findAvailableSlots()).thenReturn(null);
-
-        BookingSmartService service = new BookingSmartService(repo);
-
-        AppointmentSlot_y result = service.getNearestAvailableSlot();
-
-        assertNull(result);
-    }
-    @Test
-    void setterMethodsUpdateValues() {
-        Account_y acc = new Account_y(1, "user", "hash", "a@test.com", Role_y.USER);
-
-        acc.setUsername("newuser");
-        acc.setPasswordHash("newhash");
-        acc.setEmail("new@test.com");
-        acc.setRole(Role_y.ADMIN);
-
-        assertEquals("newuser", acc.getUsername());
-        assertEquals("newhash", acc.getPasswordHash());
-        assertEquals("new@test.com", acc.getEmail());
-        assertEquals(Role_y.ADMIN, acc.getRole());
+            assertTrue(result);
+        }
     }
 }

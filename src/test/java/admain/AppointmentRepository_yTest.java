@@ -59,7 +59,7 @@ public class AppointmentRepository_yTest {
         Exception ex = assertThrows(IllegalArgumentException.class, () ->
                 repo.book(10, 999, 2, AppointmentType_y.ONLINE)
         );
-        assertTrue(ex.getMessage().contains("does not exist"));
+        assertTrue(ex.getMessage().contains("Slot not found"));
     }
 
     @Test
