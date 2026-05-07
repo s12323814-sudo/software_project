@@ -76,7 +76,7 @@ public class AccountRepository {
 
         String sql = "SELECT 1 FROM accounts WHERE email = ?";
 
-        try (Connection conn = database_connection.getConnection(;
+        try (Connection conn = database_connection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, email);
