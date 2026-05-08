@@ -66,7 +66,104 @@ class AccountRepositoryTest {
         assertEquals("hash", acc.getPasswordHash());
         assertEquals("test@test.com", acc.getEmail());
     }
+@Test
+void testFindByUsernameOrEmail_NotFound() throws SQLException {
+    when(mockRs.next()).thenReturn(false); // مفيش نتائج
+    Account_y acc = repo.findByUsernameOrEmail("nobody");
+    assertNull(acc);
+}
 
+@Test
+void testFindByEmail_NotFound() throws SQLException {
+    when(mockRs.next()).thenReturn(false);
+    Account_y acc = repo.findByEmail("ghost@test.com");
+    assertNull(acc);
+}
+
+@Test
+void testSave_WhenInsertFails_ReturnsNull() throws SQLException {
+    when(mockRs.next()).thenReturn(false); // RETURNING ما رجّع id
+    Account_y acc = repo.save("u", "h", "e@test.com", Role_y.USER);
+    assertNull(acc);
+}@Test
+void testFindByUsernameOrEmail_SQLException() throws SQLException {
+    when(mockStmt.executeQuery())
+        .thenThrow(new SQLException("DB error"));
+    Account_y acc = repo.findByUsernameOrEmail("user");
+    assertNull(acc); // بيرجع null بدون exception
+}
+
+@Test
+void testFindByEmail_SQLException() throws SQLException {
+    when(mockStmt.executeQuery())
+        .thenThrow(new SQLException("DB error"));
+    Account_y acc = repo.findByEmail("test@test.com");
+    assertNull(acc);
+}
+
+@Test
+void testUsernameExists_SQLException() throws SQLException {
+    when(mockStmt.executeQuery())
+        .thenThrow(new SQLException("DB error"));
+    assertFalse(repo.usernameExists("user")); // false عند الخطأ
+}@Test
+void testFindByEmail_AdminRole() throws SQLException {
+    when(mockRs.next()).thenReturn(true);
+    when(mockRs.getInt("account_id")).thenReturn(5);
+    when(mockRs.getString("username")).thenReturn("admin");
+    when(mockRs.getString("password_hash")).thenReturn("adminHash");
+    when(mockRs.getString("email")).thenReturn("admin@test.com");
+    when(mockRs.getString("role")).thenReturn("ADMIN");
+
+    Account_y acc = repo.findByEmail("admin@test.com");
+    assertNotNull(acc);
+    assertEquals(Role_y.ADMIN, acc.getRole());
+    assertEquals(5, acc.getAccountId());
+}@Test
+void testFindByUsernameOrEmail_SetsParams() throws SQLException {
+    when(mockRs.next()).thenReturn(false);
+
+    repo.findByUsernameOrEmail("testInput");
+
+    // تأكد إن الباراميتر اتحط مرتين (username و email)
+    verify(mockStmt).setString(1, "testInput");
+    verify(mockStmt).setString(2, "testInput");
+}
+
+@Test
+void testSave_WithAdminRole() throws SQLException {
+    when(mockRs.next()).thenReturn(true);
+    when(mockRs.getInt("account_id")).thenReturn(99);
+
+    Account_y acc = repo.save("adminUser", "hash", "a@test.com", Role_y.ADMIN);
+    assertNotNull(acc);
+    assertEquals(Role_y.ADMIN, acc.getRole());
+
+    // تأكد إن الـ role اتبعت للـ DB صح
+    verify(mockStmt).setString(4, "ADMIN");
+}
+
+@Test
+void testEmailExists_SQLException() throws SQLException {
+    when(mockStmt.executeQuery())
+        .thenThrow(new SQLException("DB error"));
+    assertFalse(repo.emailExists("test@test.com"));
+}
+
+@Test
+void testSave_SQLException() throws SQLException {
+    when(mockStmt.executeQuery())
+        .thenThrow(new SQLException("DB error"));
+    Account_y acc = repo.save("u", "h", "e@test.com", Role_y.USER);
+    assertNull(acc);
+}
+
+@Test
+void testUpdatePassword_SQLException() throws SQLException {
+    when(mockStmt.executeUpdate())
+        .thenThrow(new SQLException("DB error"));
+    assertFalse(repo.updatePassword("test@test.com", "hash"));
+}
     // ===== findByEmail =====
     @Test
     void testFindByEmail() throws SQLException {
