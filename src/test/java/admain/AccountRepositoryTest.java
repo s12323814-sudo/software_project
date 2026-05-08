@@ -10,7 +10,7 @@ import static org.mockito.Mockito.*;
 
 class AccountRepositoryTest {
 
-    private AccountRepository repo;
+    private AccountRepository_y repo;
     private static MockedStatic<database_connection> dbStaticMock;
 
     private Connection mockConn;
@@ -30,7 +30,7 @@ class AccountRepositoryTest {
 
     @BeforeEach
     void setup() throws Exception {
-        repo = new AccountRepository();
+        repo = new AccountRepository_y();
 
         // Mock objects
         mockConn = mock(Connection.class);
