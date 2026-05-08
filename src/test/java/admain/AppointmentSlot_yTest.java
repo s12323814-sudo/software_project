@@ -29,14 +29,19 @@ void testIsSlotAvailable_returnsTrue_whenNoBooking() throws Exception {
     when(rs.next()).thenReturn(true);
     when(rs.getInt(1)).thenReturn(0);
 
-    AppointmentSlot_y slot = new AppointmentSlot_y(
-            1,
-            LocalDate.now(),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 0),
-            5,
-            0
-    );
+ AppointmentSlot_y slot = new AppointmentSlot_y(
+        1,
+        LocalDate.now(),
+        LocalTime.of(10, 0),
+        LocalTime.of(11, 0),
+        5,
+        0
+) {
+    @Override
+    protected Connection getConnection() {
+        return conn;
+    }
+};
 
     assertTrue(slot.isSlotAvailableForResource(1, 1));
 }
