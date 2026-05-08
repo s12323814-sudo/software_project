@@ -5,7 +5,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OTPGenerator_yTest {
-
+@Test
+void testOTP() {
+    String otp = OTPGenerator_y.generateOTP();
+    assertNotNull(otp);
+}
     @Test
     void testGenerateOTP_notNull() {
         String otp = OTPGenerator_y.generateOTP();
