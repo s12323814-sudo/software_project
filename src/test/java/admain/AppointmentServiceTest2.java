@@ -42,7 +42,143 @@ public class AppointmentServiceTest2{
         // بس نتأكد إنه الكلاس انبنى وما صار crash
         assertNotNull(service);
     }
+@Test
+void testBookAppointment_slotNotFound() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
 
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(false); // Slot مش موجود
+
+    AppointmentService svc = new AppointmentService(conn, slotService, repo);
+
+    assertThrows(SQLException.class, () -> {
+        svc.bookAppointment(1, 99, 2, AppointmentType_y.ONLINE);
+    });
+
+    verify(conn).rollback();
+}
+
+@Test
+void testBookAppointment_pastSlot() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(true);
+
+    // تاريخ في الماضي
+    when(rs.getDate("start_date"))
+        .thenReturn(java.sql.Date.valueOf(LocalDate.now().minusDays(1)));
+    when(rs.getTime("start_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(9, 0)));
+    when(rs.getTime("end_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(10, 0)));
+
+    AppointmentService svc = new AppointmentService(conn, slotService, repo);
+
+    assertThrows(SQLException.class, () -> {
+        svc.bookAppointment(1, 1, 2, AppointmentType_y.ONLINE);
+    });
+
+    verify(conn).rollback();
+}
+
+@Test
+void testBookAppointment_notEnoughCapacity() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(true);
+
+    when(rs.getDate("start_date"))
+        .thenReturn(java.sql.Date.valueOf(LocalDate.now().plusDays(1)));
+    when(rs.getTime("start_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(9, 0)));
+    when(rs.getTime("end_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(10, 0)));
+    when(rs.getInt("max_capacity")).thenReturn(2);
+    when(rs.getInt("booked_count")).thenReturn(2); // ممتلئ
+
+    AppointmentService svc = new AppointmentService(conn, slotService, repo);
+
+    assertThrows(SQLException.class, () -> {
+        svc.bookAppointment(1, 1, 1, AppointmentType_y.ONLINE);
+    });
+
+    verify(conn).rollback();
+}
+
+@Test
+void testBookAppointment_durationTooShort() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(true);
+
+    when(rs.getDate("start_date"))
+        .thenReturn(java.sql.Date.valueOf(LocalDate.now().plusDays(1)));
+    when(rs.getTime("start_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(9, 0)));
+    when(rs.getTime("end_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(9, 10))); // 10 دقايق بس
+    when(rs.getInt("max_capacity")).thenReturn(10);
+    when(rs.getInt("booked_count")).thenReturn(0);
+
+    AppointmentService svc = new AppointmentService(conn, slotService, repo);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+        svc.bookAppointment(1, 1, 1, AppointmentType_y.ONLINE);
+    });
+
+    verify(conn).rollback();
+}
+
+@Test
+void testBookAppointment_success() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement psSelect = mock(PreparedStatement.class);
+    PreparedStatement psInsert = mock(PreparedStatement.class);
+    PreparedStatement psUpdate = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    // أول prepareStatement → SELECT
+    // ثاني → INSERT
+    // ثالث → UPDATE
+    when(conn.prepareStatement(contains("SELECT"))).thenReturn(psSelect);
+    when(conn.prepareStatement(contains("INSERT"))).thenReturn(psInsert);
+    when(conn.prepareStatement(contains("UPDATE"))).thenReturn(psUpdate);
+
+    when(psSelect.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(true);
+
+    when(rs.getDate("start_date"))
+        .thenReturn(java.sql.Date.valueOf(LocalDate.now().plusDays(1)));
+    when(rs.getTime("start_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(9, 0)));
+    when(rs.getTime("end_time"))
+        .thenReturn(java.sql.Time.valueOf(LocalTime.of(10, 0))); // ساعة كاملة
+    when(rs.getInt("max_capacity")).thenReturn(10);
+    when(rs.getInt("booked_count")).thenReturn(0);
+
+    AppointmentService svc = new AppointmentService(conn, slotService, repo);
+
+    assertDoesNotThrow(() -> {
+        svc.bookAppointment(1, 1, 2, AppointmentType_y.ONLINE);
+    });
+
+    verify(conn).commit();
+}
     @Test
     void testConstructorBehaviour_noException() {
 
