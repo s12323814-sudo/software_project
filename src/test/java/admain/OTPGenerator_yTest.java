@@ -4,7 +4,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class OTPGenerator_yTest {
+class OTPGenerator_yTest {@Test
+    void testGenerateOTP() {
+        String otp = OTPGenerator_y.generateOTP();
+
+        assertNotNull(otp);
+        assertEquals(6, otp.length());
+        assertTrue(otp.matches("\\d{6}"));
+    }
 @Test
 void testOTP() {
     String otp = OTPGenerator_y.generateOTP();
