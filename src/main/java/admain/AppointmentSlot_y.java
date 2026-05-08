@@ -79,19 +79,14 @@ public class AppointmentSlot_y {
     /**
      * التحقق من توفر الـ Slot لمورد معين
      */
- public boolean isSlotAvailableForResource(int slotId, int resourceId) {
+    public boolean isSlotAvailableForResource(int slotId, int resourceId) {
 
-    String sql = "SELECT COUNT(*) FROM appointment_slot a " +
-                 "JOIN appointment b ON a.slot_id = b.slot_id " +
-                 "WHERE a.slot_id = ? AND b.resource_id = ?";
+        String sql = "SELECT COUNT(*) FROM appointment_slot a " +
+                     "JOIN appointment b ON a.slot_id = b.slot_id " +
+                     "WHERE a.slot_id = ? AND b.resource_id = ?";
 
-    try (Connection conn = getConnection()) {
-
-        if (conn == null) {
-            throw new RuntimeException("DB connection is null");
-        }
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, slotId);
             ps.setInt(2, resourceId);
@@ -102,14 +97,12 @@ public class AppointmentSlot_y {
                 return rs.getInt(1) == 0;
             }
 
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
 
-    } catch (SQLException e) {
-        throw new RuntimeException(e);
+        return false;
     }
-
-    return false;
-}
 
     @Override
     public String toString() {
