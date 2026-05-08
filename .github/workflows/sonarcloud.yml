@@ -35,7 +35,8 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: mvn clean test jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-  -Dsonar.projectKey=BookingySYstem_software_project
-  -Dsonar.organization=bookingysystem
-  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        run: |
+          mvn clean test jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=BookingySYstem_software_project \
+            -Dsonar.organization=bookingysystem \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
