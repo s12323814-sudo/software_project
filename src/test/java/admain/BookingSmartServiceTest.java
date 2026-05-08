@@ -46,7 +46,83 @@ class BookingSmartServiceTest {
 
         // DB mock
         when(slotRepoMock.findAvailableSlots()).thenReturn(Arrays.asList(slot1, slot2, slot3));
-    }
+    }@Test
+void testGetFutureSlots_whenRepositoryReturnsNull_shouldReturnEmptyList() {
+    when(slotRepoMock.findAvailableSlots()).thenReturn(null);
+
+    List<AppointmentSlot_y> result = smartService.sortByAvailability();
+
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
+}@Test
+void testGetFutureSlots_whenSlotHasNullDateOrTime_shouldBeFilteredOut() {
+    AppointmentSlot_y badSlot = mock(AppointmentSlot_y.class);
+    when(badSlot.getDate()).thenReturn(null);
+    when(badSlot.getStartTime()).thenReturn(null);
+
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(badSlot));
+
+    List<AppointmentSlot_y> result = smartService.sortByTime();
+
+    assertTrue(result.isEmpty());
+}@Test
+void testGetNearestAvailableSlot_whenNoSlots_shouldReturnNull() {
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of());
+
+    AppointmentSlot_y result = smartService.getNearestAvailableSlot();
+
+    assertNull(result);
+}@Test
+void testGetBestSlot_whenNoSlots_shouldReturnNull() {
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of());
+
+    AppointmentSlot_y result = smartService.getBestSlot();
+
+    assertNull(result);
+}@Test
+void testGetBestSlot_whenAllSlotsZeroCapacity_shouldReturnNull() {
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(0);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(slot));
+
+    AppointmentSlot_y result = smartService.getBestSlot();
+
+    assertNull(result);
+}@Test
+void testSortByTime_whenEmpty_shouldReturnEmptyList() {
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of());
+
+    List<AppointmentSlot_y> result = smartService.sortByTime();
+
+    assertTrue(result.isEmpty());
+}@Test
+void testSortByAvailability_shouldSortCorrectly() {
+    AppointmentSlot_y s1 = mock(AppointmentSlot_y.class);
+    AppointmentSlot_y s2 = mock(AppointmentSlot_y.class);
+
+    when(s1.getMaxCapacity()).thenReturn(10);
+    when(s1.getBookedCount()).thenReturn(9); // 1
+
+    when(s2.getMaxCapacity()).thenReturn(10);
+    when(s2.getBookedCount()).thenReturn(2); // 8
+
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s1, s2));
+
+    List<AppointmentSlot_y> result = smartService.sortByAvailability();
+
+    assertEquals(s1, result.get(0)); // الأقل availability أول
+}
+    @Test
+void testGetFutureSlots_whenRepositoryThrowsException_shouldReturnEmptyList() {
+    when(slotRepoMock.findAvailableSlots()).thenThrow(new RuntimeException("DB error"));
+
+    List<AppointmentSlot_y> result = smartService.sortByTime();
+
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
+}
     @Test
     void testGetNearestAvailableSlot() {
         AppointmentSlot_y nearest = smartService.getNearestAvailableSlot();
