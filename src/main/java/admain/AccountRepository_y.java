@@ -6,10 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class AccountRepository_y {
+public class AccountRepository {
 
     private static final Logger logger =
-            Logger.getLogger(AccountRepository_y.class.getName());
+            Logger.getLogger(AccountRepository.class.getName());
 
     public Account_y findByUsernameOrEmail(String input) {
 
