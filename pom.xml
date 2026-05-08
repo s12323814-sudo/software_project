@@ -19,10 +19,8 @@
     <sonar.organization>bookingysystem</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
-    <!-- Coverage -->
-    <sonar.coverage.jacoco.xmlReportPaths>
-      target/site/jacoco/jacoco.xml
-    </sonar.coverage.jacoco.xmlReportPaths>
+    <!-- JaCoCo Coverage XML Report Path for SonarCloud -->
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <!-- ================== DEPENDENCIES ================== -->
@@ -58,7 +56,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Mockito -->
+    <!-- Mockito Core -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
@@ -66,6 +64,7 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Mockito JUnit Jupiter -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
@@ -73,6 +72,7 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Mockito Inline -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-inline</artifactId>
@@ -100,21 +100,27 @@
   <build>
     <plugins>
 
-      <!-- Compiler -->
+      <!-- Maven Compiler Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
+        <configuration>
+          <release>17</release>
+        </configuration>
       </plugin>
 
-      <!-- Tests -->
+      <!-- Maven Surefire Plugin for Unit Tests -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+        </configuration>
       </plugin>
 
-      <!-- ================== JACOCO (IMPORTANT FIX) ================== -->
+      <!-- JaCoCo Maven Plugin for Coverage -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -122,17 +128,18 @@
 
         <executions>
 
-          <!-- تشغيل التتبع -->
+          <!-- Attach JaCoCo agent before tests run -->
           <execution>
+            <id>prepare-agent</id>
             <goals>
               <goal>prepare-agent</goal>
             </goals>
           </execution>
 
-          <!-- توليد التقرير بعد test -->
+          <!-- Generate JaCoCo XML report during verify phase -->
           <execution>
             <id>report</id>
-            <phase>test</phase>
+            <phase>verify</phase>
             <goals>
               <goal>report</goal>
             </goals>
