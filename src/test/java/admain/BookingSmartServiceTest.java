@@ -18,6 +18,9 @@ class BookingSmartServiceTest {
     private AppointmentSlot_y slot1;
     private AppointmentSlot_y slot2;
 
+    private static final LocalDate FUTURE = LocalDate.of(2030, 1, 1);
+    private static final LocalTime TIME = LocalTime.of(10, 0);
+
     @BeforeEach
     void setUp() {
         slotRepoMock = mock(SlotRepository_y.class);
@@ -38,77 +41,83 @@ class BookingSmartServiceTest {
                 8, 2);
     }
 
+    // helper عشان ما نكرر كود
+    private AppointmentSlot_y mockSlot(int maxCapacity, int bookedCount, int dayOffset) {
+        AppointmentSlot_y s = mock(AppointmentSlot_y.class);
+        when(s.getDate()).thenReturn(FUTURE.plusDays(dayOffset));
+        when(s.getStartTime()).thenReturn(TIME);
+        when(s.getMaxCapacity()).thenReturn(maxCapacity);
+        when(s.getBookedCount()).thenReturn(bookedCount);
+        return s;
+    }
+
     // =========================
     // getFutureSlotsFromDB tests indirectly
     // =========================
-@Test
-void testGetBestSlot_whenEmpty_shouldReturnNull() {
-    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of());
 
-    AppointmentSlot_y result = service.getBestSlot();
+    @Test
+    void testGetBestSlot_whenEmpty_shouldReturnNull() {
+        when(slotRepoMock.findAvailableSlots()).thenReturn(List.of());
 
-    assertNull(result);
-}@Test
-void testGetBestSlot_whenAllCapacityZero_shouldReturnNull() {
-    AppointmentSlot_y s = mock(AppointmentSlot_y.class);
-    when(s.getMaxCapacity()).thenReturn(0);
-    when(s.getBookedCount()).thenReturn(0);
+        AppointmentSlot_y result = service.getBestSlot();
 
-    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s));
+        assertNull(result);
+    }
 
-    AppointmentSlot_y result = service.getBestSlot();
+    @Test
+    void testGetBestSlot_whenAllCapacityZero_shouldReturnNull() {
+        AppointmentSlot_y s = mockSlot(0, 0, 1);
 
-    assertNull(result);
-}@Test
-void testGetBestSlot_shouldReturnHighestAvailability() {
-    AppointmentSlot_y low = mock(AppointmentSlot_y.class);
-    AppointmentSlot_y high = mock(AppointmentSlot_y.class);
+        when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s));
 
-    when(low.getMaxCapacity()).thenReturn(10);
-    when(low.getBookedCount()).thenReturn(9); // 1
+        AppointmentSlot_y result = service.getBestSlot();
 
-    when(high.getMaxCapacity()).thenReturn(10);
-    when(high.getBookedCount()).thenReturn(2); // 8
+        assertNull(result);
+    }
 
-    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(low, high));
+    @Test
+    void testGetBestSlot_shouldReturnHighestAvailability() {
+        AppointmentSlot_y low  = mockSlot(10, 9, 1); // availability = 1
+        AppointmentSlot_y high = mockSlot(10, 2, 2); // availability = 8
 
-    AppointmentSlot_y result = service.getBestSlot();
+        when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(low, high));
 
-    assertEquals(high, result);
-}@Test
-void testGetBestSlot_whenEqualValues_shouldReturnOneOfThem() {
-    AppointmentSlot_y s1 = mock(AppointmentSlot_y.class);
-    AppointmentSlot_y s2 = mock(AppointmentSlot_y.class);
+        AppointmentSlot_y result = service.getBestSlot();
 
-    when(s1.getMaxCapacity()).thenReturn(10);
-    when(s1.getBookedCount()).thenReturn(5);
+        assertEquals(high, result);
+    }
 
-    when(s2.getMaxCapacity()).thenReturn(10);
-    when(s2.getBookedCount()).thenReturn(5);
+    @Test
+    void testGetBestSlot_whenEqualValues_shouldReturnOneOfThem() {
+        AppointmentSlot_y s1 = mockSlot(10, 5, 1);
+        AppointmentSlot_y s2 = mockSlot(10, 5, 2);
 
-    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s1, s2));
+        when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s1, s2));
 
-    AppointmentSlot_y result = service.getBestSlot();
+        AppointmentSlot_y result = service.getBestSlot();
 
-    assertNotNull(result);
-}@Test
-void testGetFutureSlots_whenRepositoryThrowsException_shouldHitCatchBlock() {
-    when(slotRepoMock.findAvailableSlots())
-            .thenThrow(new RuntimeException("DB failure"));
+        assertNotNull(result);
+    }
 
-    List<AppointmentSlot_y> result = service.sortByTime();
+    @Test
+    void testGetFutureSlots_whenRepositoryThrowsException_shouldHitCatchBlock() {
+        when(slotRepoMock.findAvailableSlots())
+                .thenThrow(new RuntimeException("DB failure"));
 
-    assertNotNull(result);
-    assertTrue(result.isEmpty());
-}@Test
-void testCatchBlock_isExecuted_directly() {
-    when(slotRepoMock.findAvailableSlots())
-            .thenThrow(new RuntimeException());
+        List<AppointmentSlot_y> result = service.sortByTime();
 
-    service.getNearestAvailableSlot(); // أو أي public method
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
 
-    // ما في assert مهم هنا لأن الهدف coverage
-}
+    @Test
+    void testCatchBlock_isExecuted_directly() {
+        when(slotRepoMock.findAvailableSlots())
+                .thenThrow(new RuntimeException());
+
+        service.getNearestAvailableSlot();
+    }
+
     @Test
     void testRepositoryThrowsException_returnsEmpty() {
         when(slotRepoMock.findAvailableSlots()).thenThrow(new RuntimeException());
@@ -186,8 +195,7 @@ void testCatchBlock_isExecuted_directly() {
 
     @Test
     void testBestSlot_noCapacity_returnsNull() {
-        AppointmentSlot_y s = mock(AppointmentSlot_y.class);
-        when(s.getMaxCapacity()).thenReturn(0);
+        AppointmentSlot_y s = mockSlot(0, 0, 1);
 
         when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s));
 
