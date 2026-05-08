@@ -19,7 +19,11 @@
     <sonar.organization>bookingysystem</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
-    <!-- JaCoCo Coverage XML Report Path for SonarCloud -->
+    <!-- IMPORTANT: Make sure this exactly matches the Project Key in SonarCloud -->
+    <sonar.projectKey>BookingySYstem_software_project</sonar.projectKey>
+    <sonar.projectName>software_project</sonar.projectName>
+
+    <!-- JaCoCo XML report path used by SonarCloud -->
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
@@ -120,7 +124,7 @@
         </configuration>
       </plugin>
 
-      <!-- JaCoCo Maven Plugin for Coverage -->
+      <!-- JaCoCo Maven Plugin for Coverage Report -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -128,7 +132,7 @@
 
         <executions>
 
-          <!-- Attach JaCoCo agent before tests run -->
+          <!-- Attach JaCoCo agent before tests -->
           <execution>
             <id>prepare-agent</id>
             <goals>
@@ -136,7 +140,7 @@
             </goals>
           </execution>
 
-          <!-- Generate JaCoCo XML report during verify phase -->
+          <!-- Generate XML coverage report during verify phase -->
           <execution>
             <id>report</id>
             <phase>verify</phase>
