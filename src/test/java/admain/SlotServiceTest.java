@@ -44,6 +44,83 @@ class SlotServiceTest {
                 emailService
         );
     }
+    @Test
+void test_adminCancelSlot_whenExceptionThrown_shouldReturnFalse() throws Exception {
+
+    AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+    SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+    NotificationService_y notificationService = mock(NotificationService_y.class);
+    EmailService_y emailService = mock(EmailService_y.class);
+
+    SlotService_y service = new SlotService_y(
+            appointmentRepo,
+            slotRepo,
+            notificationService,
+            emailService
+    );
+
+    Connection conn = mock(Connection.class);
+
+    try (MockedStatic<database_connection> mocked =
+                 mockStatic(database_connection.class)) {
+
+        mocked.when(database_connection::getConnection).thenReturn(conn);
+
+        // ❌ يرمي exception مباشرة → يدخل catch
+        when(conn.prepareStatement(anyString()))
+                .thenThrow(new RuntimeException("DB crash"));
+
+        boolean result = service.adminCancelSlot(10);
+
+        assertFalse(result);
+    }
+}@Test
+void test_adminCancelSlot_whenDeleteFails_shouldRollbackAndReturnFalse() throws Exception {
+
+    AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
+    SlotRepository_y slotRepo = mock(SlotRepository_y.class);
+    NotificationService_y notificationService = mock(NotificationService_y.class);
+    EmailService_y emailService = mock(EmailService_y.class);
+
+    SlotService_y service = new SlotService_y(
+            appointmentRepo,
+            slotRepo,
+            notificationService,
+            emailService
+    );
+
+    Connection conn = mock(Connection.class);
+    PreparedStatement psUsers = mock(PreparedStatement.class);
+    PreparedStatement psDeleteAppt = mock(PreparedStatement.class);
+    PreparedStatement psDeleteSlot = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    try (MockedStatic<database_connection> mocked =
+                 mockStatic(database_connection.class)) {
+
+        mocked.when(database_connection::getConnection).thenReturn(conn);
+
+        when(conn.prepareStatement(anyString()))
+                .thenReturn(psUsers)
+                .thenReturn(psDeleteAppt)
+                .thenReturn(psDeleteSlot);
+
+        when(psUsers.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getInt("account_id")).thenReturn(1);
+
+        when(psDeleteAppt.executeUpdate()).thenReturn(1);
+
+        // ❌ يفشل → يدخل else
+        when(psDeleteSlot.executeUpdate()).thenReturn(0);
+
+        boolean result = service.adminCancelSlot(10);
+
+        assertFalse(result);
+
+        verify(conn).rollback();
+    }
+}
 @Test
 void test_adminCancelSlot_whenDeleteFails_shouldRollbackAndReturnFalse() throws Exception {
 
