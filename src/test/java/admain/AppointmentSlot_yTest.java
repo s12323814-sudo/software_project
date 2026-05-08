@@ -21,8 +21,8 @@ class AppointmentSlot_yTest {
         AppointmentSlot_y slot = new AppointmentSlot_y(
                 1,
                 LocalDate.now(),
-                LocalTime.of(9,0),
-                LocalTime.of(10,0),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
                 5,
                 2
         );
@@ -37,15 +37,14 @@ class AppointmentSlot_yTest {
         when(rs.next()).thenReturn(true);
         when(rs.getInt(1)).thenReturn(0);
 
-        try (MockedConstruction<SlotRepository_y> mocked =
-                     mockConstruction(
-                             SlotRepository_y.class,
+        try (MockedConstruction<SlotRepository_y> ignored =
+                     mockConstruction(SlotRepository_y.class,
                              (mock, context) -> {
-                                 when(mock.getConnection()).thenReturn(conn);
+                                 doReturn(conn).when(mock).getConnection();
                              })) {
 
             boolean result =
-                    slot.isSlotAvailableForResource(1,1);
+                    slot.isSlotAvailableForResource(1, 1);
 
             assertTrue(result);
         }
@@ -57,8 +56,8 @@ class AppointmentSlot_yTest {
         AppointmentSlot_y slot = new AppointmentSlot_y(
                 1,
                 LocalDate.now(),
-                LocalTime.of(9,0),
-                LocalTime.of(10,0),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
                 5,
                 2
         );
@@ -73,15 +72,14 @@ class AppointmentSlot_yTest {
         when(rs.next()).thenReturn(true);
         when(rs.getInt(1)).thenReturn(3);
 
-        try (MockedConstruction<SlotRepository_y> mocked =
-                     mockConstruction(
-                             SlotRepository_y.class,
+        try (MockedConstruction<SlotRepository_y> ignored =
+                     mockConstruction(SlotRepository_y.class,
                              (mock, context) -> {
-                                 when(mock.getConnection()).thenReturn(conn);
+                                 doReturn(conn).when(mock).getConnection();
                              })) {
 
             boolean result =
-                    slot.isSlotAvailableForResource(1,1);
+                    slot.isSlotAvailableForResource(1, 1);
 
             assertFalse(result);
         }
@@ -93,8 +91,8 @@ class AppointmentSlot_yTest {
         AppointmentSlot_y slot = new AppointmentSlot_y(
                 1,
                 LocalDate.now(),
-                LocalTime.of(9,0),
-                LocalTime.of(10,0),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
                 5,
                 2
         );
@@ -108,15 +106,14 @@ class AppointmentSlot_yTest {
 
         when(rs.next()).thenReturn(false);
 
-        try (MockedConstruction<SlotRepository_y> mocked =
-                     mockConstruction(
-                             SlotRepository_y.class,
+        try (MockedConstruction<SlotRepository_y> ignored =
+                     mockConstruction(SlotRepository_y.class,
                              (mock, context) -> {
-                                 when(mock.getConnection()).thenReturn(conn);
+                                 doReturn(conn).when(mock).getConnection();
                              })) {
 
             boolean result =
-                    slot.isSlotAvailableForResource(1,1);
+                    slot.isSlotAvailableForResource(1, 1);
 
             assertFalse(result);
         }
@@ -128,8 +125,8 @@ class AppointmentSlot_yTest {
         AppointmentSlot_y slot = new AppointmentSlot_y(
                 1,
                 LocalDate.now(),
-                LocalTime.of(9,0),
-                LocalTime.of(10,0),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
                 5,
                 5
         );
@@ -144,15 +141,14 @@ class AppointmentSlot_yTest {
         when(rs.next()).thenReturn(true);
         when(rs.getInt(1)).thenReturn(10);
 
-        try (MockedConstruction<SlotRepository_y> mocked =
-                     mockConstruction(
-                             SlotRepository_y.class,
+        try (MockedConstruction<SlotRepository_y> ignored =
+                     mockConstruction(SlotRepository_y.class,
                              (mock, context) -> {
-                                 when(mock.getConnection()).thenReturn(conn);
+                                 doReturn(conn).when(mock).getConnection();
                              })) {
 
             boolean result =
-                    slot.isSlotAvailableForResource(1,1);
+                    slot.isSlotAvailableForResource(1, 1);
 
             assertFalse(result);
         }
