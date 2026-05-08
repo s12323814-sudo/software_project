@@ -34,7 +34,61 @@ class AppointmentSlot_yTest {
         assertEquals(3, appt.getParticipants());
         assertEquals(AppointmentStatus_y.CONFIRMED, appt.getStatus());
         assertEquals(AppointmentType_y.ONLINE, appt.getType());
-    }
+    }@Test
+void testIsSlotAvailable_returnsTrue() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(true);
+    when(rs.getInt(1)).thenReturn(0); // مفيش حجز = متاح
+
+    AppointmentSlot_y slot = new AppointmentSlot_y(
+        1, LocalDate.now(), LocalTime.of(10,0), 
+        LocalTime.of(11,0), 5, 0, conn
+    );
+
+    assertTrue(slot.isSlotAvailableForResource(1, 1));
+}
+
+@Test
+void testIsSlotAvailable_returnsFalse() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(true);
+    when(rs.getInt(1)).thenReturn(1); // في حجز = مش متاح
+
+    AppointmentSlot_y slot = new AppointmentSlot_y(
+        1, LocalDate.now(), LocalTime.of(10,0), 
+        LocalTime.of(11,0), 5, 0, conn
+    );
+
+    assertFalse(slot.isSlotAvailableForResource(1, 1));
+}
+
+@Test
+void testIsSlotAvailable_rsNextFalse() throws Exception {
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+    when(rs.next()).thenReturn(false); // ما رجع نتيجة
+
+    AppointmentSlot_y slot = new AppointmentSlot_y(
+        1, LocalDate.now(), LocalTime.of(10,0), 
+        LocalTime.of(11,0), 5, 0, conn
+    );
+
+    assertFalse(slot.isSlotAvailableForResource(1, 1));
+}
     @Test
     public void testToString() {
 
