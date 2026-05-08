@@ -11,7 +11,14 @@ class OTPGenerator_yTest {
         String otp = OTPGenerator_y.generateOTP();
         assertNotNull(otp);
     }
+@Test
+void testGenerateOTP_fullCoverage() {
+    String otp = OTPGenerator_y.generateOTP();
 
+    assertNotNull(otp);
+    assertEquals(6, otp.length());
+    assertTrue(otp.matches("\\d{6}"));
+}
     @Test
     void testGenerateOTP_lengthIs6() {
         String otp = OTPGenerator_y.generateOTP();
