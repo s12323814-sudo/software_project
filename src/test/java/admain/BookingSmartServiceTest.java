@@ -42,6 +42,56 @@ class BookingSmartServiceTest {
     // getFutureSlotsFromDB tests indirectly
     // =========================
 @Test
+void testGetBestSlot_whenEmpty_shouldReturnNull() {
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of());
+
+    AppointmentSlot_y result = service.getBestSlot();
+
+    assertNull(result);
+}@Test
+void testGetBestSlot_whenAllCapacityZero_shouldReturnNull() {
+    AppointmentSlot_y s = mock(AppointmentSlot_y.class);
+    when(s.getMaxCapacity()).thenReturn(0);
+    when(s.getBookedCount()).thenReturn(0);
+
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s));
+
+    AppointmentSlot_y result = service.getBestSlot();
+
+    assertNull(result);
+}@Test
+void testGetBestSlot_shouldReturnHighestAvailability() {
+    AppointmentSlot_y low = mock(AppointmentSlot_y.class);
+    AppointmentSlot_y high = mock(AppointmentSlot_y.class);
+
+    when(low.getMaxCapacity()).thenReturn(10);
+    when(low.getBookedCount()).thenReturn(9); // 1
+
+    when(high.getMaxCapacity()).thenReturn(10);
+    when(high.getBookedCount()).thenReturn(2); // 8
+
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(low, high));
+
+    AppointmentSlot_y result = service.getBestSlot();
+
+    assertEquals(high, result);
+}@Test
+void testGetBestSlot_whenEqualValues_shouldReturnOneOfThem() {
+    AppointmentSlot_y s1 = mock(AppointmentSlot_y.class);
+    AppointmentSlot_y s2 = mock(AppointmentSlot_y.class);
+
+    when(s1.getMaxCapacity()).thenReturn(10);
+    when(s1.getBookedCount()).thenReturn(5);
+
+    when(s2.getMaxCapacity()).thenReturn(10);
+    when(s2.getBookedCount()).thenReturn(5);
+
+    when(slotRepoMock.findAvailableSlots()).thenReturn(List.of(s1, s2));
+
+    AppointmentSlot_y result = service.getBestSlot();
+
+    assertNotNull(result);
+}@Test
 void testGetFutureSlots_whenRepositoryThrowsException_shouldHitCatchBlock() {
     when(slotRepoMock.findAvailableSlots())
             .thenThrow(new RuntimeException("DB failure"));
