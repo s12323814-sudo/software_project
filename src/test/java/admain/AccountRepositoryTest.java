@@ -30,7 +30,7 @@ class AccountRepositoryTest {
 
     @BeforeEach
     void setup() throws Exception {
-        repo = new AccountRepository_y();
+        repo = new AccountRepository();
 
         // Mock objects
         mockConn = mock(Connection.class);
