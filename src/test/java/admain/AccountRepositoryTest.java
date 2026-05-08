@@ -10,7 +10,7 @@ import static org.mockito.Mockito.*;
 
 class AccountRepositoryTest {
 
-    private AccountRepository_y repo;
+    private AccountRepository repo;
     private static MockedStatic<database_connection> dbStaticMock;
 
     private Connection mockConn;
