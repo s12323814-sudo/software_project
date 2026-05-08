@@ -45,6 +45,32 @@ class SlotServiceTest {
         );
     }
     @Test
+void test_adminCancelSlot_forceCatchBlock() throws Exception {
+
+    Connection conn = mock(Connection.class);
+
+    try (MockedStatic<database_connection> mocked =
+                 mockStatic(database_connection.class)) {
+
+        mocked.when(database_connection::getConnection)
+                .thenReturn(conn);
+
+        when(conn.prepareStatement(anyString()))
+                .thenThrow(new SQLException("DB crash"));
+
+        SlotService_y service = new SlotService_y(
+                mock(AppointmentRepository_y.class),
+                mock(SlotRepository_y.class),
+                mock(NotificationService_y.class),
+                mock(EmailService_y.class)
+        );
+
+        boolean result = service.adminCancelSlot(10);
+
+        assertFalse(result);
+    }
+}
+    @Test
 void test_adminCancelSlot_whenExceptionThrown_shouldReturnFalse() throws Exception {
 
     AppointmentRepository_y appointmentRepo = mock(AppointmentRepository_y.class);
