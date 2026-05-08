@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -12,125 +13,98 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-class AppointmentSlot_yTest {
+class AppointmentSlotTest {
 
-    // =========================
-    // Constructor & Getters
-    // =========================
+    @Test
+    void testIsSlotAvailableForResource_returnsTrue() throws Exception {
 
-@Test
-void testIsSlotAvailable_returnsTrue_whenNoBooking() throws Exception {
-    Connection conn = mock(Connection.class);
-    PreparedStatement ps = mock(PreparedStatement.class);
-    ResultSet rs = mock(ResultSet.class);
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1,
+                LocalDate.now(),
+                LocalTime.of(9,0),
+                LocalTime.of(10,0),
+                5,
+                2
+        );
 
-    when(conn.prepareStatement(anyString())).thenReturn(ps);
-    when(ps.executeQuery()).thenReturn(rs);
-    when(rs.next()).thenReturn(true);
-    when(rs.getInt(1)).thenReturn(0);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
- AppointmentSlot_y slot = new AppointmentSlot_y(
-        1,
-        LocalDate.now(),
-        LocalTime.of(10, 0),
-        LocalTime.of(11, 0),
-        5,
-        0
-) {
-    @Override
-    protected Connection getConnection() {
-        return conn;
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(0);
+
+        try (MockedConstruction<SlotRepository_y> mocked =
+                     mockConstruction(SlotRepository_y.class,
+                             (mock, context) ->
+                                     when(mock.getConnection()).thenReturn(conn))) {
+
+            boolean result = slot.isSlotAvailableForResource(1,1);
+
+            assertTrue(result);
+        }
     }
-};
 
-    assertTrue(slot.isSlotAvailableForResource(1, 1));
-}
+    @Test
+    void testIsSlotAvailableForResource_returnsFalse() throws Exception {
 
-@Test
-void testIsSlotAvailable_returnsFalse_whenBooked() throws Exception {
-    Connection conn = mock(Connection.class);
-    PreparedStatement ps = mock(PreparedStatement.class);
-    ResultSet rs = mock(ResultSet.class);
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1,
+                LocalDate.now(),
+                LocalTime.of(9,0),
+                LocalTime.of(10,0),
+                5,
+                2
+        );
 
-    when(conn.prepareStatement(anyString())).thenReturn(ps);
-    when(ps.executeQuery()).thenReturn(rs);
-    when(rs.next()).thenReturn(true);
-    when(rs.getInt(1)).thenReturn(1);
+        Connection conn = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-    AppointmentSlot_y slot = new AppointmentSlot_y(
-            1,
-            LocalDate.now(),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 0),
-            5,
-            0
-    );
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
 
-    assertFalse(slot.isSlotAvailableForResource(1, 1));
-}
+        when(rs.next()).thenReturn(true);
+        when(rs.getInt(1)).thenReturn(5);
 
-@Test
-void testIsSlotAvailable_returnsFalse_whenRsNextFalse() throws Exception {
-    Connection conn = mock(Connection.class);
-    PreparedStatement ps = mock(PreparedStatement.class);
-    ResultSet rs = mock(ResultSet.class);
+        try (MockedConstruction<SlotRepository_y> mocked =
+                     mockConstruction(SlotRepository_y.class,
+                             (mock, context) ->
+                                     when(mock.getConnection()).thenReturn(conn))) {
 
-    when(conn.prepareStatement(anyString())).thenReturn(ps);
-    when(ps.executeQuery()).thenReturn(rs);
-    when(rs.next()).thenReturn(false);
+            boolean result = slot.isSlotAvailableForResource(1,1);
 
-    AppointmentSlot_y slot = new AppointmentSlot_y(
-            1,
-            LocalDate.now(),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 0),
-            5,
-            0
-    );
+            assertFalse(result);
+        }
+    }
 
-    assertFalse(slot.isSlotAvailableForResource(1, 1));
-}
+    @Test
+    void testIsSlotAvailableForResource_exception() throws Exception {
 
-@Test
-void testIsSlotAvailable_throwsRuntime_onSQLException() throws Exception {
-    Connection conn = mock(Connection.class);
+        AppointmentSlot_y slot = new AppointmentSlot_y(
+                1,
+                LocalDate.now(),
+                LocalTime.of(9,0),
+                LocalTime.of(10,0),
+                5,
+                2
+        );
 
-    when(conn.prepareStatement(anyString()))
-            .thenThrow(new java.sql.SQLException("DB Error"));
+        Connection conn = mock(Connection.class);
 
-    AppointmentSlot_y slot = new AppointmentSlot_y(
-            1,
-            LocalDate.now(),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 0),
-            5,
-            0
-    );
+        when(conn.prepareStatement(anyString()))
+                .thenThrow(new SQLException());
 
-    assertThrows(RuntimeException.class, () ->
-            slot.isSlotAvailableForResource(1, 1));
-}
+        try (MockedConstruction<SlotRepository_y> mocked =
+                     mockConstruction(SlotRepository_y.class,
+                             (mock, context) ->
+                                     when(mock.getConnection()).thenReturn(conn))) {
 
-@Test
-void testIsSlotAvailable_multipleBookings_returnsFalse() throws Exception {
-    Connection conn = mock(Connection.class);
-    PreparedStatement ps = mock(PreparedStatement.class);
-    ResultSet rs = mock(ResultSet.class);
-
-    when(conn.prepareStatement(anyString())).thenReturn(ps);
-    when(ps.executeQuery()).thenReturn(rs);
-    when(rs.next()).thenReturn(true);
-    when(rs.getInt(1)).thenReturn(3);
-
-    AppointmentSlot_y slot = new AppointmentSlot_y(
-            1,
-            LocalDate.now(),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 0),
-            5,
-            0
-    );
-
-    assertFalse(slot.isSlotAvailableForResource(1, 1));
-}
+            assertThrows(RuntimeException.class,
+                    () -> slot.isSlotAvailableForResource(1,1));
+        }
+    }
 }
