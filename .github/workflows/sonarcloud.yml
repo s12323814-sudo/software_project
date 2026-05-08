@@ -1,40 +1,41 @@
-name: SonarQube
+name: SonarCloud
 
 on:
   push:
     branches:
       - master
+      - main
 
   pull_request:
-    types: [opened, synchronize, reopened]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   build:
-    name: Build, Test and Sonar Analysis
+    name: Build and analyze
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout
-      - name: Checkout project
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Setup JDK
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: zulu
 
-      # Cache Sonar
-      - name: Cache SonarQube packages
+      - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
-      # Cache Maven
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -42,22 +43,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      # 1️⃣ Run tests
-      - name: Run tests
-        run: mvn clean test
-
-      # 2️⃣ Generate JaCoCo report
-      - name: Generate JaCoCo report
-        run: mvn jacoco:report
-
-      # 3️⃣ Verify report exists (debug step)
-      - name: Check JaCoCo files
-        run: ls -R target/site/jacoco
-
-      # 4️⃣ Sonar analysis
-      - name: SonarQube analysis
+      - name: Build, test, generate coverage, and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          mvn sonar:sonar \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        run: mvn -B clean verify sonar:sonar
