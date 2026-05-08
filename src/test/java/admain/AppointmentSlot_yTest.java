@@ -128,3 +128,4 @@ void testIsSlotAvailable_multipleBookings_returnsFalse() throws Exception {
 
     assertFalse(slot.isSlotAvailableForResource(1, 1));
 }
+}
