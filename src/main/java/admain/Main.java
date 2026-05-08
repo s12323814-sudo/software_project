@@ -45,40 +45,49 @@ public class Main {
     	 scheduler.scheduleAtFixedRate(() -> {
     		    reminderManager.checkReminders();
     		}, 0, 1, TimeUnit.MINUTES);
-        while (true) {
-            System.out.println("\n=== Main Menu ===");
-            System.out.println("1- Login as User/Admin");
-            System.out.println("2- Register");
-            System.out.println("3- Forgot Password");
-            System.out.println("4- Exit");
+  boolean running = true;
 
-            int choice;
-            try {
-                choice = Integer.parseInt(sc.nextLine());
-            } catch (Exception e) {
-                System.out.println("Invalid input!");
-                continue;
-            }
+while (running) {
 
-            switch (choice) {
-                case 1:
-                	loginMenu();
-                    break;
-                case 2:
-                    registerMenu();
-                    break;
-                case 3:
-                    forgotPasswordMenu();
-                    break;
-                case 4:
-                    System.out.println("Goodbye!");
-                    System.exit(0);
-                    break;
-                default:
-                    System.out.println("Invalid choice");
-					 break;
-            }
-        }
+    System.out.println("\n=== Main Menu ===");
+    System.out.println("1- Login as User/Admin");
+    System.out.println("2- Register");
+    System.out.println("3- Forgot Password");
+    System.out.println("4- Exit");
+
+    int choice;
+
+    try {
+        choice = Integer.parseInt(sc.nextLine());
+    } catch (Exception e) {
+        System.out.println("Invalid input!");
+        continue;
+    }
+
+    switch (choice) {
+
+        case 1:
+            loginMenu();
+            break;
+
+        case 2:
+            registerMenu();
+            break;
+
+        case 3:
+            forgotPasswordMenu();
+            break;
+
+        case 4:
+            System.out.println("Goodbye!");
+            running = false;
+            break;
+
+        default:
+            System.out.println("Invalid choice");
+            break;
+    }
+}
     }
     private static void loginMenu() {
         System.out.print("Username or Email: ");
