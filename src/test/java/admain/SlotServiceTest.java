@@ -43,7 +43,68 @@ class SlotServiceTest {
                 notificationService,
                 emailService
         );
+    }@Test
+void test_adminCancelSlot_forceCatchBlock() {
+
+    try (MockedStatic<database_connection> mocked =
+                 mockStatic(database_connection.class)) {
+
+        mocked.when(database_connection::getConnection)
+                .thenThrow(new RuntimeException("DB crash"));
+
+        SlotService_y service = new SlotService_y(
+                mock(AppointmentRepository_y.class),
+                mock(SlotRepository_y.class),
+                mock(NotificationService_y.class),
+                mock(EmailService_y.class)
+        );
+
+        boolean result = service.adminCancelSlot(10);
+
+        assertFalse(result);
     }
+}@Test
+void test_adminCancelSlot_deleteFails_branch() throws Exception {
+
+    Connection conn = mock(Connection.class);
+    PreparedStatement psUsers = mock(PreparedStatement.class);
+    PreparedStatement psDeleteAppt = mock(PreparedStatement.class);
+    PreparedStatement psDeleteSlot = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    try (MockedStatic<database_connection> mocked =
+                 mockStatic(database_connection.class)) {
+
+        mocked.when(database_connection::getConnection).thenReturn(conn);
+
+        when(conn.prepareStatement(anyString()))
+                .thenReturn(psUsers)
+                .thenReturn(psDeleteAppt)
+                .thenReturn(psDeleteSlot);
+
+        when(psUsers.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getInt("account_id")).thenReturn(1);
+
+        when(psDeleteAppt.executeUpdate()).thenReturn(1);
+
+        // 🔥 هذا هو المهم
+        when(psDeleteSlot.executeUpdate()).thenReturn(0);
+
+        SlotService_y service = new SlotService_y(
+                mock(AppointmentRepository_y.class),
+                mock(SlotRepository_y.class),
+                mock(NotificationService_y.class),
+                mock(EmailService_y.class)
+        );
+
+        boolean result = service.adminCancelSlot(10);
+
+        assertFalse(result);
+
+        verify(conn).rollback();
+    }
+}
     @Test
 void test_adminCancelSlot_forceCatchBlock() throws Exception {
 
