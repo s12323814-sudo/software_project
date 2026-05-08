@@ -1,7 +1,7 @@
 package admain;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,18 +33,16 @@ class AppointmentSlot_yTest {
 
         when(conn.prepareStatement(anyString())).thenReturn(ps);
         when(ps.executeQuery()).thenReturn(rs);
-
         when(rs.next()).thenReturn(true);
         when(rs.getInt(1)).thenReturn(0);
 
-        try (MockedConstruction<SlotRepository_y> ignored =
-                     mockConstruction(SlotRepository_y.class,
-                             (mock, context) -> {
-                                 doReturn(conn).when(mock).getConnection();
-                             })) {
+        try (MockedStatic<database_connection> dbMock =
+                     mockStatic(database_connection.class)) {
 
-            boolean result =
-                    slot.isSlotAvailableForResource(1, 1);
+            dbMock.when(database_connection::getConnection)
+                  .thenReturn(conn);
+
+            boolean result = slot.isSlotAvailableForResource(1, 1);
 
             assertTrue(result);
         }
@@ -68,18 +66,16 @@ class AppointmentSlot_yTest {
 
         when(conn.prepareStatement(anyString())).thenReturn(ps);
         when(ps.executeQuery()).thenReturn(rs);
-
         when(rs.next()).thenReturn(true);
         when(rs.getInt(1)).thenReturn(3);
 
-        try (MockedConstruction<SlotRepository_y> ignored =
-                     mockConstruction(SlotRepository_y.class,
-                             (mock, context) -> {
-                                 doReturn(conn).when(mock).getConnection();
-                             })) {
+        try (MockedStatic<database_connection> dbMock =
+                     mockStatic(database_connection.class)) {
 
-            boolean result =
-                    slot.isSlotAvailableForResource(1, 1);
+            dbMock.when(database_connection::getConnection)
+                  .thenReturn(conn);
+
+            boolean result = slot.isSlotAvailableForResource(1, 1);
 
             assertFalse(result);
         }
@@ -103,17 +99,15 @@ class AppointmentSlot_yTest {
 
         when(conn.prepareStatement(anyString())).thenReturn(ps);
         when(ps.executeQuery()).thenReturn(rs);
-
         when(rs.next()).thenReturn(false);
 
-        try (MockedConstruction<SlotRepository_y> ignored =
-                     mockConstruction(SlotRepository_y.class,
-                             (mock, context) -> {
-                                 doReturn(conn).when(mock).getConnection();
-                             })) {
+        try (MockedStatic<database_connection> dbMock =
+                     mockStatic(database_connection.class)) {
 
-            boolean result =
-                    slot.isSlotAvailableForResource(1, 1);
+            dbMock.when(database_connection::getConnection)
+                  .thenReturn(conn);
+
+            boolean result = slot.isSlotAvailableForResource(1, 1);
 
             assertFalse(result);
         }
@@ -137,18 +131,16 @@ class AppointmentSlot_yTest {
 
         when(conn.prepareStatement(anyString())).thenReturn(ps);
         when(ps.executeQuery()).thenReturn(rs);
-
         when(rs.next()).thenReturn(true);
         when(rs.getInt(1)).thenReturn(10);
 
-        try (MockedConstruction<SlotRepository_y> ignored =
-                     mockConstruction(SlotRepository_y.class,
-                             (mock, context) -> {
-                                 doReturn(conn).when(mock).getConnection();
-                             })) {
+        try (MockedStatic<database_connection> dbMock =
+                     mockStatic(database_connection.class)) {
 
-            boolean result =
-                    slot.isSlotAvailableForResource(1, 1);
+            dbMock.when(database_connection::getConnection)
+                  .thenReturn(conn);
+
+            boolean result = slot.isSlotAvailableForResource(1, 1);
 
             assertFalse(result);
         }
