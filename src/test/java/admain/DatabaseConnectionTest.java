@@ -153,9 +153,9 @@ class DatabaseConnectionTest {
     @DisplayName("getConnection() should return null and log error on SQLException")
     void testGetConnection_WhenSQLException_ShouldReturnNull() throws Exception {
         Dotenv mockDotenv = mock(Dotenv.class);
-        when(mockDotenv.get("DB_URL")).thenReturn("jdbc:h2:mem:testdb");
-        when(mockDotenv.get("DB_USER")).thenReturn("sa");
-        when(mockDotenv.get("DB_PASS")).thenReturn("");
+        lenient().when(mockDotenv.get("DB_URL")).thenReturn("jdbc:h2:mem:testdb");
+        lenient().when(mockDotenv.get("DB_USER")).thenReturn("sa");
+        lenient().when(mockDotenv.get("DB_PASS")).thenReturn("");
 
         Field dotenvField = database_connection.class.getDeclaredField("dotenv");
         dotenvField.setAccessible(true);
