@@ -2,13 +2,11 @@ package admain;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import io.github.cdimascio.dotenv.Dotenv;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,7 +71,7 @@ class DatabaseConnectionTest {
 
         Connection mockConn = mock(Connection.class);
 
-        try (MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
+        try (org.mockito.MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
             dmMock.when(() -> DriverManager.getConnection(
                 "jdbc:h2:mem:testdb", "sa", ""))
                 .thenReturn(mockConn);
@@ -108,7 +106,7 @@ class DatabaseConnectionTest {
 
         Connection newConn = mock(Connection.class);
 
-        try (MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
+        try (org.mockito.MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
             dmMock.when(() -> DriverManager.getConnection(
                 "jdbc:h2:mem:testdb", "sa", ""))
                 .thenReturn(newConn);
@@ -140,7 +138,7 @@ class DatabaseConnectionTest {
         connField.setAccessible(true);
         connField.set(null, openConn);
 
-        try (MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
+        try (org.mockito.MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
             Connection result = database_connection.getConnection();
 
             assertSame(openConn, result);
@@ -153,22 +151,16 @@ class DatabaseConnectionTest {
     @DisplayName("getConnection() should return null and log error on SQLException")
     void testGetConnection_WhenSQLException_ShouldReturnNull() throws Exception {
         Dotenv mockDotenv = mock(Dotenv.class);
-        lenient().when(mockDotenv.get("DB_URL")).thenReturn("jdbc:h2:mem:testdb");
-        lenient().when(mockDotenv.get("DB_USER")).thenReturn("sa");
-        lenient().when(mockDotenv.get("DB_PASS")).thenReturn("");
+        when(mockDotenv.get("DB_URL")).thenReturn("jdbc:invalid://bad-url");
+        when(mockDotenv.get("DB_USER")).thenReturn("sa");
+        when(mockDotenv.get("DB_PASS")).thenReturn("");
 
         Field dotenvField = database_connection.class.getDeclaredField("dotenv");
         dotenvField.setAccessible(true);
         dotenvField.set(null, mockDotenv);
 
-        try (MockedStatic<DriverManager> dmMock = mockStatic(DriverManager.class)) {
-            dmMock.when(() -> DriverManager.getConnection(
-                "jdbc:h2:mem:testdb", "sa", ""))
-                .thenThrow(new SQLException("Connection refused"));
+        Connection result = database_connection.getConnection();
 
-            Connection result = database_connection.getConnection();
-
-            assertNull(result);
-        }
+        assertNull(result);
     }
 }
