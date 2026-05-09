@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class AppointmentRepository_y {
-
+private static final String APPOINTMENT_ID = "appointment_id";
+    
     private static final Logger logger =
             Logger.getLogger(AppointmentRepository_y.class.getName());
 
@@ -55,7 +56,7 @@ public class AppointmentRepository_y {
                 while (rs.next()) {
 
                 	Appointment a = new Appointment(
-                	        rs.getInt("appointment_id"),
+                	   rs.getInt(APPOINTMENT_ID),
                 	        rs.getInt("account_id"),
                 	        rs.getInt("slot_id"),
                 	        rs.getInt("participants"),
@@ -88,7 +89,7 @@ public class AppointmentRepository_y {
 
             while (rs.next()) {
 
-                int appointmentId = rs.getInt("appointment_id");
+                int appointmentId = rs.getInt(APPOINTMENT_ID);
                 int userId = rs.getInt("account_id");
                 int slotId = rs.getInt("slot_id");
                 int participants = rs.getInt("participants");
@@ -137,7 +138,7 @@ public class AppointmentRepository_y {
             while (rs.next()) {
 
                 int slotId = rs.getInt("slot_id");
-                int appointmentId = rs.getInt("appointment_id");
+                int appointmentId =rs.getInt(APPOINTMENT_ID);
                 int participants = rs.getInt("participants");
 
                 AppointmentStatus_y status =
