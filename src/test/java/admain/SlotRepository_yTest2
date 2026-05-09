@@ -1,0 +1,166 @@
+package admain;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+class SlotRepository_yTest2 {
+
+    private SlotRepository_y repo;
+    private Connection conn;
+    private PreparedStatement ps;
+    private ResultSet rs;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        repo = Mockito.spy(new SlotRepository_y());
+        conn = mock(Connection.class);
+        ps = mock(PreparedStatement.class);
+        rs = mock(ResultSet.class);
+        doReturn(conn).when(repo).getConnection();
+        when(conn.prepareStatement(anyString())).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+    }
+
+    // ===== Helper لبناء ResultSet يرجع slot =====
+    private void setupSlotRow(int slotId, int booked, int capacity) throws Exception {
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getInt("slot_id")).thenReturn(slotId);
+        when(rs.getDate("slot_date")).thenReturn(Date.valueOf(LocalDate.now().plusDays(1)));
+        when(rs.getTime("slot_start_time")).thenReturn(Time.valueOf(LocalTime.of(9, 0)));
+        when(rs.getTime("slot_end_time")).thenReturn(Time.valueOf(LocalTime.of(10, 0)));
+        when(rs.getInt("max_capacity")).thenReturn(capacity);
+        when(rs.getInt("booked_count")).thenReturn(booked);
+    }
+
+    // ===== findAvailableSlots - slot متاح =====
+    @Test
+    void testFindAvailableSlots_available() throws Exception {
+        setupSlotRow(1, 2, 10); // booked < capacity → يُضاف
+        List<AppointmentSlot_y> result = repo.findAvailableSlots();
+        assertEquals(1, result.size());
+    }
+
+    // ===== findAvailableSlots - slot ممتلئ =====
+    @Test
+    void testFindAvailableSlots_full() throws Exception {
+        setupSlotRow(1, 10, 10); // booked == capacity → لا يُضاف
+        List<AppointmentSlot_y> result = repo.findAvailableSlots();
+        assertTrue(result.isEmpty());
+    }
+
+    // ===== findAvailableSlots - لا توجد slots =====
+    @Test
+    void testFindAvailableSlots_empty() throws Exception {
+        when(rs.next()).thenReturn(false);
+        List<AppointmentSlot_y> result = repo.findAvailableSlots();
+        assertTrue(result.isEmpty());
+    }
+
+    // ===== findAvailableSlots - SQLException =====
+    @Test
+    void testFindAvailableSlots_sqlException() throws Exception {
+        when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+        List<AppointmentSlot_y> result = repo.findAvailableSlots();
+        assertTrue(result.isEmpty());
+    }
+
+    // ===== findById - موجود =====
+    @Test
+    void testFindById_found() throws Exception {
+        setupSlotRow(1, 2, 10);
+        AppointmentSlot_y slot = repo.findById(1);
+        assertNotNull(slot);
+        assertEquals(1, slot.getId());
+    }
+
+    // ===== findById - غير موجود =====
+    @Test
+    void testFindById_notFound() throws Exception {
+        when(rs.next()).thenReturn(false);
+        AppointmentSlot_y slot = repo.findById(99);
+        assertNull(slot);
+    }
+
+    // ===== findById - SQLException =====
+    @Test
+    void testFindById_sqlException() throws Exception {
+        when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+        AppointmentSlot_y slot = repo.findById(1);
+        assertNull(slot);
+    }
+
+    // ===== findAvailableSlotsByDate - موجود =====
+    @Test
+    void testFindAvailableSlotsByDate_found() throws Exception {
+        setupSlotRow(1, 2, 10);
+        List<AppointmentSlot_y> result = repo.findAvailableSlotsByDate(LocalDate.now().plusDays(1));
+        assertEquals(1, result.size());
+    }
+
+    // ===== findAvailableSlotsByDate - فارغ =====
+    @Test
+    void testFindAvailableSlotsByDate_empty() throws Exception {
+        when(rs.next()).thenReturn(false);
+        List<AppointmentSlot_y> result = repo.findAvailableSlotsByDate(LocalDate.now());
+        assertTrue(result.isEmpty());
+    }
+
+    // ===== findAvailableSlotsByDate - SQLException =====
+    @Test
+    void testFindAvailableSlotsByDate_sqlException() throws Exception {
+        when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+        List<AppointmentSlot_y> result = repo.findAvailableSlotsByDate(LocalDate.now());
+        assertTrue(result.isEmpty());
+    }
+
+    // ===== addSlot - success =====
+    @Test
+    void testAddSlot_success() throws Exception {
+        when(ps.executeUpdate()).thenReturn(1);
+        boolean result = repo.addSlot(LocalDate.now().plusDays(1),
+                LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 1);
+        assertTrue(result);
+    }
+
+    // ===== addSlot - failure =====
+    @Test
+    void testAddSlot_failure() throws Exception {
+        when(ps.executeUpdate()).thenReturn(0);
+        boolean result = repo.addSlot(LocalDate.now().plusDays(1),
+                LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 1);
+        assertFalse(result);
+    }
+
+    // ===== addSlot - SQLException =====
+    @Test
+    void testAddSlot_sqlException() throws Exception {
+        when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+        boolean result = repo.addSlot(LocalDate.now().plusDays(1),
+                LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 1);
+        assertFalse(result);
+    }
+
+    // ===== decreaseBookedCount =====
+    @Test
+    void testDecreaseBookedCount_success() throws Exception {
+        when(ps.executeUpdate()).thenReturn(1);
+        int result = repo.decreaseBookedCount(1, 2, conn);
+        assertEquals(1, result);
+    }
+
+    @Test
+    void testDecreaseBookedCount_throwsSQLException() throws Exception {
+        when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+        assertThrows(SQLException.class, () -> repo.decreaseBookedCount(1, 2, conn));
+    }
+}
