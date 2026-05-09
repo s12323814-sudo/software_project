@@ -16,12 +16,11 @@ import static org.mockito.Mockito.*;
 
 class AppointmentServiceTest2 {
 
-    @Mock scheduleRepository repo;
     @Mock SlotService_y slotService;
+    @Mock scheduleRepository repo;
 
-    // connection جاهز للاستخدام في كل test
     private Connection conn;
-    private PreparedStatement ps;
+    private PreparedStatement psSelect;
     private PreparedStatement psInsert;
     private PreparedStatement psUpdate;
     private ResultSet rs;
@@ -31,62 +30,64 @@ class AppointmentServiceTest2 {
         MockitoAnnotations.openMocks(this);
 
         conn     = mock(Connection.class);
-        ps       = mock(PreparedStatement.class);
+        psSelect = mock(PreparedStatement.class);
         psInsert = mock(PreparedStatement.class);
         psUpdate = mock(PreparedStatement.class);
         rs       = mock(ResultSet.class);
 
-        // كل prepareStatement يرجع mock مختلف حسب الـ SQL
-        when(conn.prepareStatement(contains("SELECT"))).thenReturn(ps);
+        when(conn.prepareStatement(contains("SELECT"))).thenReturn(psSelect);
         when(conn.prepareStatement(contains("INSERT"))).thenReturn(psInsert);
         when(conn.prepareStatement(contains("UPDATE"))).thenReturn(psUpdate);
-
-        when(ps.executeQuery()).thenReturn(rs);
+        when(psSelect.executeQuery()).thenReturn(rs);
         when(psInsert.executeUpdate()).thenReturn(1);
         when(psUpdate.executeUpdate()).thenReturn(1);
-
         doNothing().when(conn).setAutoCommit(anyBoolean());
         doNothing().when(conn).commit();
         doNothing().when(conn).rollback();
-    }
-
-    // ===== Helper لإعداد ResultSet ناجح =====
-    private void setupSuccessfulSlot() throws Exception {
-        when(rs.next()).thenReturn(true);
-        when(rs.getDate("start_date"))
-            .thenReturn(Date.valueOf(LocalDate.now().plusDays(1)));
-        when(rs.getTime("start_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(9, 0)));
-        when(rs.getTime("end_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(10, 0)));
-        when(rs.getInt("max_capacity")).thenReturn(10);
-        when(rs.getInt("booked_count")).thenReturn(0);
     }
 
     private AppointmentService svc() {
         return new AppointmentService(conn, slotService, repo);
     }
 
+    // ===== setup slot مستقبلي ناجح =====
+    private void setupValidSlot(int capacity, int booked, LocalTime start, LocalTime end) throws Exception {
+        when(rs.next()).thenReturn(true);
+        when(rs.getDate("start_date")).thenReturn(Date.valueOf(LocalDate.now().plusDays(1)));
+        when(rs.getTime("start_time")).thenReturn(Time.valueOf(start));
+        when(rs.getTime("end_time")).thenReturn(Time.valueOf(end));
+        when(rs.getInt("max_capacity")).thenReturn(capacity);
+        when(rs.getInt("booked_count")).thenReturn(booked);
+    }
+
     // ===== Constructor =====
+
     @Test
-    void testConstructor() {
+    void testDefaultConstructor() {
         assertNotNull(new AppointmentService());
     }
 
-    // ===== getUserAppointments =====
     @Test
-    void testGetUserAppointments() throws Exception {
+    void testParamConstructor() {
+        assertNotNull(svc());
+    }
+
+    // ===== getUserAppointments =====
+
+    @Test
+    void testGetUserAppointments_returnsData() throws Exception {
         when(repo.getAppointments(1)).thenReturn(List.of(new Appointment()));
         assertEquals(1, svc().getUserAppointments(1).size());
     }
 
     @Test
     void testGetUserAppointments_empty() throws Exception {
-        when(repo.getAppointments(1)).thenReturn(Collections.emptyList());
-        assertTrue(svc().getUserAppointments(1).isEmpty());
+        when(repo.getAppointments(2)).thenReturn(Collections.emptyList());
+        assertTrue(svc().getUserAppointments(2).isEmpty());
     }
 
     // ===== getAvailableSlots =====
+
     @Test
     void testGetAvailableSlots() {
         when(slotService.getAvailableSlots()).thenReturn(Collections.emptyList());
@@ -94,111 +95,99 @@ class AppointmentServiceTest2 {
     }
 
     // ===== addSlot =====
+
     @Test
     void testAddSlot() {
-        LocalDateTime start = LocalDateTime.now();
-        LocalDateTime end = start.plusHours(1);
-        svc().addSlot(start, end, 10, 1);
-        verify(slotService).addSlot(
-            start.toLocalDate(), start.toLocalTime(),
-            end.toLocalTime(), 10, 1
-        );
+        LocalDateTime start = LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+        LocalDateTime end   = LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.of(10, 0));
+        svc().addSlot(start, end, 5, 1);
+        verify(slotService).addSlot(start.toLocalDate(), start.toLocalTime(), end.toLocalTime(), 5, 1);
     }
 
     // ===== bookAppointment - success =====
+
     @Test
     void testBook_success() throws Exception {
-        setupSuccessfulSlot();
+        setupValidSlot(10, 0, LocalTime.of(9, 0), LocalTime.of(10, 0));
         assertDoesNotThrow(() -> svc().bookAppointment(1, 1, 2, AppointmentType_y.ONLINE));
         verify(conn).commit();
     }
 
     // ===== bookAppointment - slot not found =====
+
     @Test
     void testBook_slotNotFound() throws Exception {
         when(rs.next()).thenReturn(false);
-        assertThrows(SQLException.class,
-            () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
+        assertThrows(SQLException.class, () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
         verify(conn).rollback();
     }
 
-    // ===== bookAppointment - null date/time =====
+    // ===== bookAppointment - null date =====
+
     @Test
     void testBook_nullDate() throws Exception {
         when(rs.next()).thenReturn(true);
         when(rs.getDate("start_date")).thenReturn(null);
         when(rs.getTime("start_time")).thenReturn(null);
         when(rs.getTime("end_time")).thenReturn(null);
-        assertThrows(SQLException.class,
-            () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
+        assertThrows(SQLException.class, () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
         verify(conn).rollback();
     }
 
     // ===== bookAppointment - past slot =====
+
     @Test
     void testBook_pastSlot() throws Exception {
         when(rs.next()).thenReturn(true);
-        when(rs.getDate("start_date"))
-            .thenReturn(Date.valueOf(LocalDate.now().minusDays(1)));
-        when(rs.getTime("start_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(9, 0)));
-        when(rs.getTime("end_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(10, 0)));
+        when(rs.getDate("start_date")).thenReturn(Date.valueOf(LocalDate.now().minusDays(1)));
+        when(rs.getTime("start_time")).thenReturn(Time.valueOf(LocalTime.of(9, 0)));
+        when(rs.getTime("end_time")).thenReturn(Time.valueOf(LocalTime.of(10, 0)));
         when(rs.getInt("max_capacity")).thenReturn(10);
         when(rs.getInt("booked_count")).thenReturn(0);
-        assertThrows(SQLException.class,
-            () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
+        assertThrows(SQLException.class, () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
         verify(conn).rollback();
     }
 
     // ===== bookAppointment - not enough capacity =====
+
     @Test
     void testBook_notEnoughCapacity() throws Exception {
-        when(rs.next()).thenReturn(true);
-        when(rs.getDate("start_date"))
-            .thenReturn(Date.valueOf(LocalDate.now().plusDays(1)));
-        when(rs.getTime("start_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(9, 0)));
-        when(rs.getTime("end_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(10, 0)));
-        when(rs.getInt("max_capacity")).thenReturn(2);
-        when(rs.getInt("booked_count")).thenReturn(2);
-        assertThrows(SQLException.class,
-            () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
+        setupValidSlot(2, 2, LocalTime.of(9, 0), LocalTime.of(10, 0));
+        assertThrows(SQLException.class, () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
         verify(conn).rollback();
     }
 
-    // ===== bookAppointment - invalid duration too short =====
+    // ===== bookAppointment - duration too short =====
+
     @Test
     void testBook_durationTooShort() throws Exception {
-        when(rs.next()).thenReturn(true);
-        when(rs.getDate("start_date"))
-            .thenReturn(Date.valueOf(LocalDate.now().plusDays(1)));
-        when(rs.getTime("start_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(9, 0)));
-        when(rs.getTime("end_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(9, 20))); // 20 دقيقة < 30
-        when(rs.getInt("max_capacity")).thenReturn(10);
-        when(rs.getInt("booked_count")).thenReturn(0);
-        assertThrows(IllegalArgumentException.class,
-            () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
+        setupValidSlot(10, 0, LocalTime.of(9, 0), LocalTime.of(9, 20)); // 20 دقيقة
+        assertThrows(IllegalArgumentException.class, () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
         verify(conn).rollback();
     }
 
-    // ===== bookAppointment - invalid duration too long =====
+    // ===== bookAppointment - duration too long =====
+
     @Test
     void testBook_durationTooLong() throws Exception {
-        when(rs.next()).thenReturn(true);
-        when(rs.getDate("start_date"))
-            .thenReturn(Date.valueOf(LocalDate.now().plusDays(1)));
-        when(rs.getTime("start_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(9, 0)));
-        when(rs.getTime("end_time"))
-            .thenReturn(Time.valueOf(LocalTime.of(11, 30))); // 150 دقيقة > 120
-        when(rs.getInt("max_capacity")).thenReturn(10);
-        when(rs.getInt("booked_count")).thenReturn(0);
-        assertThrows(IllegalArgumentException.class,
-            () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
+        setupValidSlot(10, 0, LocalTime.of(9, 0), LocalTime.of(11, 30)); // 150 دقيقة
+        assertThrows(IllegalArgumentException.class, () -> svc().bookAppointment(1, 1, 1, AppointmentType_y.ONLINE));
         verify(conn).rollback();
+    }
+
+    // ===== bookAppointment - different types =====
+
+    @Test
+    void testBook_typeGeneral() throws Exception {
+        setupValidSlot(10, 0, LocalTime.of(9, 0), LocalTime.of(10, 0));
+        assertDoesNotThrow(() -> svc().bookAppointment(1, 1, 1, AppointmentType_y.GENERAL));
+        verify(conn).commit();
+    }
+
+    @Test
+    void testBook_typeConsultation() throws Exception {
+        setupValidSlot(10, 0, LocalTime.of(9, 0), LocalTime.of(10, 0));
+        assertDoesNotThrow(() -> svc().bookAppointment(1, 1, 1, AppointmentType_y.CONSULTATION));
+        verify(conn).commit();
     }
 }
