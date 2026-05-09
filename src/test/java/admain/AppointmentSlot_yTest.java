@@ -12,7 +12,11 @@ import java.time.LocalTime;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-
+import java.time.*;
+import java.sql.*;
+import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 class AppointmentSlot_yTest {
 
     @Test
@@ -145,4 +149,44 @@ class AppointmentSlot_yTest {
             assertFalse(result);
         }
     }
+    @Test
+void testGetEndTime() {
+    AppointmentSlot_y slot = new AppointmentSlot_y(
+        1, LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 2
+    );
+    assertEquals(LocalTime.of(10, 0), slot.getEndTime());
+}
+
+@Test
+void testGetStartDateTime() {
+    LocalDate date = LocalDate.now();
+    AppointmentSlot_y slot = new AppointmentSlot_y(
+        1, date, LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 2
+    );
+    ZonedDateTime expected = ZonedDateTime.of(date, LocalTime.of(9, 0), ZoneId.of("Asia/Hebron"));
+    assertEquals(expected, slot.getStartDateTime());
+}
+
+@Test
+void testGetEndDateTime() {
+    LocalDate date = LocalDate.now();
+    AppointmentSlot_y slot = new AppointmentSlot_y(
+        1, date, LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 2
+    );
+    ZonedDateTime expected = ZonedDateTime.of(date, LocalTime.of(10, 0), ZoneId.of("Asia/Hebron"));
+    assertEquals(expected, slot.getEndDateTime());
+}
+
+@Test
+void testIsSlotAvailableForResource_sqlException() throws Exception {
+    AppointmentSlot_y slot = Mockito.spy(new AppointmentSlot_y(
+        1, LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 2
+    ));
+    Connection mockConn = mock(Connection.class);
+    doReturn(mockConn).when(slot).getConnection();
+    when(mockConn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+    assertThrows(RuntimeException.class, () ->
+        slot.isSlotAvailableForResource(1, 1));
+}
 }
