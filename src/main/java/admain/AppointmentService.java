@@ -84,7 +84,7 @@ public class AppointmentService {
                     if (participants > remaining) throw new SQLException("Not enough capacity for this slot");
 
                     long duration = Duration.between(start, end).toMinutes();
-                    if (duration < minDuration || duration > MAX_DURATION)
+                    if (duration <MIN_DURATION || duration > MAX_DURATION)
                         throw new IllegalArgumentException("Duration must be between 30 and 120 minutes.");
 
                      String insert = "INSERT INTO appointments " +
