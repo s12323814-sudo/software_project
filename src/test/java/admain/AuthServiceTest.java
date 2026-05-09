@@ -32,7 +32,54 @@ class AuthServiceCleanTest {
                 Role_y.USER
         );
     }
+// ================= LOGIN =================
 
+@Test
+void login_blankInput() {
+    assertNull(service.login("   ", "123456"));
+}
+
+@Test
+void login_blankPassword() {
+    assertNull(service.login("user", "   "));
+}
+
+// ================= REGISTER =================
+
+@Test
+void register_nullUsername() {
+    assertNull(service.register(null, "123456", "a@test.com", Role_y.USER));
+}
+
+@Test
+void register_shortUsername() {
+    assertNull(service.register("ab", "123456", "a@test.com", Role_y.USER));
+}
+
+@Test
+void register_nullPassword() {
+    assertNull(service.register("user", null, "a@test.com", Role_y.USER));
+}
+
+@Test
+void register_nullEmail() {
+    assertNull(service.register("user", "123456", null, Role_y.USER));
+}
+
+// ================= PASSWORD =================
+
+@Test
+void updatePassword_nullPassword() {
+    assertFalse(service.updatePassword("test@test.com", null));
+}
+
+// ================= GET ACCOUNT =================
+
+@Test
+void getAccountByEmail_notFound() {
+    when(repo.findByEmail("x@test.com")).thenReturn(null);
+    assertNull(service.getAccountByEmail("x@test.com"));
+}
     // ================= LOGIN =================
 
     @Test
