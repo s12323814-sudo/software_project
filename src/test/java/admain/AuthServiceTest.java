@@ -152,7 +152,19 @@ class AuthServiceCleanTest {
 
         assertFalse(service.emailExists("x@test.com"));
     }
-
+@Test
+void testIsSlotAvailableForResource_sqlException() throws Exception {
+    SlotRepository_y mockRepo = mock(SlotRepository_y.class);
+    Connection mockConn = mock(Connection.class);
+    
+    when(mockRepo.getConnection()).thenReturn(mockConn);
+    when(mockConn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+    
+    YourService service = new YourService(mockRepo);
+    
+    assertThrows(RuntimeException.class, () -> 
+        service.isSlotAvailableForResource(1, 1));
+}
     // ================= GET ACCOUNT =================
 
     @Test
