@@ -9,8 +9,17 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class AppointmentRepository_y {
-private static final String APPOINTMENT_ID = "appointment_id";
-    
+
+    private static final String APPOINTMENT_ID = "appointment_id";
+    private static final String ACCOUNT_ID = "account_id";
+    private static final String SLOT_ID = "slot_id";
+    private static final String PARTICIPANTS = "participants";
+    private static final String STATUS = "status";
+    private static final String TYPE = "type";
+    private static final String USERNAME = "username";
+    private static final String START_TIME = "start_time";
+    private static final String END_TIME = "end_time";
+
     private static final Logger logger =
             Logger.getLogger(AppointmentRepository_y.class.getName());
 
@@ -52,18 +61,16 @@ private static final String APPOINTMENT_ID = "appointment_id";
             stmt.setInt(1, adminId);
 
             try (ResultSet rs = stmt.executeQuery()) {
-
                 while (rs.next()) {
-
-                	Appointment a = new Appointment(
-                	   rs.getInt(APPOINTMENT_ID),
-                	        rs.getInt("account_id"),
-                	        rs.getInt("slot_id"),
-                	        rs.getInt("participants"),
-                	        AppointmentStatus_y.valueOf(rs.getString("status")),
-                	        AppointmentType_y.valueOf(rs.getString("type"))
-                	);
-                    a.setUsername(rs.getString("username"));
+                    Appointment a = new Appointment(
+                            rs.getInt(APPOINTMENT_ID),
+                            rs.getInt(ACCOUNT_ID),
+                            rs.getInt(SLOT_ID),
+                            rs.getInt(PARTICIPANTS),
+                            AppointmentStatus_y.valueOf(rs.getString(STATUS)),
+                            AppointmentType_y.valueOf(rs.getString(TYPE))
+                    );
+                    a.setUsername(rs.getString(USERNAME));
                     list.add(a);
                 }
             }
@@ -90,21 +97,21 @@ private static final String APPOINTMENT_ID = "appointment_id";
             while (rs.next()) {
 
                 int appointmentId = rs.getInt(APPOINTMENT_ID);
-                int userId = rs.getInt("account_id");
-                int slotId = rs.getInt("slot_id");
-                int participants = rs.getInt("participants");
+                int userId = rs.getInt(ACCOUNT_ID);
+                int slotId = rs.getInt(SLOT_ID);
+                int participants = rs.getInt(PARTICIPANTS);
 
                 AppointmentStatus_y status =
-                        AppointmentStatus_y.valueOf(rs.getString("status"));
+                        AppointmentStatus_y.valueOf(rs.getString(STATUS));
 
                 AppointmentType_y type =
-                        AppointmentType_y.valueOf(rs.getString("type"));
+                        AppointmentType_y.valueOf(rs.getString(TYPE));
 
                 ZonedDateTime start =
-                        rs.getTimestamp("start_time").toInstant().atZone(ZONE);
+                        rs.getTimestamp(START_TIME).toInstant().atZone(ZONE);
 
                 ZonedDateTime end =
-                        rs.getTimestamp("end_time").toInstant().atZone(ZONE);
+                        rs.getTimestamp(END_TIME).toInstant().atZone(ZONE);
 
                 TimeSlot timeSlot = new TimeSlot(slotId, start, end);
 
@@ -126,7 +133,9 @@ private static final String APPOINTMENT_ID = "appointment_id";
         List<Appointment> appointments = new ArrayList<>();
 
         String sql =
-                "SELECT * FROM appointments WHERE account_id = ? ORDER BY start_time ASC";
+                "SELECT appointment_id, slot_id, account_id, participants, " +
+                "status, type, start_time, end_time " +
+                "FROM appointments WHERE account_id = ? ORDER BY start_time ASC";
 
         try (Connection conn = database_connection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -137,21 +146,21 @@ private static final String APPOINTMENT_ID = "appointment_id";
 
             while (rs.next()) {
 
-                int slotId = rs.getInt("slot_id");
-                int appointmentId =rs.getInt(APPOINTMENT_ID);
-                int participants = rs.getInt("participants");
+                int slotId = rs.getInt(SLOT_ID);
+                int appointmentId = rs.getInt(APPOINTMENT_ID);
+                int participants = rs.getInt(PARTICIPANTS);
 
                 AppointmentStatus_y status =
-                        AppointmentStatus_y.valueOf(rs.getString("status"));
+                        AppointmentStatus_y.valueOf(rs.getString(STATUS));
 
                 AppointmentType_y type =
-                        AppointmentType_y.valueOf(rs.getString("type"));
+                        AppointmentType_y.valueOf(rs.getString(TYPE));
 
                 ZonedDateTime start =
-                        rs.getTimestamp("start_time").toInstant().atZone(ZONE);
+                        rs.getTimestamp(START_TIME).toInstant().atZone(ZONE);
 
                 ZonedDateTime end =
-                        rs.getTimestamp("end_time").toInstant().atZone(ZONE);
+                        rs.getTimestamp(END_TIME).toInstant().atZone(ZONE);
 
                 TimeSlot timeSlot = new TimeSlot(slotId, start, end);
 
@@ -255,8 +264,8 @@ private static final String APPOINTMENT_ID = "appointment_id";
                     return false;
                 }
 
-                slotId = rs.getInt("slot_id");
-                participants = rs.getInt("participants");
+                slotId = rs.getInt(SLOT_ID);
+                participants = rs.getInt(PARTICIPANTS);
             }
 
             try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
