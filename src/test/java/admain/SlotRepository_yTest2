@@ -41,7 +41,34 @@ class SlotRepository_yTest2 {
         when(rs.getInt("max_capacity")).thenReturn(capacity);
         when(rs.getInt("booked_count")).thenReturn(booked);
     }
+@Test
+void testFindAvailableSlots_sqlException() throws Exception {
+    when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+    List<AppointmentSlot_y> result = repo.findAvailableSlots();
+    assertTrue(result.isEmpty());
+}
 
+@Test
+void testFindById_sqlException() throws Exception {
+    when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+    AppointmentSlot_y result = repo.findById(1);
+    assertNull(result);
+}
+
+@Test
+void testFindAvailableSlotsByDate_sqlException() throws Exception {
+    when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+    List<AppointmentSlot_y> result = repo.findAvailableSlotsByDate(LocalDate.now());
+    assertTrue(result.isEmpty());
+}
+
+@Test
+void testAddSlot_sqlException() throws Exception {
+    when(conn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+    boolean result = repo.addSlot(LocalDate.now().plusDays(1),
+            LocalTime.of(9, 0), LocalTime.of(10, 0), 10, 1);
+    assertFalse(result);
+}
     // ===== findAvailableSlots - slot متاح =====
     @Test
     void testFindAvailableSlots_available() throws Exception {
