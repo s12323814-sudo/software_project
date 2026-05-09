@@ -9,7 +9,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
-
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 class ReminderManagerTest {
 
     @Mock
@@ -26,6 +26,38 @@ class ReminderManagerTest {
         MockitoAnnotations.openMocks(this);
     }
 
+@Test
+void shouldNotSendDuplicateTenMinuteReminder() throws Exception {
+    Account_y user = new Account_y(1, "user", "hash", "test@test.com", Role_y.USER);
+    session_y.currentUser = user;
+
+    ZonedDateTime start = ZonedDateTime.now(ZoneId.of("Asia/Hebron")).plusMinutes(10);
+    TimeSlot slot = new TimeSlot(1, start, start.plusMinutes(30));
+    Appointment appt = new Appointment(200, 1, 1, slot, 1,
+            AppointmentStatus_y.CONFIRMED, AppointmentType_y.GENERAL);
+
+    when(appointmentRepository.getUserUpcomingAppointments(1))
+            .thenReturn(List.of(appt));
+
+    reminderManager.checkReminders();
+    reminderManager.checkReminders();
+
+    verify(notificationService, times(1))
+            .sendReminder(eq("test@test.com"), contains("10 minutes"));
+}
+
+// exception في الـ catch
+@Test
+void shouldHandleExceptionGracefully() throws Exception {
+    Account_y user = new Account_y(1, "user", "hash", "test@test.com", Role_y.USER);
+    session_y.currentUser = user;
+
+    when(appointmentRepository.getUserUpcomingAppointments(1))
+            .thenThrow(new RuntimeException("DB error"));
+
+    assertDoesNotThrow(() -> reminderManager.checkReminders());
+    verifyNoInteractions(notificationService);
+}
     // 🔥 Test 1: إشعار قبل ساعة
     @Test
     void shouldSendReminderOneHourBefore() {
