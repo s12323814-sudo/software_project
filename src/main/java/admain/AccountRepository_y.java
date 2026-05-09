@@ -7,7 +7,13 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 public class AccountRepository_y {
-
+private static final String APPOINTMENT_ID = "appointment_id";
+private static final String ACCOUNT_ID = "account_id";
+private static final String SLOT_ID = "slot_id";
+private static final String PARTICIPANTS = "participants";
+private static final String STATUS = "status";
+private static final String TYPE = "type";
+private static final String USERNAME = "username";
     private static final Logger logger =
             Logger.getLogger(AccountRepository_y.class.getName());
 
