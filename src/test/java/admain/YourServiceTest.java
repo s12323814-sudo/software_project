@@ -3,7 +3,8 @@ package admain;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.*;
 
 class YourServiceTest {
@@ -52,4 +53,17 @@ class YourServiceTest {
 
         assertFalse(available);
     }
+    @Test
+void testIsSlotAvailableForResource_sqlException() throws Exception {
+    SlotRepository_y mockRepo = mock(SlotRepository_y.class);
+    Connection mockConn = mock(Connection.class);
+    
+    when(mockRepo.getConnection()).thenReturn(mockConn);
+    when(mockConn.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+    
+    YourService service = new YourService(mockRepo);
+    
+    assertThrows(RuntimeException.class, () -> 
+        service.isSlotAvailableForResource(1, 1));
+}
 }
