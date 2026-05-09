@@ -322,5 +322,73 @@ void testGetAppointments_empty() throws SQLException {
         assertEquals("Not enough capacity for the new slot.", ex.getMessage());
     }
 
-    // يمكن إضافة باقي الحالات المشابهة (Edge cases, VIRTUAL, URGENT, GROUP rules, etc.)
+ @Test
+void testDetermineStatus_Completed() {
+    ZonedDateTime start = ZonedDateTime.now(ZONE).minusHours(3);
+    ZonedDateTime end = ZonedDateTime.now(ZONE).minusHours(1);
+    AppointmentSlot_y slot = new AppointmentSlot_y(10, 2);
+    
+    AppointmentStatus_y status = scheduleRepository.determineStatus(start, end, 2, slot);
+    assertEquals(AppointmentStatus_y.COMPLETED, status);
+}
+
+@Test
+void testDetermineStatus_Ongoing() {
+    ZonedDateTime start = ZonedDateTime.now(ZONE).minusMinutes(30);
+    ZonedDateTime end = ZonedDateTime.now(ZONE).plusMinutes(30);
+    AppointmentSlot_y slot = new AppointmentSlot_y(10, 2);
+    
+    AppointmentStatus_y status = scheduleRepository.determineStatus(start, end, 2, slot);
+    assertEquals(AppointmentStatus_y.ONGOING, status);
+}
+
+@Test
+void testDetermineStatus_Confirmed() {
+    ZonedDateTime start = ZonedDateTime.now(ZONE).plusHours(1);
+    ZonedDateTime end = ZonedDateTime.now(ZONE).plusHours(2);
+    AppointmentSlot_y slot = new AppointmentSlot_y(10, 2); // capacity=10, booked=2
+    
+    AppointmentStatus_y status = scheduleRepository.determineStatus(start, end, 5, slot);
+    assertEquals(AppointmentStatus_y.CONFIRMED, status);
+}
+
+@Test
+void testDetermineStatus_Waitlist() {
+    ZonedDateTime start = ZonedDateTime.now(ZONE).plusHours(1);
+    ZonedDateTime end = ZonedDateTime.now(ZONE).plusHours(2);
+    AppointmentSlot_y slot = new AppointmentSlot_y(5, 4); // capacity=5, booked=4
+    
+    AppointmentStatus_y status = scheduleRepository.determineStatus(start, end, 3, slot);
+    assertEquals(AppointmentStatus_y.WAITLIST, status);
+}
+
+@Test
+void testAddAppointment_InvalidDuration_TooShort() {
+    // duration < 30 min
+    assertThrows(IllegalArgumentException.class, () -> {
+        repo.addAppointment(appointmentWithDuration(10));
+    });
+}
+
+@Test
+void testAddAppointment_InvalidDuration_TooLong() {
+    // duration > 120 min
+    assertThrows(IllegalArgumentException.class, () -> {
+        repo.addAppointment(appointmentWithDuration(150));
+    });
+}
+
+@Test
+void testModifyAppointment_NotFound() {
+    assertThrows(SQLException.class, () -> {
+        repo.modifyAppointment(9999, 1, 2);
+    });
+}
+
+@Test
+void testIsSlotAvailable_SlotNotFound() throws SQLException {
+    // slot_id غير موجود → يرجع false
+    boolean result = repo.isSlotAvailable(conn, 9999, 1);
+    assertFalse(result);
+}
 }
