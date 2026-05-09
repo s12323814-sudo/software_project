@@ -6,7 +6,26 @@ import org.junit.jupiter.api.Test;
 import java.time.ZonedDateTime;
 
 public class AppointmentTest {
+@Test
+void testEmptyConstructor() {
+    Appointment appt = new Appointment();
+    assertEquals(0, appt.getAppointmentId());
+    assertEquals(0, appt.getUserId());
+    assertNull(appt.getTimeSlot());
+}
 
+@Test
+void testGetUsername_null() {
+    Appointment appt = new Appointment();
+    assertNull(appt.getUsername());
+}
+
+@Test
+void testSetAndGetUsername() {
+    Appointment appt = new Appointment();
+    appt.setUsername("yasmeen");
+    assertEquals("yasmeen", appt.getUsername());
+}
     @Test
     public void testToString_withTimeSlot() {
         TimeSlot slot = new TimeSlot(1, 
