@@ -11,7 +11,48 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class AccountTest {
+@Test
+void testSetUsername_null() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    assertThrows(IllegalArgumentException.class, () -> acc.setUsername(null));
+}
 
+@Test
+void testSetUsername_tooShort() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    assertThrows(IllegalArgumentException.class, () -> acc.setUsername("ab"));
+}
+
+@Test
+void testSetPasswordHash_null() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    assertThrows(IllegalArgumentException.class, () -> acc.setPasswordHash(null));
+}
+
+@Test
+void testSetPasswordHash_empty() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    assertThrows(IllegalArgumentException.class, () -> acc.setPasswordHash(""));
+}
+
+@Test
+void testSetEmail_null() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    assertThrows(IllegalArgumentException.class, () -> acc.setEmail(null));
+}
+
+@Test
+void testSetEmail_invalid() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    assertThrows(IllegalArgumentException.class, () -> acc.setEmail("invalidemail"));
+}
+
+@Test
+void testSetRole() {
+    Account_y acc = new Account_y(1, "user", "hash123", "user@mail.com", Role_y.USER);
+    acc.setRole(Role_y.ADMIN);
+    assertEquals(Role_y.ADMIN, acc.getRole());
+}
 
 	    // =========================
 	    // 1. Constructor valid case
