@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class SlotRepository_y {
-
+private static final String ADD_SLOT_ERROR = "Error in addSlot: ";
     private static final Logger logger =
             Logger.getLogger(SlotRepository_y.class.getName());
 
@@ -36,7 +36,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            logger.severe("Error in addSlot: " + e.getMessage());
+            logger.severe(ADD_SLOT_ERROR + e.getMessage());
         }
 
         return list;
@@ -58,7 +58,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            logger.severe("Error in addSlot: " + e.getMessage());
+            logger.severe(ADD_SLOT_ERROR + e.getMessage());
         }
 
         return null;
@@ -84,7 +84,7 @@ public class SlotRepository_y {
             }
 
         } catch (SQLException e) {
-            logger.severe("Error in addSlot: " + e.getMessage());
+            logger.severe(ADD_SLOT_ERROR + e.getMessage());
         }
 
         return list;
@@ -110,7 +110,7 @@ public class SlotRepository_y {
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            logger.severe("Error in addSlot: " + e.getMessage());
+            logger.severe(ADD_SLOT_ERROR + e.getMessage());
         }
 
         return false;
