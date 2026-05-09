@@ -32,6 +32,11 @@ class AuthServiceCleanTest {
                 Role_y.USER
         );
     }
+    @Test
+void testDefaultConstructor() {
+    authService_y service = new authService_y();
+    assertNotNull(service);
+}
 // ================= LOGIN =================
 
 @Test
