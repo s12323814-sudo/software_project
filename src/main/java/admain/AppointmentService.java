@@ -11,7 +11,7 @@ import java.util.List;
 
 public class AppointmentService {
 
-    public static final String slotService_y = null;
+    public static final String SLOT_SERVICE_Y = null;
 
     private AppointmentRepository_y appointmentRepo;
     private SlotRepository_y slotRepo;
