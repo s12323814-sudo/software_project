@@ -14,9 +14,10 @@ public class EmailNotificationAdapter implements NotificationService_y {
     public void sendReminder(String email, String message) {
         emailService.sendEmail(email, "Appointment Reminder", message);
     }
-
-    @Override
-    public void sendNotification(int userId, String message) {}
+@Override
+public void sendNotification(int userId, String message) {
+    emailService.sendEmail(String.valueOf(userId), "Notification", message);
+}
 
     @Override
     public void clear() {}
