@@ -48,7 +48,72 @@ void test_adminCancelAppointment_dbCrash() {
         assertFalse(service.adminCancelAppointment(1, 10));
     }
 }
+@Test
+void bookAppointment_urgent_valid_shouldPass() throws Exception {
 
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(10);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+    when(appointmentRepo.book(anyInt(), anyInt(), anyInt(), any()))
+            .thenReturn(true);
+
+    boolean result = service.bookAppointment(
+            1, 1, 1, AppointmentType_y.URGENT
+    );
+
+    assertTrue(result);
+}
+    @Test
+void bookAppointment_group_valid_shouldPass() throws Exception {
+
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(10);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+    when(appointmentRepo.book(anyInt(), anyInt(), anyInt(), any()))
+            .thenReturn(true);
+
+    boolean result = service.bookAppointment(
+            1, 1, 3, AppointmentType_y.GROUP
+    );
+
+    assertTrue(result);
+}
+    @Test
+void bookAppointment_group_invalid_shouldThrow() throws Exception {
+
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(10);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.bookAppointment(
+                1, 1, 1, AppointmentType_y.GROUP
+        );
+    });
+}
+    @Test
+void bookAppointment_virtual_shouldIgnoreCapacity() throws Exception {
+
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(1); // حتى لو صغير
+    when(slot.getBookedCount()).thenReturn(999); // حتى لو ممتلئ
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+    when(appointmentRepo.book(anyInt(), anyInt(), anyInt(), any()))
+            .thenReturn(true);
+
+    boolean result = service.bookAppointment(
+            1, 1, 50, AppointmentType_y.VIRTUAL
+    );
+
+    assertTrue(result);
+}
 @Test
 void test_adminCancelAppointment_appointmentNotFound() throws Exception {
     Connection conn = mock(Connection.class);
