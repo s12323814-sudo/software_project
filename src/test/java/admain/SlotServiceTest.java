@@ -38,7 +38,24 @@ class SlotServiceTest {
 
     // ================= ADMIN CANCEL SLOT =================
 // ================= ADMIN CANCEL APPOINTMENT =================
+@Test
+void bookAppointment_nullType_shouldHitDefaultOrFail() {
 
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(10);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+
+    assertThrows(Exception.class, () -> {
+        service.bookAppointment(
+                1,
+                1,
+                1,
+                null
+        );
+    });
+}
     @Test
 void bookAppointment_notEnoughCapacity_shouldThrow() throws Exception {
 
