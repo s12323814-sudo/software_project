@@ -38,6 +38,146 @@ class SlotServiceTest {
 
     // ================= ADMIN CANCEL SLOT =================
 // ================= ADMIN CANCEL APPOINTMENT =================
+    
+ @Test
+void bookAppointment_nullSlotData_shouldThrowSQLException() throws Exception {
+
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+
+    when(rs.next()).thenReturn(true);
+
+    when(rs.getDate("start_date")).thenReturn(null);
+    when(rs.getTime("start_time")).thenReturn(null);
+    when(rs.getTime("end_time")).thenReturn(null);
+
+    AppointmentService service =
+            new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
+
+    assertThrows(SQLException.class, () -> {
+        service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+    });
+}
+@Test
+void bookAppointment_pastSlot_shouldThrowSQLException() throws Exception {
+
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+
+    when(rs.next()).thenReturn(true);
+
+    // تاريخ قديم جدًا
+    when(rs.getDate("start_date"))
+            .thenReturn(java.sql.Date.valueOf("2020-01-01"));
+
+    when(rs.getTime("start_time"))
+            .thenReturn(java.sql.Time.valueOf("10:00:00"));
+    when(rs.getTime("end_time"))
+            .thenReturn(java.sql.Time.valueOf("11:00:00"));
+
+    when(rs.getInt("max_capacity")).thenReturn(10);
+    when(rs.getInt("booked_count")).thenReturn(0);
+
+    AppointmentService service =
+            new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
+
+    assertThrows(SQLException.class, () -> {
+        service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+    });
+}
+@Test
+void bookAppointment_whenException_shouldRollback() throws Exception {
+
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+
+    when(rs.next()).thenThrow(new SQLException("DB crash"));
+
+    AppointmentService service =
+            new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
+
+    assertThrows(SQLException.class, () -> {
+        service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+    });
+
+    verify(conn).rollback();
+}
+@Test
+void bookAppointment_durationTooShort_shouldThrowIllegalArgumentException() throws Exception {
+
+    Connection conn = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+    ResultSet rs = mock(ResultSet.class);
+
+    when(conn.prepareStatement(anyString())).thenReturn(ps);
+    when(ps.executeQuery()).thenReturn(rs);
+
+    when(rs.next()).thenReturn(true);
+
+    when(rs.getDate("start_date"))
+            .thenReturn(java.sql.Date.valueOf("2026-12-01"));
+
+    when(rs.getTime("start_time"))
+            .thenReturn(java.sql.Time.valueOf("10:00:00"));
+
+    when(rs.getTime("end_time"))
+            .thenReturn(java.sql.Time.valueOf("10:20:00")); // 20 min
+
+    when(rs.getInt("max_capacity")).thenReturn(10);
+    when(rs.getInt("booked_count")).thenReturn(0);
+
+    AppointmentService service =
+            new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
+
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+    });
+}
+@Test
+void getAvailableSlots_shouldCallSlotService() {
+
+    SlotService_y slotService = mock(SlotService_y.class);
+    when(slotService.getAvailableSlots()).thenReturn(List.of());
+
+    AppointmentService service =
+            new AppointmentService(mock(Connection.class), slotService, mock(scheduleRepository.class));
+
+    List<AppointmentSlot_y> result = service.getAvailableSlots();
+
+    assertTrue(result.isEmpty());
+    verify(slotService).getAvailableSlots();
+}
+@Test
+void addSlot_shouldCallSlotService() {
+
+    SlotService_y slotService = mock(SlotService_y.class);
+    when(slotService.addSlot(any(), any(), any(), anyInt(), anyInt()))
+            .thenReturn(true);
+
+    AppointmentService service =
+            new AppointmentService(mock(Connection.class), slotService, mock(scheduleRepository.class));
+
+    service.addSlot(
+            LocalDateTime.now().plusDays(1),
+            LocalDateTime.now().plusDays(1).plusHours(1),
+            5,
+            1
+    );
+
+    verify(slotService).addSlot(any(), any(), any(), anyInt(), anyInt());
+}
   @Test
 void bookAppointment_slotNotFound_shouldThrowSQLException() throws Exception {
 
