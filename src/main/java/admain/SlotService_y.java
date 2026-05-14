@@ -73,9 +73,8 @@ this.emailService = emailService; // ✅ الآن صح
             case GENERAL:
                break;
 
-            if (type == null) {
-    throw new IllegalArgumentException("Appointment type cannot be null");
-}
+    default:
+    throw new IllegalArgumentException("Unknown appointment type");
         }
 
          if (type != AppointmentType_y.VIRTUAL && participants > remaining) {
