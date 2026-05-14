@@ -61,7 +61,24 @@ class AppointmentServiceTest22 {
     }
 
     // ===== Constructor =====
+@Test
+void bookAppointment_nullType_shouldThrowException() throws Exception {
 
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(10);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+
+    assertThrows(Exception.class, () -> {
+        service.bookAppointment(
+                1,
+                1,
+                1,
+                null
+        );
+    });
+}
     @Test
     void testDefaultConstructor() {
         assertNotNull(new AppointmentService());
