@@ -33,7 +33,11 @@ class EmailNotificationAdapterTest {
         // لازم ما يرمي error
         adapter.sendNotification(1, "msg");
 
-        verifyNoInteractions(emailService);
+       verify(emailService).sendEmail(
+        "1",
+        "Notification",
+        "msg"
+);
     }
 
     @Test
