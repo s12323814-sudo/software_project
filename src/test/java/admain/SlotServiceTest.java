@@ -8,7 +8,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
-
+import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -55,8 +55,8 @@ void bookAppointment_nullSlotData_shouldThrowSQLException() throws Exception {
     when(rs.getTime("start_time")).thenReturn(null);
     when(rs.getTime("end_time")).thenReturn(null);
 
-    AppointmentService service =
-            new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
+  AppointmentService appointmentService =
+        new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
 
     assertThrows(SQLException.class, () -> {
         service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
