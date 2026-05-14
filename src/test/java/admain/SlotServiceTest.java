@@ -38,7 +38,42 @@ class SlotServiceTest {
 
     // ================= ADMIN CANCEL SLOT =================
 // ================= ADMIN CANCEL APPOINTMENT =================
+@Test
+void bookAppointment_unknownType_shouldThrowException() throws Exception {
 
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(10);
+    when(slot.getBookedCount()).thenReturn(0);
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.bookAppointment(
+                1,
+                1,
+                1,
+                null   // triggers default indirectly
+        );
+    });
+}
+    @Test
+void bookAppointment_notEnoughCapacity_shouldThrow() throws Exception {
+
+    AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+    when(slot.getMaxCapacity()).thenReturn(2);
+    when(slot.getBookedCount()).thenReturn(0); // remaining = 2
+
+    when(slotRepo.findById(1)).thenReturn(slot);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.bookAppointment(
+                1,
+                1,
+                5, // أكبر من remaining
+                AppointmentType_y.IN_PERSON // أي type غير VIRTUAL
+        );
+    });
+}
 @Test
 void test_adminCancelAppointment_dbCrash() {
     try (MockedStatic<database_connection> mocked =
