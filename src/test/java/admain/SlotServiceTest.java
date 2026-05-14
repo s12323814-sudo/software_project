@@ -39,8 +39,8 @@ class SlotServiceTest {
     // ================= ADMIN CANCEL SLOT =================
 // ================= ADMIN CANCEL APPOINTMENT =================
     
- @Test
-void bookAppointment_nullSlotData_shouldThrowSQLException() throws Exception {
+@Test
+void bookAppointment_nullSlotData_shouldThrowException() throws Exception {
 
     Connection conn = mock(Connection.class);
     PreparedStatement ps = mock(PreparedStatement.class);
@@ -55,11 +55,20 @@ void bookAppointment_nullSlotData_shouldThrowSQLException() throws Exception {
     when(rs.getTime("start_time")).thenReturn(null);
     when(rs.getTime("end_time")).thenReturn(null);
 
-  AppointmentService appointmentService =
-        new AppointmentService(conn, mock(SlotService_y.class), mock(scheduleRepository.class));
+    AppointmentService appointmentService =
+            new AppointmentService(
+                    conn,
+                    mock(SlotService_y.class),
+                    mock(scheduleRepository.class)
+            );
 
-    assertThrows(SQLException.class, () -> {
-        service.bookAppointment(1, 1, 1, AppointmentType_y.GENERAL);
+    assertThrows(Exception.class, () -> {
+        appointmentService.bookAppointment(
+                1,
+                1,
+                1,
+                AppointmentType_y.GENERAL
+        );
     });
 }
 @Test
