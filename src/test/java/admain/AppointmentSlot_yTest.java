@@ -156,7 +156,25 @@ void testGetEndTime() {
     );
     assertEquals(LocalTime.of(10, 0), slot.getEndTime());
 }
+@Test
+void saveUser_whenSQLExceptionThrown_shouldThrowRuntimeException() throws Exception {
 
+    Connection connection = mock(Connection.class);
+    PreparedStatement ps = mock(PreparedStatement.class);
+
+    when(connection.prepareStatement(anyString()))
+            .thenThrow(new SQLException("DB error"));
+
+    YourClass service = new YourClass(connection);
+
+    RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> service.saveUser(new User())
+    );
+
+    assertTrue(ex.getCause() instanceof SQLException);
+    assertEquals("DB error", ex.getCause().getMessage());
+}
 @Test
 void testGetStartDateTime() {
     LocalDate date = LocalDate.now();
