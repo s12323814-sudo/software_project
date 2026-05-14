@@ -39,22 +39,26 @@ class SlotServiceTest {
     // ================= ADMIN CANCEL SLOT =================
 // ================= ADMIN CANCEL APPOINTMENT =================
 @Test
-void bookAppointment_unknownType_shouldThrowException() throws Exception {
+void bookAppointment_whenTypeIsNull_shouldThrowIllegalArgumentException() throws Exception {
 
     AppointmentSlot_y slot = mock(AppointmentSlot_y.class);
+
     when(slot.getMaxCapacity()).thenReturn(10);
     when(slot.getBookedCount()).thenReturn(0);
 
     when(slotRepo.findById(1)).thenReturn(slot);
 
-    assertThrows(IllegalArgumentException.class, () -> {
-        service.bookAppointment(
-                1,
-                1,
-                1,
-                null   // triggers default indirectly
-        );
-    });
+    IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> service.bookAppointment(
+                    1,
+                    1,
+                    1,
+                    null
+            )
+    );
+
+    assertEquals("Appointment type cannot be null", ex.getMessage());
 }
     @Test
 void bookAppointment_notEnoughCapacity_shouldThrow() throws Exception {
