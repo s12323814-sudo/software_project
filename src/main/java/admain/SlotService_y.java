@@ -26,14 +26,9 @@ public class SlotService_y {
 this.appointmentRepo = appointmentRepo;
 this.slotRepo = slotRepo;
 this.notificationService = notificationService;
-this.emailService = emailService; 
+this.emailService = emailService; // ✅ الآن صح
 }
-public SlotService_y() {
-    this.appointmentRepo = new AppointmentRepository_y();
-    this.slotRepo = new SlotRepository_y();
-    this.notificationService = new NotificationService_y();
-    this.emailService = new EmailService_y();
-}
+
    public List<AppointmentSlot_y> getAvailableSlots() {
         return slotRepo.findAvailableSlots();
     }
